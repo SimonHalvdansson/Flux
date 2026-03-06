@@ -1,0 +1,4 @@
+<resources>
+    <color name="widget_text">@android:color/system_on_secondary_container_dark</color>
+    <color name="widget_price_text">@android:color/system_on_surface_dark</color>
+</resources>

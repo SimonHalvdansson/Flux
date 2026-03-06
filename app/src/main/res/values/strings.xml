@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">Flux</string>
+    <string name="appwidget_text">EXAMPLE</string>
+    <string name="add_widget">Add widget</string>
+    <string name="main_widget_description">Bar chart</string>
+    <string name="list_widget_description">List</string>
+    <string name="welcome_text">Welcome to Flux!</string>
+    <string name="chart_bars">Bar chart</string>
+    <string name="chart_graph">Graph</string>
+</resources>

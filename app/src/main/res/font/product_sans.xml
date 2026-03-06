@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<font-family xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Thin (100) -->
+    <font
+        android:fontStyle="normal"
+        android:fontWeight="100"
+        android:font="@font/productsans_thin" />
+
+    <!-- Thin Italic -->
+    <font
+        android:fontStyle="italic"
+        android:fontWeight="100"
+        android:font="@font/productsans_thinitalic" />
+
+    <!-- Light (300) -->
+    <font
+        android:fontStyle="normal"
+        android:fontWeight="300"
+        android:font="@font/productsans_light" />
+
+    <!-- Light Italic -->
+    <font
+        android:fontStyle="italic"
+        android:fontWeight="300"
+        android:font="@font/productsans_lightitalic" />
+
+    <!-- Regular (400) -->
+    <font
+        android:fontStyle="normal"
+        android:fontWeight="400"
+        android:font="@font/productsans_regular" />
+
+    <!-- Italic -->
+    <font
+        android:fontStyle="italic"
+        android:fontWeight="400"
+        android:font="@font/productsans_italic" />
+
+    <!-- Medium (500) -->
+    <font
+        android:fontStyle="normal"
+        android:fontWeight="500"
+        android:font="@font/productsans_medium" />
+
+    <!-- Medium Italic -->
+    <font
+        android:fontStyle="italic"
+        android:fontWeight="500"
+        android:font="@font/productsans_mediumitalic" />
+
+    <!-- Bold (700) -->
+    <font
+        android:fontStyle="normal"
+        android:fontWeight="700"
+        android:font="@font/productsans_bold" />
+
+    <!-- Bold Italic -->
+    <font
+        android:fontStyle="italic"
+        android:fontWeight="700"
+        android:font="@font/productsans_bolditalic" />
+
+    <!-- Black (900) -->
+    <font
+        android:fontStyle="normal"
+        android:fontWeight="900"
+        android:font="@font/productsans_black" />
+
+    <!-- Black Italic -->
+    <font
+        android:fontStyle="italic"
+        android:fontWeight="900"
+        android:font="@font/productsans_blackitalic" />
+
+</font-family>

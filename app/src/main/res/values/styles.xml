@@ -1,0 +1,68 @@
+<resources>
+
+    <style name="Theme.Flux" parent="Theme.Material3Expressive.DayNight.NoActionBar">
+        <item name="android:statusBarColor">?attr/colorSurface</item>
+        <item name="android:windowLightStatusBar">?attr/isLightTheme</item>
+    </style>
+
+    <style name="Widget.Flux.AppWidget.Container" parent="android:Widget">
+        <item name="android:id">@android:id/background</item>
+        <item name="android:background">@drawable/widget_bg_rounded</item>
+        <item name="android:padding">?attr/appWidgetPadding</item>
+        <item name="android:clipToOutline">true</item>
+    </style>
+
+    <style name="Widget.Flux.AppWidget.Text" parent="android:Widget">
+        <item name="android:textColor">@color/widget_text</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="Widget.Flux.AppWidget.Text.Header" parent="Widget.Flux.AppWidget.Text">
+        <item name="android:textSize">13sp</item>
+    </style>
+
+    <style name="Widget.Flux.AppWidget.Text.Price" parent="Widget.Flux.AppWidget.Text">
+        <item name="android:textSize">34sp</item>
+        <item name="android:textColor">@color/widget_price_text</item>
+    </style>
+
+    <style name="Widget.Flux.AppWidget.Text.Unit" parent="Widget.Flux.AppWidget.Text">
+        <item name="android:textSize">14sp</item>
+    </style>
+
+    <style name="Widget.Flux.AppWidget.Text.Extrema" parent="Widget.Flux.AppWidget.Text">
+        <item name="android:textSize">13sp</item>
+    </style>
+
+    <style name="Widget.Flux.AppWidget.Text.ListHeader" parent="Widget.Flux.AppWidget.Text">
+        <item name="android:textSize">12sp</item>
+    </style>
+
+    <style name="Widget.Flux.AppWidget.Text.ListItem" parent="Widget.Flux.AppWidget.Text">
+        <item name="android:textSize">13sp</item>
+    </style>
+
+    <style name="Widget.Flux.AppWidget.Text.ApiError" parent="Widget.Flux.AppWidget.Text">
+        <item name="android:textSize">18sp</item>
+    </style>
+
+    <style name="Widget.Flux.AppWidget.Bar" parent="android:Widget">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_gravity">bottom</item>
+        <item name="android:layout_marginRight">2dp</item>
+        <item name="android:layout_marginLeft">2dp</item>
+    </style>
+
+    <style name="Widget.Flux.AppWidget.TimeText" parent="Widget.Flux.AppWidget.Text">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:gravity">start</item>
+        <item name="android:layout_marginRight">2dp</item>
+        <item name="android:layout_marginLeft">2dp</item>
+        <item name="android:textSize">10sp</item>
+    </style>
+
+</resources>
