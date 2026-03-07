@@ -11,6 +11,9 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 
 import com.google.android.material.button.MaterialButtonToggleGroup;
 
@@ -23,6 +26,7 @@ public class ConfigurationActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_configuration);
+        applyWindowInsets();
 
         Intent intent = getIntent();
         appWidgetId = intent.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, AppWidgetManager.INVALID_APPWIDGET_ID);
@@ -133,6 +137,26 @@ public class ConfigurationActivity extends AppCompatActivity {
         }
 
         doneButton.setOnClickListener(v -> finishWithSuccess());
+    }
+
+    private void applyWindowInsets() {
+        View root = findViewById(R.id.main_container);
+        int padStart = root.getPaddingStart();
+        int padTop = root.getPaddingTop();
+        int padEnd = root.getPaddingEnd();
+        int padBottom = root.getPaddingBottom();
+
+        ViewCompat.setOnApplyWindowInsetsListener(root, (view, insets) -> {
+            Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            root.setPaddingRelative(
+                    padStart + bars.left,
+                    padTop + bars.top,
+                    padEnd + bars.right,
+                    padBottom + bars.bottom
+            );
+            return insets;
+        });
+        ViewCompat.requestApplyInsets(root);
     }
 
     private void updateBarPoolVisibility(View container, int chartMode) {

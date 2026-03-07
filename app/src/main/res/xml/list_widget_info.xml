@@ -5,11 +5,11 @@
     android:initialKeyguardLayout="@layout/list_widget"
     android:initialLayout="@layout/list_widget"
     android:minWidth="125dp"
-    android:minHeight="140dp"
+    android:minHeight="105dp"
     android:previewImage="@drawable/example_appwidget_preview"
     android:previewLayout="@layout/list_widget_preview"
     android:resizeMode="horizontal|vertical"
     android:targetCellWidth="2"
-    android:targetCellHeight="4"
+    android:targetCellHeight="3"
     android:updatePeriodMillis="3600000"
     android:widgetCategory="home_screen" />

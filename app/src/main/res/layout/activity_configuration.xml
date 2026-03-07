@@ -1,168 +1,45 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/main_container"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:fillViewport="true">
+    android:layout_height="match_parent"
+    android:clipChildren="false"
+    android:clipToPadding="false">
 
-    <LinearLayout
+    <io.github.simonhalvdansson.flux.MainBackdropView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="24dp">
+        android:layout_height="match_parent"
+        android:importantForAccessibility="no" />
 
-        <TextView
-            android:id="@+id/config_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:fontFamily="@font/productsans_bold"
-            android:text="@string/widget_settings_title"
-            android:textSize="28sp" />
+    <io.github.simonhalvdansson.flux.NoiseOverlayView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:importantForAccessibility="no" />
 
-        <LinearLayout
-            android:id="@+id/main_widget_settings_section"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:orientation="vertical">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:fontFamily="@font/productsans_bold"
-                android:text="@string/widget_chart_mode_title"
-                android:textSize="16sp" />
-
-            <com.google.android.material.button.MaterialButtonToggleGroup
-                android:id="@+id/chart_toggle_group"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                app:singleSelection="true">
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/chart_bars_button"
-                    style="?attr/materialButtonOutlinedStyle"
-                    android:layout_width="0dp"
-                    android:layout_height="56dp"
-                    android:layout_weight="1"
-                    android:fontFamily="@font/productsans_bold"
-                    android:text="@string/chart_bars" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/chart_graph_button"
-                    style="?attr/materialButtonOutlinedStyle"
-                    android:layout_width="0dp"
-                    android:layout_height="56dp"
-                    android:layout_weight="1"
-                    android:fontFamily="@font/productsans_bold"
-                    android:text="@string/chart_graph" />
-            </com.google.android.material.button.MaterialButtonToggleGroup>
-
-            <LinearLayout
-                android:id="@+id/bar_pool_container"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:orientation="vertical">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:fontFamily="@font/productsans_bold"
-                    android:text="@string/widget_bar_pool_title"
-                    android:textSize="16sp" />
-
-                <com.google.android.material.button.MaterialButtonToggleGroup
-                    android:id="@+id/bar_pool_toggle_group"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    app:singleSelection="true">
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/bar_pool_average_button"
-                        style="?attr/materialButtonOutlinedStyle"
-                        android:layout_width="0dp"
-                        android:layout_height="56dp"
-                        android:layout_weight="1"
-                        android:fontFamily="@font/productsans_bold"
-                        android:text="@string/pool_average" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/bar_pool_min_button"
-                        style="?attr/materialButtonOutlinedStyle"
-                        android:layout_width="0dp"
-                        android:layout_height="56dp"
-                        android:layout_weight="1"
-                        android:fontFamily="@font/productsans_bold"
-                        android:text="@string/pool_min" />
-                </com.google.android.material.button.MaterialButtonToggleGroup>
-            </LinearLayout>
-        </LinearLayout>
+    <ScrollView
+        android:id="@+id/main_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        android:fillViewport="true">
 
         <LinearLayout
-            android:id="@+id/list_widget_settings_section"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
             android:orientation="vertical"
-            android:visibility="gone">
+            android:padding="24dp">
 
             <TextView
+                android:id="@+id/config_title"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:fontFamily="@font/productsans_bold"
-                android:text="@string/widget_list_increment_title"
-                android:textSize="16sp" />
-
-            <com.google.android.material.button.MaterialButtonToggleGroup
-                android:id="@+id/list_increment_toggle_group"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                app:singleSelection="true">
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/increment_15_button"
-                    style="?attr/materialButtonOutlinedStyle"
-                    android:layout_width="0dp"
-                    android:layout_height="56dp"
-                    android:layout_weight="1"
-                    android:fontFamily="@font/productsans_bold"
-                    android:text="@string/increment_15_minutes" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/increment_30_button"
-                    style="?attr/materialButtonOutlinedStyle"
-                    android:layout_width="0dp"
-                    android:layout_height="56dp"
-                    android:layout_weight="1"
-                    android:fontFamily="@font/productsans_bold"
-                    android:text="@string/increment_30_minutes" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/increment_60_button"
-                    style="?attr/materialButtonOutlinedStyle"
-                    android:layout_width="0dp"
-                    android:layout_height="56dp"
-                    android:layout_weight="1"
-                    android:fontFamily="@font/productsans_bold"
-                    android:text="@string/increment_1_hour" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/increment_120_button"
-                    style="?attr/materialButtonOutlinedStyle"
-                    android:layout_width="0dp"
-                    android:layout_height="56dp"
-                    android:layout_weight="1"
-                    android:fontFamily="@font/productsans_bold"
-                    android:text="@string/increment_2_hours" />
-            </com.google.android.material.button.MaterialButtonToggleGroup>
+                android:text="@string/widget_settings_title"
+                android:textSize="28sp" />
 
             <LinearLayout
-                android:id="@+id/list_pool_container"
+                android:id="@+id/main_widget_settings_section"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="20dp"
@@ -172,46 +49,188 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:fontFamily="@font/productsans_bold"
-                    android:text="@string/widget_list_pool_title"
+                    android:text="@string/widget_chart_mode_title"
                     android:textSize="16sp" />
 
                 <com.google.android.material.button.MaterialButtonToggleGroup
-                    android:id="@+id/list_pool_toggle_group"
+                    android:id="@+id/chart_toggle_group"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
                     app:singleSelection="true">
 
                     <com.google.android.material.button.MaterialButton
-                        android:id="@+id/list_pool_average_button"
+                        android:id="@+id/chart_bars_button"
                         style="?attr/materialButtonOutlinedStyle"
                         android:layout_width="0dp"
                         android:layout_height="56dp"
                         android:layout_weight="1"
                         android:fontFamily="@font/productsans_bold"
-                        android:text="@string/pool_average" />
+                        android:text="@string/chart_bars" />
 
                     <com.google.android.material.button.MaterialButton
-                        android:id="@+id/list_pool_min_button"
+                        android:id="@+id/chart_graph_button"
                         style="?attr/materialButtonOutlinedStyle"
                         android:layout_width="0dp"
                         android:layout_height="56dp"
                         android:layout_weight="1"
                         android:fontFamily="@font/productsans_bold"
-                        android:text="@string/pool_min" />
+                        android:text="@string/chart_graph" />
                 </com.google.android.material.button.MaterialButtonToggleGroup>
-            </LinearLayout>
-        </LinearLayout>
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/done_button"
-            style="@style/Widget.Material3Expressive.Button.ElevatedButton"
-            android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:layout_marginTop="24dp"
-            android:backgroundTint="?attr/colorSecondary"
-            android:fontFamily="@font/productsans_bold"
-            android:text="@string/add_widget"
-            android:textColor="?attr/colorOnSecondary" />
-    </LinearLayout>
-</ScrollView>
+                <LinearLayout
+                    android:id="@+id/bar_pool_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/productsans_bold"
+                        android:text="@string/widget_bar_pool_title"
+                        android:textSize="16sp" />
+
+                    <com.google.android.material.button.MaterialButtonToggleGroup
+                        android:id="@+id/bar_pool_toggle_group"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        app:singleSelection="true">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/bar_pool_average_button"
+                            style="?attr/materialButtonOutlinedStyle"
+                            android:layout_width="0dp"
+                            android:layout_height="56dp"
+                            android:layout_weight="1"
+                            android:fontFamily="@font/productsans_bold"
+                            android:text="@string/pool_average" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/bar_pool_min_button"
+                            style="?attr/materialButtonOutlinedStyle"
+                            android:layout_width="0dp"
+                            android:layout_height="56dp"
+                            android:layout_weight="1"
+                            android:fontFamily="@font/productsans_bold"
+                            android:text="@string/pool_min" />
+                    </com.google.android.material.button.MaterialButtonToggleGroup>
+                </LinearLayout>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/list_widget_settings_section"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/productsans_bold"
+                    android:text="@string/widget_list_increment_title"
+                    android:textSize="16sp" />
+
+                <com.google.android.material.button.MaterialButtonToggleGroup
+                    android:id="@+id/list_increment_toggle_group"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    app:singleSelection="true">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/increment_15_button"
+                        style="?attr/materialButtonOutlinedStyle"
+                        android:layout_width="0dp"
+                        android:layout_height="56dp"
+                        android:layout_weight="1"
+                        android:fontFamily="@font/productsans_bold"
+                        android:text="@string/increment_15_minutes" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/increment_30_button"
+                        style="?attr/materialButtonOutlinedStyle"
+                        android:layout_width="0dp"
+                        android:layout_height="56dp"
+                        android:layout_weight="1"
+                        android:fontFamily="@font/productsans_bold"
+                        android:text="@string/increment_30_minutes" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/increment_60_button"
+                        style="?attr/materialButtonOutlinedStyle"
+                        android:layout_width="0dp"
+                        android:layout_height="56dp"
+                        android:layout_weight="1"
+                        android:fontFamily="@font/productsans_bold"
+                        android:text="@string/increment_1_hour" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/increment_120_button"
+                        style="?attr/materialButtonOutlinedStyle"
+                        android:layout_width="0dp"
+                        android:layout_height="56dp"
+                        android:layout_weight="1"
+                        android:fontFamily="@font/productsans_bold"
+                        android:text="@string/increment_2_hours" />
+                </com.google.android.material.button.MaterialButtonToggleGroup>
+
+                <LinearLayout
+                    android:id="@+id/list_pool_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/productsans_bold"
+                        android:text="@string/widget_list_pool_title"
+                        android:textSize="16sp" />
+
+                    <com.google.android.material.button.MaterialButtonToggleGroup
+                        android:id="@+id/list_pool_toggle_group"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        app:singleSelection="true">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/list_pool_average_button"
+                            style="?attr/materialButtonOutlinedStyle"
+                            android:layout_width="0dp"
+                            android:layout_height="56dp"
+                            android:layout_weight="1"
+                            android:fontFamily="@font/productsans_bold"
+                            android:text="@string/pool_average" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/list_pool_min_button"
+                            style="?attr/materialButtonOutlinedStyle"
+                            android:layout_width="0dp"
+                            android:layout_height="56dp"
+                            android:layout_weight="1"
+                            android:fontFamily="@font/productsans_bold"
+                            android:text="@string/pool_min" />
+                    </com.google.android.material.button.MaterialButtonToggleGroup>
+                </LinearLayout>
+            </LinearLayout>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/done_button"
+                style="@style/Widget.Material3Expressive.Button.ElevatedButton"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginTop="24dp"
+                android:backgroundTint="?attr/colorSecondary"
+                android:fontFamily="@font/productsans_bold"
+                android:text="@string/add_widget"
+                android:textColor="?attr/colorOnSecondary" />
+        </LinearLayout>
+    </ScrollView>
+</FrameLayout>
