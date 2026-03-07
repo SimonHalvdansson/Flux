@@ -1,228 +1,357 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/main_container"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/main_container"
+    android:clipChildren="false"
+    android:clipToPadding="false"
     android:orientation="vertical"
-    android:padding="24dp">
+    android:padding="32dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        android:gravity="top"
         android:orientation="horizontal">
 
-        <ImageView
-            android:layout_gravity="center_vertical"
-            android:src="@mipmap/ic_launcher_round"
-            android:layout_width="44dp"
-            android:layout_marginRight="12dp"
-            android:layout_height="44dp"/>
-
-        <TextView
-            android:paddingTop="16dp"
-            android:fontFamily="@font/productsans_bold"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="Flux"
-            android:textSize="32sp"
-            android:paddingBottom="16dp"/>
+            android:layout_weight="1"
+            android:orientation="vertical">
 
+            <TextView
+                android:id="@+id/current_price_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/productsans_medium"
+                android:text="@string/current_price_label"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/current_price_value"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:fontFamily="@font/productsans_bold"
+                android:text="@string/current_price_loading"
+                android:textSize="42sp" />
+        </LinearLayout>
+
+        <FrameLayout
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:layout_marginStart="12dp"
+            android:clipChildren="false"
+            android:clipToPadding="false">
+
+            <ImageView
+                android:id="@+id/app_icon"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:layout_gravity="center"
+                android:src="@mipmap/ic_launcher_round" />
+        </FrameLayout>
     </LinearLayout>
 
     <LinearLayout
-        android:orientation="vertical"
+        android:id="@+id/bar_chart_section"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:layout_marginTop="28dp"
+        android:orientation="vertical">
 
         <LinearLayout
-            android:orientation="horizontal"
+            android:id="@+id/bar_chart_container"
             android:layout_width="match_parent"
-            android:layout_height="56dp">
+            android:layout_height="160dp"
+            android:gravity="bottom"
+            android:orientation="horizontal">
 
-            <TextView
-                android:fontFamily="@font/productsans_bold"
-                android:layout_gravity="center_vertical"
+            <ImageView
+                android:id="@+id/bar_0"
                 android:layout_width="0dp"
+                android:layout_height="8dp"
+                android:layout_marginHorizontal="1dp"
                 android:layout_weight="1"
-                android:textSize="16dp"
-                android:layout_height="wrap_content"
-                android:text="Country"/>
-
-            <com.google.android.material.textfield.TextInputLayout
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
-                android:layout_gravity="center_vertical"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content">
-
-                <com.google.android.material.textfield.MaterialAutoCompleteTextView
-                    android:id="@+id/country_dropdown"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:inputType="none"
-                    android:fontFamily="@font/productsans_bold" />
-
-            </com.google.android.material.textfield.TextInputLayout>
-
+                android:background="@drawable/bar_rounded_old" />
+            <ImageView
+                android:id="@+id/bar_1"
+                android:layout_width="0dp"
+                android:layout_height="8dp"
+                android:layout_marginHorizontal="1dp"
+                android:layout_weight="1"
+                android:background="@drawable/bar_rounded_old" />
+            <ImageView
+                android:id="@+id/bar_2"
+                android:layout_width="0dp"
+                android:layout_height="8dp"
+                android:layout_marginHorizontal="1dp"
+                android:layout_weight="1"
+                android:background="@drawable/bar_rounded_old" />
+            <ImageView
+                android:id="@+id/bar_3"
+                android:layout_width="0dp"
+                android:layout_height="8dp"
+                android:layout_marginHorizontal="1dp"
+                android:layout_weight="1"
+                android:background="@drawable/bar_rounded_current" />
+            <ImageView
+                android:id="@+id/bar_4"
+                android:layout_width="0dp"
+                android:layout_height="8dp"
+                android:layout_marginHorizontal="1dp"
+                android:layout_weight="1"
+                android:background="@drawable/bar_rounded" />
+            <ImageView
+                android:id="@+id/bar_5"
+                android:layout_width="0dp"
+                android:layout_height="8dp"
+                android:layout_marginHorizontal="1dp"
+                android:layout_weight="1"
+                android:background="@drawable/bar_rounded" />
+            <ImageView
+                android:id="@+id/bar_6"
+                android:layout_width="0dp"
+                android:layout_height="8dp"
+                android:layout_marginHorizontal="1dp"
+                android:layout_weight="1"
+                android:background="@drawable/bar_rounded" />
+            <ImageView
+                android:id="@+id/bar_7"
+                android:layout_width="0dp"
+                android:layout_height="8dp"
+                android:layout_marginHorizontal="1dp"
+                android:layout_weight="1"
+                android:background="@drawable/bar_rounded" />
+            <ImageView
+                android:id="@+id/bar_8"
+                android:layout_width="0dp"
+                android:layout_height="8dp"
+                android:layout_marginHorizontal="1dp"
+                android:layout_weight="1"
+                android:background="@drawable/bar_rounded" />
+            <ImageView
+                android:id="@+id/bar_9"
+                android:layout_width="0dp"
+                android:layout_height="8dp"
+                android:layout_marginHorizontal="1dp"
+                android:layout_weight="1"
+                android:background="@drawable/bar_rounded" />
+            <ImageView
+                android:id="@+id/bar_10"
+                android:layout_width="0dp"
+                android:layout_height="8dp"
+                android:layout_marginHorizontal="1dp"
+                android:layout_weight="1"
+                android:background="@drawable/bar_rounded" />
+            <ImageView
+                android:id="@+id/bar_11"
+                android:layout_width="0dp"
+                android:layout_height="8dp"
+                android:layout_marginHorizontal="1dp"
+                android:layout_weight="1"
+                android:background="@drawable/bar_rounded" />
+            <ImageView
+                android:id="@+id/bar_12"
+                android:layout_width="0dp"
+                android:layout_height="8dp"
+                android:layout_marginHorizontal="1dp"
+                android:layout_weight="1"
+                android:background="@drawable/bar_rounded" />
+            <ImageView
+                android:id="@+id/bar_13"
+                android:layout_width="0dp"
+                android:layout_height="8dp"
+                android:layout_marginHorizontal="1dp"
+                android:layout_weight="1"
+                android:background="@drawable/bar_rounded" />
+            <ImageView
+                android:id="@+id/bar_14"
+                android:layout_width="0dp"
+                android:layout_height="8dp"
+                android:layout_marginHorizontal="1dp"
+                android:layout_weight="1"
+                android:background="@drawable/bar_rounded" />
+            <ImageView
+                android:id="@+id/bar_15"
+                android:layout_width="0dp"
+                android:layout_height="8dp"
+                android:layout_marginHorizontal="1dp"
+                android:layout_weight="1"
+                android:background="@drawable/bar_rounded" />
+            <ImageView
+                android:id="@+id/bar_16"
+                android:layout_width="0dp"
+                android:layout_height="8dp"
+                android:layout_marginHorizontal="1dp"
+                android:layout_weight="1"
+                android:background="@drawable/bar_rounded" />
+            <ImageView
+                android:id="@+id/bar_17"
+                android:layout_width="0dp"
+                android:layout_height="8dp"
+                android:layout_marginHorizontal="1dp"
+                android:layout_weight="1"
+                android:background="@drawable/bar_rounded" />
+            <ImageView
+                android:id="@+id/bar_18"
+                android:layout_width="0dp"
+                android:layout_height="8dp"
+                android:layout_marginHorizontal="1dp"
+                android:layout_weight="1"
+                android:background="@drawable/bar_rounded" />
+            <ImageView
+                android:id="@+id/bar_19"
+                android:layout_width="0dp"
+                android:layout_height="8dp"
+                android:layout_marginHorizontal="1dp"
+                android:layout_weight="1"
+                android:background="@drawable/bar_rounded" />
+            <ImageView
+                android:id="@+id/bar_20"
+                android:layout_width="0dp"
+                android:layout_height="8dp"
+                android:layout_marginHorizontal="1dp"
+                android:layout_weight="1"
+                android:background="@drawable/bar_rounded" />
+            <ImageView
+                android:id="@+id/bar_21"
+                android:layout_width="0dp"
+                android:layout_height="8dp"
+                android:layout_marginHorizontal="1dp"
+                android:layout_weight="1"
+                android:background="@drawable/bar_rounded" />
+            <ImageView
+                android:id="@+id/bar_22"
+                android:layout_width="0dp"
+                android:layout_height="8dp"
+                android:layout_marginHorizontal="1dp"
+                android:layout_weight="1"
+                android:background="@drawable/bar_rounded" />
+            <ImageView
+                android:id="@+id/bar_23"
+                android:layout_width="0dp"
+                android:layout_height="8dp"
+                android:layout_marginHorizontal="1dp"
+                android:layout_weight="1"
+                android:background="@drawable/bar_rounded" />
         </LinearLayout>
 
         <LinearLayout
-            android:id="@+id/region_container"
-            android:orientation="horizontal"
-            android:layout_width="match_parent"
-            android:layout_height="56dp">
-
-            <TextView
-                android:fontFamily="@font/productsans_bold"
-                android:layout_gravity="center_vertical"
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:textSize="16dp"
-                android:layout_height="wrap_content"
-                android:text="Region"/>
-
-            <com.google.android.material.textfield.TextInputLayout
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
-                android:layout_gravity="center_vertical"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content">
-
-                <com.google.android.material.textfield.MaterialAutoCompleteTextView
-                    android:id="@+id/area_dropdown"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:inputType="none"
-                    android:fontFamily="@font/productsans_bold" />
-
-            </com.google.android.material.textfield.TextInputLayout>
-
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/stromstotte_container"
-            android:orientation="horizontal"
-            android:layout_width="match_parent"
-            android:layout_height="56dp">
-
-            <TextView
-                android:fontFamily="@font/productsans_bold"
-                android:layout_gravity="center_vertical"
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:textSize="16dp"
-                android:layout_height="wrap_content"
-                android:text="Strømstøtte (-90 % > 0.77 kr/kWh)"/>
-
-            <com.google.android.material.materialswitch.MaterialSwitch
-                android:id="@+id/stromstotte_switch"
-                android:layout_gravity="center_vertical"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"/>
-
-        </LinearLayout>
-
-        <LinearLayout
-            android:orientation="horizontal"
-            android:layout_width="match_parent"
-            android:layout_height="56dp">
-
-            <TextView
-                android:id="@+id/vat_label"
-                android:fontFamily="@font/productsans_bold"
-                android:layout_gravity="center_vertical"
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:textSize="16dp"
-                android:layout_height="wrap_content"
-                android:text="VAT (+25 %)"/>
-
-            <com.google.android.material.materialswitch.MaterialSwitch
-                android:id="@+id/vat_switch"
-                android:layout_gravity="center_vertical"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"/>
-
-        </LinearLayout>
-
-        <LinearLayout
-            android:orientation="horizontal"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-
-            <TextView
-                android:fontFamily="@font/productsans_bold"
-                android:layout_gravity="center_vertical"
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:textSize="16dp"
-                android:layout_height="wrap_content"
-                android:text="Grid fee (inc. VAT)"/>
-
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/grid_fee_container"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                android:layout_gravity="center_vertical"
-                android:layout_width="160dp"
-                android:layout_height="wrap_content"
-                app:suffixText="">
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/grid_fee_input"
-                    android:layout_width="match_parent"
-                    android:layout_height="56dp"
-                    android:fontFamily="@font/productsans_bold"
-                    android:gravity="center_vertical|end"
-                    android:inputType="numberDecimal" />
-
-            </com.google.android.material.textfield.TextInputLayout>
-
-        </LinearLayout>
-
-        <com.google.android.material.button.MaterialButtonToggleGroup
-            android:id="@+id/chart_toggle_group"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            app:singleSelection="true">
+            android:orientation="horizontal">
 
-            <com.google.android.material.button.MaterialButton
-                android:fontFamily="@font/productsans_bold"
-                android:id="@+id/chart_bars_button"
+            <TextView
+                android:id="@+id/time0"
                 android:layout_width="0dp"
-                android:layout_height="56dp"
+                android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="@string/chart_bars"
-                style="?attr/materialButtonOutlinedStyle" />
-
-            <com.google.android.material.button.MaterialButton
-                android:fontFamily="@font/productsans_bold"
-                android:id="@+id/chart_graph_button"
+                android:fontFamily="@font/productsans_medium"
+                android:gravity="start"
+                android:textSize="12sp" />
+            <TextView
+                android:id="@+id/time1"
                 android:layout_width="0dp"
-                android:layout_height="56dp"
+                android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="@string/chart_graph"
-                style="?attr/materialButtonOutlinedStyle" />
+                android:fontFamily="@font/productsans_medium"
+                android:gravity="start"
+                android:textSize="12sp" />
+            <TextView
+                android:id="@+id/time2"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:fontFamily="@font/productsans_medium"
+                android:gravity="start"
+                android:textSize="12sp" />
+            <TextView
+                android:id="@+id/time3"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:fontFamily="@font/productsans_medium"
+                android:gravity="start"
+                android:textSize="12sp" />
+            <TextView
+                android:id="@+id/time4"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:fontFamily="@font/productsans_medium"
+                android:gravity="start"
+                android:textSize="12sp" />
+            <TextView
+                android:id="@+id/time5"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:fontFamily="@font/productsans_medium"
+                android:gravity="start"
+                android:textSize="12sp" />
+            <TextView
+                android:id="@+id/time6"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:fontFamily="@font/productsans_medium"
+                android:gravity="start"
+                android:textSize="12sp" />
+            <TextView
+                android:id="@+id/time7"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:fontFamily="@font/productsans_medium"
+                android:gravity="start"
+                android:textSize="12sp" />
+            <TextView
+                android:id="@+id/time8"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:fontFamily="@font/productsans_medium"
+                android:gravity="start"
+                android:textSize="12sp" />
+            <TextView
+                android:id="@+id/time9"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:fontFamily="@font/productsans_medium"
+                android:gravity="start"
+                android:textSize="12sp" />
+            <TextView
+                android:id="@+id/time10"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:fontFamily="@font/productsans_medium"
+                android:gravity="start"
+                android:textSize="12sp" />
+            <TextView
+                android:id="@+id/time11"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:fontFamily="@font/productsans_medium"
+                android:gravity="start"
+                android:textSize="12sp" />
+        </LinearLayout>
 
-        </com.google.android.material.button.MaterialButtonToggleGroup>
-
+        <TextView
+            android:id="@+id/today_average_value"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:fontFamily="@font/productsans_medium"
+            android:text="@string/today_average_unavailable"
+            android:textSize="14sp" />
     </LinearLayout>
-
-    <View
-        android:layout_weight="1"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"/>
-
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/done_button"
-        style="@style/Widget.Material3Expressive.Button.ElevatedButton"
-        android:backgroundTint="?attr/colorSecondary"
-        android:textColor="?attr/colorOnSecondary"
-        android:layout_gravity="center_horizontal"
-        android:fontFamily="@font/productsans_bold"
-        android:text="Done"
-        android:elevation="8dp"
-        android:layout_width="200dp"
-        android:layout_height="64dp"/>
-
 
 </LinearLayout>

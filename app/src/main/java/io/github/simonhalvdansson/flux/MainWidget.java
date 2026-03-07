@@ -31,14 +31,6 @@ public class MainWidget extends AppWidgetProvider {
 
     private static final String TAG = "MainWidget";
 
-    // Name of your SharedPreferences file
-    private static final String PREFS_NAME = "spot_price_prefs";
-
-    /**
-     * Key where we store serialized mirror entries from the background job.
-     */
-    private static final String KEY_JSON_DATA = "combined_json_data";
-
     // All bar IDs. Must be exactly 24 for consistent indexing.
     private static final int[] barIds = {
             R.id.bar_0, R.id.bar_1, R.id.bar_2, R.id.bar_3,
@@ -98,13 +90,10 @@ public class MainWidget extends AppWidgetProvider {
      */
     static void updateAppWidget(Context context, AppWidgetManager appWidgetManager, int appWidgetId) {
 
-        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-        String combinedJson = prefs.getString(KEY_JSON_DATA, null);
-        boolean applyVat = prefs.getBoolean(PriceUpdateJobService.KEY_APPLY_VAT, false);
-        boolean applyStromstotte = prefs.getBoolean(PriceUpdateJobService.KEY_APPLY_STROMSTOTTE, false);
+        SharedPreferences prefs = PriceRepository.getPreferences(context);
+        String combinedJson = prefs.getString(PriceRepository.KEY_JSON_DATA, null);
         int chartMode = prefs.getInt(PriceUpdateJobService.KEY_CHART_MODE, 0);
         boolean apiError = prefs.getBoolean(PriceUpdateJobService.KEY_API_ERROR, false);
-        double gridFee = PriceDisplayUtils.parseGridFee(prefs.getString(PriceUpdateJobService.KEY_GRID_FEE, ""));
 
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.main_widget);
         // Reset visibility in case previous update showed API error state.
@@ -116,6 +105,7 @@ public class MainWidget extends AppWidgetProvider {
         views.setViewVisibility(R.id.min_price_text, View.VISIBLE);
 
         Intent intent = new Intent(context, MainActivity.class);
+        intent.putExtra(MainActivity.EXTRA_DISABLE_CHART_ANIMATION, true);
         PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_IMMUTABLE);
         views.setOnClickPendingIntent(R.id.widget_root, pendingIntent);
 
@@ -177,22 +167,7 @@ public class MainWidget extends AppWidgetProvider {
         views.setTextViewText(R.id.current_price_unit, unitText);
 
         // Parse JSON
-        List<PriceFetcher.PriceEntry> allData = PriceFetcher.parseCombinedJson(combinedJson);
-
-        double vatRate = PriceFetcher.getVatRate(country);
-        for (PriceFetcher.PriceEntry e : allData) {
-            double price = e.pricePerKwh;
-            if (applyStromstotte && price > PriceFetcher.STROMSTOTTE_THRESHOLD) {
-                price -= (price - PriceFetcher.STROMSTOTTE_THRESHOLD) * PriceFetcher.STROMSTOTTE_PERCENT;
-            }
-            if (applyVat) {
-                price *= vatRate;
-            }
-            price += gridFee;
-            e.pricePerKwh = price;
-        }
-
-        Collections.sort(allData, Comparator.comparing(o -> o.startTime));
+        List<PriceFetcher.PriceEntry> allData = CurrentPriceResolver.getAdjustedEntries(prefs);
 
         if (allData.isEmpty()) {
             showApiErrorState(appWidgetManager, appWidgetId, views);
@@ -207,22 +182,7 @@ public class MainWidget extends AppWidgetProvider {
 
         ZonedDateTime now = ZonedDateTime.now(ZoneId.systemDefault());
 
-        int currentIndex = -1;
-        for (int i = 0; i < allData.size(); i++) {
-            ZonedDateTime start = allData.get(i).startTime.atZoneSameInstant(ZoneId.systemDefault());
-            ZonedDateTime end   = allData.get(i).endTime.atZoneSameInstant(ZoneId.systemDefault());
-            if ((now.isEqual(start) || now.isAfter(start)) && now.isBefore(end)) {
-                currentIndex = i;
-                break;
-            }
-        }
-        if (currentIndex == -1) {
-            if (!allData.isEmpty() && now.isBefore(allData.get(0).startTime.atZoneSameInstant(ZoneId.systemDefault()))) {
-                currentIndex = 0;
-            } else {
-                currentIndex = allData.size() - 1;
-            }
-        }
+        int currentIndex = CurrentPriceResolver.findCurrentIndex(allData);
 
         PriceFetcher.PriceEntry currentEntry = allData.get(currentIndex);
 

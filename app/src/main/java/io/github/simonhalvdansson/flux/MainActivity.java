@@ -1,274 +1,357 @@
 package io.github.simonhalvdansson.flux;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.AnimatorSet;
+import android.animation.ValueAnimator;
+import android.graphics.Outline;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.util.TypedValue;
 import android.view.View;
-import android.text.Editable;
-import android.text.TextWatcher;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.AutoCompleteTextView;
-import android.widget.Button;
+import android.view.ViewOutlineProvider;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-
-import com.google.android.material.materialswitch.MaterialSwitch;
-import com.google.android.material.button.MaterialButtonToggleGroup;
-import com.google.android.material.textfield.TextInputEditText;
-import com.google.android.material.textfield.TextInputLayout;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.interpolator.view.animation.LinearOutSlowInInterpolator;
 
+import java.time.OffsetDateTime;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
-
 public class MainActivity extends AppCompatActivity {
 
-    private final List<RegionConfig.Country> countries = RegionConfig.getCountries();
-    private int currentCountryIndex = 0;
+    public static final String EXTRA_DISABLE_CHART_ANIMATION =
+            "io.github.simonhalvdansson.flux.extra.DISABLE_CHART_ANIMATION";
+
+    private static final int[] BAR_IDS = {
+            R.id.bar_0, R.id.bar_1, R.id.bar_2, R.id.bar_3,
+            R.id.bar_4, R.id.bar_5, R.id.bar_6, R.id.bar_7,
+            R.id.bar_8, R.id.bar_9, R.id.bar_10, R.id.bar_11,
+            R.id.bar_12, R.id.bar_13, R.id.bar_14, R.id.bar_15,
+            R.id.bar_16, R.id.bar_17, R.id.bar_18, R.id.bar_19,
+            R.id.bar_20, R.id.bar_21, R.id.bar_22, R.id.bar_23
+    };
+
+    private static final int[] TIME_LABEL_IDS = {
+            R.id.time0, R.id.time1, R.id.time2, R.id.time3,
+            R.id.time4, R.id.time5, R.id.time6, R.id.time7,
+            R.id.time8, R.id.time9, R.id.time10, R.id.time11
+    };
+
+    private static final int[] TIME_BAR_INDICES = {0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22};
+    private static final int CHART_MAX_HEIGHT_DP = 160;
+    private static final int MIN_BAR_HEIGHT_DP = 8;
+    private static final long BAR_ANIMATION_DURATION_MS = 468L;
+    private static final long BAR_ANIMATION_STAGGER_MS = 20L;
+
+    private TextView currentPriceValue;
+    private TextView todayAverageValue;
+    private View chartContainer;
+    private SharedPreferences sharedPreferences;
+    private SharedPreferences.OnSharedPreferenceChangeListener preferenceChangeListener;
+    private AnimatorSet barAnimator;
+    private boolean shouldAnimateBars;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        sharedPreferences = PriceRepository.getPreferences(this);
+        ImageView appIconView = findViewById(R.id.app_icon);
+        currentPriceValue = findViewById(R.id.current_price_value);
+        todayAverageValue = findViewById(R.id.today_average_value);
+        chartContainer = findViewById(R.id.bar_chart_section);
+        shouldAnimateBars = savedInstanceState == null
+                && !getIntent().getBooleanExtra(EXTRA_DISABLE_CHART_ANIMATION, false);
+
+        configureAppIconShadow(appIconView);
+        applyWindowInsets();
+
+        preferenceChangeListener = (prefs, key) -> {
+            if (PriceRepository.KEY_JSON_DATA.equals(key)
+                    || PriceUpdateJobService.KEY_API_ERROR.equals(key)
+                    || PriceUpdateJobService.KEY_SELECTED_COUNTRY.equals(key)
+                    || PriceUpdateJobService.KEY_APPLY_VAT.equals(key)
+                    || PriceUpdateJobService.KEY_APPLY_STROMSTOTTE.equals(key)
+                    || PriceUpdateJobService.KEY_GRID_FEE.equals(key)) {
+                runOnUiThread(this::renderCurrentPrice);
+            }
+        };
+
         PriceUpdateScheduler.schedulePriceUpdateJob(this);
+        refreshPrices();
+    }
 
-        AutoCompleteTextView countryDropdown = findViewById(R.id.country_dropdown);
-        AutoCompleteTextView areaDropdown = findViewById(R.id.area_dropdown);
+    @Override
+    protected void onStart() {
+        super.onStart();
+        sharedPreferences.registerOnSharedPreferenceChangeListener(preferenceChangeListener);
+        renderCurrentPrice();
+    }
 
-        List<String> countryNames = new ArrayList<>();
-        for (RegionConfig.Country country : countries) {
-            countryNames.add(country.getDisplayName());
-        }
-        ArrayAdapter<String> countryAdapter = new ArrayAdapter<>(this, R.layout.spinner_dropdown_item, countryNames);
-        countryDropdown.setAdapter(countryAdapter);
+    @Override
+    protected void onStop() {
+        cancelBarAnimation();
+        sharedPreferences.unregisterOnSharedPreferenceChangeListener(preferenceChangeListener);
+        super.onStop();
+    }
 
-        // Draw behind system bars
-        final View root = findViewById(R.id.main_container);
+    private void applyWindowInsets() {
+        View root = findViewById(R.id.main_container);
+        int padStart = root.getPaddingStart();
+        int padTop = root.getPaddingTop();
+        int padEnd = root.getPaddingEnd();
+        int padBottom = root.getPaddingBottom();
 
-        // Remember original paddings
-        final int padStart = root.getPaddingStart();
-        final int padTop   = root.getPaddingTop();
-        final int padEnd   = root.getPaddingEnd();
-        final int padBot   = root.getPaddingBottom();
-
-        ViewCompat.setOnApplyWindowInsetsListener(root, (v, insets) -> {
+        ViewCompat.setOnApplyWindowInsetsListener(root, (view, insets) -> {
             Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            Insets ime  = insets.getInsets(WindowInsetsCompat.Type.ime());
-
             root.setPaddingRelative(
                     padStart + bars.left,
-                    padTop   + bars.top,
-                    padEnd   + bars.right,
-                    padBot   + Math.max(bars.bottom, ime.bottom)
+                    padTop + bars.top,
+                    padEnd + bars.right,
+                    padBottom + bars.bottom
             );
-            return insets; // don’t consume
+            return insets;
         });
         ViewCompat.requestApplyInsets(root);
+    }
 
-        SharedPreferences prefs = getSharedPreferences("spot_price_prefs", MODE_PRIVATE);
-        LinearLayout regionContainer = findViewById(R.id.region_container);
-        LinearLayout stromstotteContainer = findViewById(R.id.stromstotte_container);
-        MaterialSwitch stromstotteSwitch = findViewById(R.id.stromstotte_switch);
-        MaterialSwitch vatSwitch = findViewById(R.id.vat_switch);
-        TextView vatLabel = findViewById(R.id.vat_label);
-        TextInputLayout gridFeeContainer = findViewById(R.id.grid_fee_container);
-        TextInputEditText gridFeeInput = findViewById(R.id.grid_fee_input);
-        MaterialButtonToggleGroup chartToggleGroup = findViewById(R.id.chart_toggle_group);
+    private void configureAppIconShadow(ImageView appIconView) {
+        float elevationPx = TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP,
+                12,
+                getResources().getDisplayMetrics()
+        );
+        appIconView.setOutlineProvider(new ViewOutlineProvider() {
+            @Override
+            public void getOutline(View view, Outline outline) {
+                outline.setOval(0, 0, view.getWidth(), view.getHeight());
+            }
+        });
+        appIconView.setClipToOutline(false);
+        appIconView.setElevation(elevationPx);
+        //appIconView.setTranslationZ(elevationPx);
+    }
 
-        int chartMode = prefs.getInt(PriceUpdateJobService.KEY_CHART_MODE, 0);
-        if (chartMode == 0) {
-            chartToggleGroup.check(R.id.chart_bars_button);
+    private void refreshPrices() {
+        Thread refreshThread = new Thread(() -> PriceRepository.refreshCachedPrices(getApplicationContext()));
+        refreshThread.start();
+    }
+
+    private void renderCurrentPrice() {
+        CurrentPriceResolver.Snapshot snapshot = CurrentPriceResolver.resolve(this);
+        if (snapshot.hasData) {
+            currentPriceValue.setText(snapshot.getDisplayPrice());
+        } else if (snapshot.apiError) {
+            currentPriceValue.setText(R.string.current_price_unavailable);
         } else {
-            chartToggleGroup.check(R.id.chart_graph_button);
+            currentPriceValue.setText(R.string.current_price_loading);
         }
 
-        chartToggleGroup.setSelectionRequired(true);
-
-        chartToggleGroup.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
-            if (isChecked) {
-                int mode = checkedId == R.id.chart_bars_button ? 0 : 1;
-                prefs.edit().putInt(PriceUpdateJobService.KEY_CHART_MODE, mode).apply();
-                MainWidget.updateAllWidgets(MainActivity.this);
-                ListWidget.updateAllWidgets(MainActivity.this);
-            }
-        });
-
-        Button doneButton = findViewById(R.id.done_button);
-
-        doneButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                finishAffinity();
-            }
-        });
-
-        // Initial country and area selection
-        String selectedCountry = prefs.getString(PriceUpdateJobService.KEY_SELECTED_COUNTRY, "NO");
-        currentCountryIndex = RegionConfig.indexOfCountryCode(selectedCountry);
-        if (currentCountryIndex < 0) {
-            currentCountryIndex = RegionConfig.indexOfCountryCode("NO");
-        }
-        if (currentCountryIndex < 0) {
-            currentCountryIndex = 0;
-        }
-
-        RegionConfig.Country currentCountry = countries.get(currentCountryIndex);
-        countryDropdown.setText(currentCountry.getDisplayName(), false);
-
-        updateAreaDropdown(areaDropdown, prefs, currentCountry);
-
-        stromstotteSwitch.setChecked(prefs.getBoolean(PriceUpdateJobService.KEY_APPLY_STROMSTOTTE, false));
-        boolean isNorway = "NO".equals(currentCountry.getCode());
-        stromstotteContainer.setVisibility(isNorway ? View.VISIBLE : View.GONE);
-        if (!isNorway) {
-            stromstotteSwitch.setChecked(false);
-            prefs.edit().putBoolean(PriceUpdateJobService.KEY_APPLY_STROMSTOTTE, false).apply();
-        }
-        updateRegionVisibility(regionContainer, areaDropdown, currentCountry);
-        vatSwitch.setChecked(prefs.getBoolean(PriceUpdateJobService.KEY_APPLY_VAT, false));
-        updateVatLabel(vatLabel);
-        updateGridFeeUnit(gridFeeContainer, currentCountry.getCode());
-
-        String savedGridFee = prefs.getString(PriceUpdateJobService.KEY_GRID_FEE, "");
-        if (savedGridFee == null || savedGridFee.trim().isEmpty()) {
-            savedGridFee = "0";
-            prefs.edit().putString(PriceUpdateJobService.KEY_GRID_FEE, savedGridFee).apply();
-        }
-        gridFeeInput.setText(savedGridFee);
-        gridFeeInput.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-            }
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-            }
-
-            @Override
-            public void afterTextChanged(Editable s) {
-                prefs.edit().putString(PriceUpdateJobService.KEY_GRID_FEE, s == null ? "" : s.toString()).apply();
-                MainWidget.updateAllWidgets(MainActivity.this);
-                ListWidget.updateAllWidgets(MainActivity.this);
-            }
-        });
-        gridFeeInput.setOnFocusChangeListener((v, hasFocus) -> {
-            if (hasFocus) {
-                return;
-            }
-            CharSequence value = gridFeeInput.getText();
-            if (value == null || value.toString().trim().isEmpty()) {
-                gridFeeInput.setText("0");
-            }
-        });
-
-        countryDropdown.setOnItemClickListener((parent, view, position, id) -> {
-            currentCountryIndex = position;
-            RegionConfig.Country selected = countries.get(position);
-            String countryCode = selected.getCode();
-            prefs.edit().putString(PriceUpdateJobService.KEY_SELECTED_COUNTRY, countryCode).apply();
-
-            updateAreaDropdown(areaDropdown, prefs, selected);
-
-            boolean norway = "NO".equals(countryCode);
-            stromstotteContainer.setVisibility(norway ? View.VISIBLE : View.GONE);
-            if (!norway) {
-                stromstotteSwitch.setChecked(false);
-                prefs.edit().putBoolean(PriceUpdateJobService.KEY_APPLY_STROMSTOTTE, false).apply();
-            }
-            updateRegionVisibility(regionContainer, areaDropdown, selected);
-            updateVatLabel(vatLabel);
-            updateGridFeeUnit(gridFeeContainer, countryCode);
-            PriceUpdateScheduler.schedulePriceUpdateJob(MainActivity.this);
-        });
-
-        countryDropdown.setOnFocusChangeListener((v, hasFocus) -> {
-            if (hasFocus) countryDropdown.showDropDown();
-        });
-        countryDropdown.setOnClickListener(v -> countryDropdown.showDropDown());
-
-        areaDropdown.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                List<RegionConfig.Area> areas = countries.get(currentCountryIndex).getAreas();
-                String area = areas.get(position).getCode();
-                prefs.edit().putString(PriceUpdateJobService.KEY_SELECTED_AREA, area).apply();
-                PriceUpdateScheduler.schedulePriceUpdateJob(MainActivity.this);
-            }
-        });
-
-        areaDropdown.setOnFocusChangeListener((v, hasFocus) -> {
-            if (hasFocus && countries.get(currentCountryIndex).hasMultipleAreas()) {
-                areaDropdown.showDropDown();
-            }
-        });
-        areaDropdown.setOnClickListener(v -> {
-            if (countries.get(currentCountryIndex).hasMultipleAreas()) {
-                areaDropdown.showDropDown();
-            }
-        });
-
-        stromstotteSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            prefs.edit().putBoolean(PriceUpdateJobService.KEY_APPLY_STROMSTOTTE, isChecked).apply();
-            MainWidget.updateAllWidgets(MainActivity.this);
-            ListWidget.updateAllWidgets(MainActivity.this);
-        });
-
-        vatSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            prefs.edit().putBoolean(PriceUpdateJobService.KEY_APPLY_VAT, isChecked).apply();
-            MainWidget.updateAllWidgets(MainActivity.this);
-            ListWidget.updateAllWidgets(MainActivity.this);
-        });
+        renderBarChart();
     }
 
-    private void updateVatLabel(TextView label) {
-        label.setText("VAT (+25 %)");
-    }
-
-    private void updateGridFeeUnit(TextInputLayout layout, String countryCode) {
-        layout.setSuffixText(PriceDisplayUtils.getUnitText(countryCode));
-    }
-
-    private void updateAreaDropdown(AutoCompleteTextView areaDropdown, SharedPreferences prefs, RegionConfig.Country country) {
-        List<RegionConfig.Area> areas = country.getAreas();
-        List<String> labels = new ArrayList<>(areas.size());
-        for (RegionConfig.Area area : areas) {
-            labels.add(area.getLabel());
+    private void renderBarChart() {
+        List<PriceFetcher.PriceEntry> allData = CurrentPriceResolver.getAdjustedEntries(sharedPreferences);
+        if (allData.isEmpty()) {
+            cancelBarAnimation();
+            chartContainer.setVisibility(View.GONE);
+            todayAverageValue.setText(R.string.today_average_unavailable);
+            return;
         }
-        ArrayAdapter<String> newAdapter = new ArrayAdapter<>(this, R.layout.spinner_dropdown_item, labels);
-        areaDropdown.setAdapter(newAdapter);
 
-        String defaultAreaCode = areas.isEmpty() ? null : areas.get(0).getCode();
-        String selectedArea = prefs.getString(PriceUpdateJobService.KEY_SELECTED_AREA, defaultAreaCode);
-        RegionConfig.Area areaToDisplay = null;
-        for (RegionConfig.Area area : areas) {
-            if (area.getCode().equals(selectedArea)) {
-                areaToDisplay = area;
-                break;
+        List<PriceFetcher.PriceEntry> hourlyData = PriceFetcher.aggregateToHourly(allData);
+        if (hourlyData.isEmpty()) {
+            cancelBarAnimation();
+            chartContainer.setVisibility(View.GONE);
+            todayAverageValue.setText(R.string.today_average_unavailable);
+            return;
+        }
+
+        chartContainer.setVisibility(View.VISIBLE);
+
+        int currentIndex = CurrentPriceResolver.findCurrentIndex(allData);
+        PriceFetcher.PriceEntry currentEntry = allData.get(currentIndex);
+        OffsetDateTime currentHourStart = currentEntry.startTime.truncatedTo(ChronoUnit.HOURS);
+
+        int currentHourIndex = 0;
+        long bestDiff = Long.MAX_VALUE;
+        for (int i = 0; i < hourlyData.size(); i++) {
+            long diff = Math.abs(java.time.Duration.between(currentHourStart, hourlyData.get(i).startTime).toMinutes());
+            if (diff < bestDiff) {
+                bestDiff = diff;
+                currentHourIndex = i;
             }
         }
-        if (areaToDisplay == null && !areas.isEmpty()) {
-            areaToDisplay = areas.get(0);
-            prefs.edit().putString(PriceUpdateJobService.KEY_SELECTED_AREA, areaToDisplay.getCode()).apply();
+
+        int desiredCount = Math.min(BAR_IDS.length, hourlyData.size());
+        int firstHourIndex = Math.max(0, currentHourIndex - 3);
+        int lastHourIndex = Math.min(hourlyData.size() - 1, firstHourIndex + desiredCount - 1);
+        int actualCount = lastHourIndex - firstHourIndex + 1;
+        if (actualCount < desiredCount) {
+            firstHourIndex = Math.max(0, Math.min(firstHourIndex, hourlyData.size() - desiredCount));
+            lastHourIndex = Math.min(hourlyData.size() - 1, firstHourIndex + desiredCount - 1);
         }
-        if (areaToDisplay != null) {
-            areaDropdown.setText(areaToDisplay.getLabel(), false);
+
+        List<PriceFetcher.PriceEntry> displayEntries = hourlyData.subList(firstHourIndex, lastHourIndex + 1);
+        double maxPrice = 0.0;
+        for (PriceFetcher.PriceEntry entry : displayEntries) {
+            maxPrice = Math.max(maxPrice, entry.pricePerKwh);
+        }
+        if (maxPrice <= 0.0) {
+            maxPrice = 1.0;
+        }
+
+        ZonedDateTime now = ZonedDateTime.now(ZoneId.systemDefault());
+        int[] targetHeightsPx = new int[BAR_IDS.length];
+        for (int i = 0; i < BAR_IDS.length; i++) {
+            ImageView bar = findViewById(BAR_IDS[i]);
+            if (i < displayEntries.size()) {
+                PriceFetcher.PriceEntry entry = displayEntries.get(i);
+                float barHeightDp = (float) Math.max(
+                        MIN_BAR_HEIGHT_DP,
+                        (entry.pricePerKwh / maxPrice) * CHART_MAX_HEIGHT_DP
+                );
+                targetHeightsPx[i] = Math.round(TypedValue.applyDimension(
+                        TypedValue.COMPLEX_UNIT_DIP,
+                        barHeightDp,
+                        getResources().getDisplayMetrics()
+                ));
+                bar.setVisibility(View.VISIBLE);
+
+                ZonedDateTime start = entry.startTime.atZoneSameInstant(ZoneId.systemDefault());
+                ZonedDateTime end = entry.endTime.atZoneSameInstant(ZoneId.systemDefault());
+                if ((now.isEqual(start) || now.isAfter(start)) && now.isBefore(end)) {
+                    bar.setBackgroundResource(R.drawable.bar_rounded_current);
+                } else if (now.isAfter(end)) {
+                    bar.setBackgroundResource(R.drawable.bar_rounded_old);
+                } else {
+                    bar.setBackgroundResource(R.drawable.bar_rounded);
+                }
+            } else {
+                bar.setVisibility(View.INVISIBLE);
+                targetHeightsPx[i] = 0;
+            }
+        }
+
+        if (shouldAnimateBars) {
+            shouldAnimateBars = false;
+            chartContainer.post(() -> animateBars(targetHeightsPx, displayEntries.size()));
         } else {
-            areaDropdown.setText("", false);
+            cancelBarAnimation();
+            applyBarHeights(targetHeightsPx);
+        }
+
+        for (int i = 0; i < TIME_LABEL_IDS.length; i++) {
+            TextView label = findViewById(TIME_LABEL_IDS[i]);
+            int barIndex = TIME_BAR_INDICES[i];
+            if (barIndex < displayEntries.size()) {
+                ZonedDateTime start = displayEntries.get(barIndex).startTime.atZoneSameInstant(ZoneId.systemDefault());
+                label.setText(String.format("%02d", start.getHour()));
+            } else {
+                label.setText("");
+            }
+        }
+
+        renderTodayAverage(hourlyData);
+    }
+
+    private void renderTodayAverage(List<PriceFetcher.PriceEntry> hourlyData) {
+        String country = sharedPreferences.getString(PriceUpdateJobService.KEY_SELECTED_COUNTRY, "NO");
+        LocalDate today = LocalDate.now(ZoneId.systemDefault());
+        double total = 0.0;
+        int count = 0;
+
+        for (PriceFetcher.PriceEntry entry : hourlyData) {
+            if (entry.startTime != null && today.equals(entry.startTime.atZoneSameInstant(ZoneId.systemDefault()).toLocalDate())) {
+                total += entry.pricePerKwh;
+                count++;
+            }
+        }
+
+        if (count == 0) {
+            todayAverageValue.setText(R.string.today_average_unavailable);
+            return;
+        }
+
+        String averageText = getString(
+                R.string.today_average_format,
+                PriceDisplayUtils.formatPrice(total / count, country),
+                PriceDisplayUtils.getUnitText(country)
+        );
+        todayAverageValue.setText(averageText);
+    }
+
+    private void animateBars(int[] targetHeightsPx, int visibleBarCount) {
+        cancelBarAnimation();
+
+        List<Animator> animators = new ArrayList<>();
+        LinearOutSlowInInterpolator interpolator = new LinearOutSlowInInterpolator();
+
+        for (int i = 0; i < BAR_IDS.length; i++) {
+            ImageView bar = findViewById(BAR_IDS[i]);
+            if (i >= visibleBarCount) {
+                setBarHeight(bar, 0);
+                continue;
+            }
+
+            setBarHeight(bar, 0);
+            ValueAnimator animator = ValueAnimator.ofInt(0, targetHeightsPx[i]);
+            animator.setDuration(BAR_ANIMATION_DURATION_MS);
+            animator.setStartDelay(i * BAR_ANIMATION_STAGGER_MS);
+            animator.setInterpolator(interpolator);
+            animator.addUpdateListener(valueAnimator -> setBarHeight(bar, (int) valueAnimator.getAnimatedValue()));
+            animators.add(animator);
+        }
+
+        barAnimator = new AnimatorSet();
+        barAnimator.playTogether(animators);
+        barAnimator.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationCancel(Animator animation) {
+                applyBarHeights(targetHeightsPx);
+                barAnimator = null;
+            }
+
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                applyBarHeights(targetHeightsPx);
+                barAnimator = null;
+            }
+        });
+        barAnimator.start();
+    }
+
+    private void applyBarHeights(int[] targetHeightsPx) {
+        for (int i = 0; i < BAR_IDS.length; i++) {
+            ImageView bar = findViewById(BAR_IDS[i]);
+            setBarHeight(bar, targetHeightsPx[i]);
         }
     }
 
-    private void updateRegionVisibility(LinearLayout regionContainer, AutoCompleteTextView areaDropdown, RegionConfig.Country country) {
-        boolean showRegion = country.hasMultipleAreas();
-        regionContainer.setVisibility(showRegion ? View.VISIBLE : View.GONE);
-        areaDropdown.setEnabled(showRegion);
-        areaDropdown.setFocusable(showRegion);
-        areaDropdown.setFocusableInTouchMode(showRegion);
+    private void setBarHeight(ImageView bar, int heightPx) {
+        LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) bar.getLayoutParams();
+        if (params.height != heightPx) {
+            params.height = heightPx;
+            bar.setLayoutParams(params);
+        }
+    }
+
+    private void cancelBarAnimation() {
+        if (barAnimator != null) {
+            barAnimator.cancel();
+            barAnimator = null;
+        }
     }
 }
-

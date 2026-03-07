@@ -7,4 +7,9 @@
     <string name="welcome_text">Welcome to Flux!</string>
     <string name="chart_bars">Bar chart</string>
     <string name="chart_graph">Graph</string>
+    <string name="current_price_label">Current price</string>
+    <string name="current_price_loading">Loading current price...</string>
+    <string name="current_price_unavailable">Price unavailable</string>
+    <string name="today_average_unavailable">Today average unavailable</string>
+    <string name="today_average_format">Today average: %1$s %2$s</string>
 </resources>

@@ -32,8 +32,6 @@ public class ListWidgetService extends RemoteViewsService {
     }
 
     static class PriceRemoteViewsFactory implements RemoteViewsFactory {
-        private static final String PREFS_NAME = "spot_price_prefs";
-        private static final String KEY_JSON_DATA = "combined_json_data";
         private static final int ITEM_TIME_WIDTH_DP = 39;
         private static final int ITEM_TIME_MARGIN_END_DP = 4;
         private static final int ITEM_PRICE_WIDTH_DP = 36;
@@ -68,49 +66,20 @@ public class ListWidgetService extends RemoteViewsService {
             items.clear();
             maxPrice = 0.0;
             updateMaxBarWidthPx();
-            SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-            String combinedJson = prefs.getString(KEY_JSON_DATA, null);
-            boolean applyVat = prefs.getBoolean(PriceUpdateJobService.KEY_APPLY_VAT, false);
-            boolean applyStromstotte = prefs.getBoolean(PriceUpdateJobService.KEY_APPLY_STROMSTOTTE, false);
+            SharedPreferences prefs = PriceRepository.getPreferences(context);
+            String combinedJson = prefs.getString(PriceRepository.KEY_JSON_DATA, null);
             country = prefs.getString(PriceUpdateJobService.KEY_SELECTED_COUNTRY, "NO");
-            double gridFee = PriceDisplayUtils.parseGridFee(prefs.getString(PriceUpdateJobService.KEY_GRID_FEE, ""));
 
             if (combinedJson == null || combinedJson.trim().isEmpty()) {
                 return;
             }
 
-            List<PriceFetcher.PriceEntry> allData = PriceFetcher.parseCombinedJson(combinedJson);
-            double vatRate = PriceFetcher.getVatRate(country);
-            for (PriceFetcher.PriceEntry e : allData) {
-                double price = e.pricePerKwh;
-                if (applyStromstotte && price > PriceFetcher.STROMSTOTTE_THRESHOLD) {
-                    price -= (price - PriceFetcher.STROMSTOTTE_THRESHOLD) * PriceFetcher.STROMSTOTTE_PERCENT;
-                }
-                if (applyVat) {
-                    price *= vatRate;
-                }
-                price += gridFee;
-                e.pricePerKwh = price;
+            List<PriceFetcher.PriceEntry> allData = CurrentPriceResolver.getAdjustedEntries(prefs);
+            if (allData.isEmpty()) {
+                return;
             }
-            Collections.sort(allData, Comparator.comparing(o -> o.startTime));
 
-            ZonedDateTime now = ZonedDateTime.now(ZoneId.systemDefault());
-            int currentIndex = -1;
-            for (int i = 0; i < allData.size(); i++) {
-                ZonedDateTime start = allData.get(i).startTime.atZoneSameInstant(ZoneId.systemDefault());
-                ZonedDateTime end = allData.get(i).endTime.atZoneSameInstant(ZoneId.systemDefault());
-                if ((now.isEqual(start) || now.isAfter(start)) && now.isBefore(end)) {
-                    currentIndex = i;
-                    break;
-                }
-            }
-            if (currentIndex == -1) {
-                if (!allData.isEmpty() && now.isBefore(allData.get(0).startTime.atZoneSameInstant(ZoneId.systemDefault()))) {
-                    currentIndex = 0;
-                } else {
-                    currentIndex = allData.size() - 1;
-                }
-            }
+            int currentIndex = CurrentPriceResolver.findCurrentIndex(allData);
 
             for (int i = currentIndex + 1; i < allData.size(); i++) {
                 PriceFetcher.PriceEntry entry = allData.get(i);

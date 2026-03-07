@@ -33,5 +33,21 @@ public final class PriceDisplayUtils {
         numberFormat.setMaximumFractionDigits(2);
         return numberFormat.format(value);
     }
+
+    public static double applyPriceAdjustments(double pricePerKwh,
+                                               String country,
+                                               boolean applyVat,
+                                               boolean applyStromstotte,
+                                               double gridFee) {
+        double adjustedPrice = pricePerKwh;
+        if (applyStromstotte && adjustedPrice > PriceFetcher.STROMSTOTTE_THRESHOLD) {
+            adjustedPrice -= (adjustedPrice - PriceFetcher.STROMSTOTTE_THRESHOLD)
+                    * PriceFetcher.STROMSTOTTE_PERCENT;
+        }
+        if (applyVat) {
+            adjustedPrice *= PriceFetcher.getVatRate(country);
+        }
+        return adjustedPrice + gridFee;
+    }
 }
 

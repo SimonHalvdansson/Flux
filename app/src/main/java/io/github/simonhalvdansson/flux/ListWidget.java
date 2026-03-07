@@ -23,8 +23,6 @@ import java.util.List;
  */
 public class ListWidget extends AppWidgetProvider {
 
-    private static final String PREFS_NAME = "spot_price_prefs";
-    private static final String KEY_JSON_DATA = "combined_json_data";
     private static final String TAG = "ListWidget";
 
     @Override
@@ -63,17 +61,15 @@ public class ListWidget extends AppWidgetProvider {
     }
 
     static void updateAppWidget(Context context, AppWidgetManager appWidgetManager, int appWidgetId) {
-        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-        String combinedJson = prefs.getString(KEY_JSON_DATA, null);
-        boolean applyVat = prefs.getBoolean(PriceUpdateJobService.KEY_APPLY_VAT, false);
-        boolean applyStromstotte = prefs.getBoolean(PriceUpdateJobService.KEY_APPLY_STROMSTOTTE, false);
+        SharedPreferences prefs = PriceRepository.getPreferences(context);
+        String combinedJson = prefs.getString(PriceRepository.KEY_JSON_DATA, null);
         String country = prefs.getString(PriceUpdateJobService.KEY_SELECTED_COUNTRY, "NO");
         boolean apiError = prefs.getBoolean(PriceUpdateJobService.KEY_API_ERROR, false);
-        double gridFee = PriceDisplayUtils.parseGridFee(prefs.getString(PriceUpdateJobService.KEY_GRID_FEE, ""));
 
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.list_widget);
 
         Intent intent = new Intent(context, MainActivity.class);
+        intent.putExtra(MainActivity.EXTRA_DISABLE_CHART_ANIMATION, true);
         // Use a mutable PendingIntent so list clicks can launch the activity
         PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_MUTABLE);
         views.setOnClickPendingIntent(R.id.widget_root_list, pendingIntent);
@@ -93,7 +89,7 @@ public class ListWidget extends AppWidgetProvider {
             return;
         }
 
-        List<PriceFetcher.PriceEntry> allData = PriceFetcher.parseCombinedJson(combinedJson);
+        List<PriceFetcher.PriceEntry> allData = CurrentPriceResolver.getAdjustedEntries(prefs);
 
         if (allData.isEmpty()) {
             Log.w(TAG, "No price data available; showing API error state.");
@@ -101,37 +97,7 @@ public class ListWidget extends AppWidgetProvider {
             return;
         }
 
-        double vatRate = PriceFetcher.getVatRate(country);
-        for (PriceFetcher.PriceEntry e : allData) {
-            double price = e.pricePerKwh;
-            if (applyStromstotte && price > PriceFetcher.STROMSTOTTE_THRESHOLD) {
-                price -= (price - PriceFetcher.STROMSTOTTE_THRESHOLD) * PriceFetcher.STROMSTOTTE_PERCENT;
-            }
-            if (applyVat) {
-                price *= vatRate;
-            }
-            price += gridFee;
-            e.pricePerKwh = price;
-        }
-        allData.sort(Comparator.comparing(o -> o.startTime));
-
-        ZonedDateTime now = ZonedDateTime.now(ZoneId.systemDefault());
-        int currentIndex = -1;
-        for (int i = 0; i < allData.size(); i++) {
-            ZonedDateTime start = allData.get(i).startTime.atZoneSameInstant(ZoneId.systemDefault());
-            ZonedDateTime end = allData.get(i).endTime.atZoneSameInstant(ZoneId.systemDefault());
-            if ((now.isEqual(start) || now.isAfter(start)) && now.isBefore(end)) {
-                currentIndex = i;
-                break;
-            }
-        }
-        if (currentIndex == -1) {
-            if (!allData.isEmpty() && now.isBefore(allData.get(0).startTime.atZoneSameInstant(ZoneId.systemDefault()))) {
-                currentIndex = 0;
-            } else {
-                currentIndex = allData.size() - 1;
-            }
-        }
+        int currentIndex = CurrentPriceResolver.findCurrentIndex(allData);
 
         PriceFetcher.PriceEntry currentEntry = allData.get(currentIndex);
         double currentPrice = currentEntry.pricePerKwh;
