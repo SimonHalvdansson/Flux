@@ -1,4 +1,15 @@
 <resources>
     <color name="widget_text">@android:color/system_on_secondary_container_light</color>
     <color name="widget_price_text">@android:color/system_on_surface_light</color>
+    <color name="main_price_emphasis">#000000</color>
+    <color name="main_backdrop_base_top">#F9FBFF</color>
+    <color name="main_backdrop_base_bottom">#F4F1FF</color>
+    <color name="main_backdrop_veil">#80FFFFFF</color>
+    <color name="main_backdrop_blob_blue">#5A63FF</color>
+    <color name="main_backdrop_blob_lilac">#9D8FFF</color>
+    <color name="main_backdrop_blob_pink">#FFB8E7</color>
+    <color name="main_backdrop_blob_rose">#FFD8F2</color>
+    <color name="main_backdrop_blob_mist">#DDD8FF</color>
+    <color name="main_backdrop_noise_light">#FFFFFF</color>
+    <color name="main_backdrop_noise_dark">#A9B2D4</color>
 </resources>

@@ -1,4 +1,15 @@
 <resources>
     <color name="widget_text">@android:color/system_on_secondary_container_dark</color>
     <color name="widget_price_text">@android:color/system_on_surface_dark</color>
+    <color name="main_price_emphasis">#FFFFFF</color>
+    <color name="main_backdrop_base_top">#111521</color>
+    <color name="main_backdrop_base_bottom">#17131F</color>
+    <color name="main_backdrop_veil">#330D1018</color>
+    <color name="main_backdrop_blob_blue">#1B255C</color>
+    <color name="main_backdrop_blob_lilac">#40368A</color>
+    <color name="main_backdrop_blob_pink">#4E2B3F</color>
+    <color name="main_backdrop_blob_rose">#553163</color>
+    <color name="main_backdrop_blob_mist">#1E2844</color>
+    <color name="main_backdrop_noise_light">#F6F8FF</color>
+    <color name="main_backdrop_noise_dark">#02040A</color>
 </resources>

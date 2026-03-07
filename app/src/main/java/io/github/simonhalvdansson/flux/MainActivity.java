@@ -76,6 +76,7 @@ public class MainActivity extends AppCompatActivity {
                 && !getIntent().getBooleanExtra(EXTRA_DISABLE_CHART_ANIMATION, false);
 
         configureAppIconShadow(appIconView);
+        configureBarShadows();
         applyWindowInsets();
 
         preferenceChangeListener = (prefs, key) -> {
@@ -130,7 +131,7 @@ public class MainActivity extends AppCompatActivity {
     private void configureAppIconShadow(ImageView appIconView) {
         float elevationPx = TypedValue.applyDimension(
                 TypedValue.COMPLEX_UNIT_DIP,
-                12,
+                18,
                 getResources().getDisplayMetrics()
         );
         appIconView.setOutlineProvider(new ViewOutlineProvider() {
@@ -142,6 +143,31 @@ public class MainActivity extends AppCompatActivity {
         appIconView.setClipToOutline(false);
         appIconView.setElevation(elevationPx);
         //appIconView.setTranslationZ(elevationPx);
+    }
+
+    private void configureBarShadows() {
+        float elevationPx = TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP,
+                2,
+                getResources().getDisplayMetrics()
+        );
+        float cornerRadiusPx = TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP,
+                8,
+                getResources().getDisplayMetrics()
+        );
+
+        for (int barId : BAR_IDS) {
+            ImageView bar = findViewById(barId);
+            bar.setOutlineProvider(new ViewOutlineProvider() {
+                @Override
+                public void getOutline(View view, Outline outline) {
+                    outline.setRoundRect(0, 0, view.getWidth(), view.getHeight(), cornerRadiusPx);
+                }
+            });
+            bar.setClipToOutline(false);
+            bar.setElevation(elevationPx);
+        }
     }
 
     private void refreshPrices() {
