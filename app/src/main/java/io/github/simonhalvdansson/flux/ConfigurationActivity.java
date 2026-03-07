@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -78,7 +79,7 @@ public class ConfigurationActivity extends AppCompatActivity {
             listPoolToggleGroup.check(listPoolMode == WidgetPreferences.POOL_MODE_MIN
                     ? R.id.list_pool_min_button
                     : R.id.list_pool_average_button);
-            updateListPoolVisibility(listPoolContainer, incrementMinutes);
+            updateListPoolVisibility(listPoolContainer, incrementMinutes, false);
 
             listIncrementToggleGroup.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
                 if (!isChecked) {
@@ -86,7 +87,7 @@ public class ConfigurationActivity extends AppCompatActivity {
                 }
                 int minutes = getIncrementMinutesForButton(checkedId);
                 prefs.edit().putInt(WidgetPreferences.KEY_LIST_INCREMENT_MINUTES, minutes).apply();
-                updateListPoolVisibility(listPoolContainer, minutes);
+                updateListPoolVisibility(listPoolContainer, minutes, true);
             });
 
             listPoolToggleGroup.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
@@ -163,8 +164,38 @@ public class ConfigurationActivity extends AppCompatActivity {
         container.setVisibility(chartMode == WidgetPreferences.CHART_MODE_BARS ? View.VISIBLE : View.GONE);
     }
 
-    private void updateListPoolVisibility(View container, int incrementMinutes) {
-        container.setVisibility(WidgetPreferences.listPoolingEnabled(incrementMinutes) ? View.VISIBLE : View.GONE);
+    private void updateListPoolVisibility(View container, int incrementMinutes, boolean animate) {
+        boolean enabled = WidgetPreferences.listPoolingEnabled(incrementMinutes);
+        float targetAlpha = enabled ? 1f : 0.38f;
+        container.setVisibility(View.VISIBLE);
+        container.animate().cancel();
+        if (animate) {
+            if (enabled) {
+                setViewEnabled(container, true);
+            }
+            container.animate()
+                    .alpha(targetAlpha)
+                    .setDuration(180L)
+                    .withEndAction(() -> {
+                        if (!enabled) {
+                            setViewEnabled(container, false);
+                        }
+                    })
+                    .start();
+        } else {
+            container.setAlpha(targetAlpha);
+            setViewEnabled(container, enabled);
+        }
+    }
+
+    private void setViewEnabled(View view, boolean enabled) {
+        view.setEnabled(enabled);
+        if (view instanceof ViewGroup) {
+            ViewGroup group = (ViewGroup) view;
+            for (int i = 0; i < group.getChildCount(); i++) {
+                setViewEnabled(group.getChildAt(i), enabled);
+            }
+        }
     }
 
     private int getIncrementButtonId(int incrementMinutes) {
