@@ -24,7 +24,7 @@
             android:fontFamily="@font/productsans_bold"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Set up widget"
+            android:text="Flux"
             android:textSize="32sp"
             android:paddingBottom="16dp"/>
 
