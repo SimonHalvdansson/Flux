@@ -5,6 +5,14 @@
         <item name="android:windowLightStatusBar">?attr/isLightTheme</item>
     </style>
 
+    <style name="Theme.Flux.WidgetConfig" parent="Theme.Flux">
+        <item name="android:windowIsFloating">true</item>
+        <item name="android:windowBackground">@drawable/widget_bg_rounded</item>
+        <item name="android:backgroundDimEnabled">true</item>
+        <item name="android:windowMinWidthMajor">92%</item>
+        <item name="android:windowMinWidthMinor">92%</item>
+    </style>
+
     <style name="Widget.Flux.AppWidget.Container" parent="android:Widget">
         <item name="android:id">@android:id/background</item>
         <item name="android:background">@drawable/widget_bg_rounded</item>

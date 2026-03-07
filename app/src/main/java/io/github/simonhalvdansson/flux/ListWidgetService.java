@@ -81,8 +81,21 @@ public class ListWidgetService extends RemoteViewsService {
 
             int currentIndex = CurrentPriceResolver.findCurrentIndex(allData);
 
+            List<PriceFetcher.PriceEntry> futureEntries = new ArrayList<>();
             for (int i = currentIndex + 1; i < allData.size(); i++) {
-                PriceFetcher.PriceEntry entry = allData.get(i);
+                futureEntries.add(allData.get(i));
+            }
+
+            int incrementMinutes = WidgetPreferences.getListIncrementMinutes(prefs);
+            int poolMode = WidgetPreferences.getListPoolMode(prefs);
+            List<PriceFetcher.PriceEntry> displayEntries;
+            if (incrementMinutes == WidgetPreferences.INCREMENT_15_MINUTES) {
+                displayEntries = futureEntries;
+            } else {
+                displayEntries = PriceFetcher.aggregateConsecutive(futureEntries, incrementMinutes, poolMode);
+            }
+
+            for (PriceFetcher.PriceEntry entry : displayEntries) {
                 items.add(entry);
                 if (entry.pricePerKwh > maxPrice) {
                     maxPrice = entry.pricePerKwh;

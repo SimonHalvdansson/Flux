@@ -92,7 +92,8 @@ public class MainWidget extends AppWidgetProvider {
 
         SharedPreferences prefs = PriceRepository.getPreferences(context);
         String combinedJson = prefs.getString(PriceRepository.KEY_JSON_DATA, null);
-        int chartMode = prefs.getInt(PriceUpdateJobService.KEY_CHART_MODE, 0);
+        int chartMode = WidgetPreferences.getChartMode(prefs);
+        int barPoolMode = WidgetPreferences.getMainBarPoolMode(prefs);
         boolean apiError = prefs.getBoolean(PriceUpdateJobService.KEY_API_ERROR, false);
 
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.main_widget);
@@ -174,7 +175,7 @@ public class MainWidget extends AppWidgetProvider {
             return;
         }
 
-        List<PriceFetcher.PriceEntry> hourlyData = PriceFetcher.aggregateToHourly(allData);
+        List<PriceFetcher.PriceEntry> hourlyData = PriceFetcher.aggregateToHourly(allData, barPoolMode);
         if (hourlyData.isEmpty()) {
             showApiErrorState(appWidgetManager, appWidgetId, views);
             return;

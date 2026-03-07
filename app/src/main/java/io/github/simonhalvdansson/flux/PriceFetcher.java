@@ -332,39 +332,132 @@ public class PriceFetcher {
     }
 
     public static List<PriceEntry> aggregateToHourly(List<PriceEntry> entries) {
+        return aggregateToHourly(entries, WidgetPreferences.POOL_MODE_AVERAGE);
+    }
+
+    public static List<PriceEntry> aggregateToHourly(List<PriceEntry> entries, int poolMode) {
+        return aggregateAligned(entries, 60, poolMode);
+    }
+
+    public static List<PriceEntry> aggregateConsecutive(List<PriceEntry> entries, int intervalMinutes, int poolMode) {
+        List<PriceEntry> sorted = new ArrayList<>();
+        for (PriceEntry entry : entries) {
+            if (entry != null && entry.startTime != null && entry.endTime != null) {
+                sorted.add(entry);
+            }
+        }
+        sorted.sort(Comparator.comparing(o -> o.startTime));
+
+        if (intervalMinutes <= WidgetPreferences.INCREMENT_15_MINUTES) {
+            return sorted;
+        }
+
+        List<PriceEntry> aggregated = new ArrayList<>();
+        OffsetDateTime bucketStart = null;
+        OffsetDateTime bucketEnd = null;
+        OffsetDateTime lastEnd = null;
+        double weightedTotal = 0.0;
+        long totalMinutes = 0L;
+        double minPrice = Double.POSITIVE_INFINITY;
+
+        for (PriceEntry entry : sorted) {
+            long minutes = Duration.between(entry.startTime, entry.endTime).toMinutes();
+            if (minutes <= 0) {
+                continue;
+            }
+
+            if (bucketStart == null) {
+                bucketStart = entry.startTime;
+                bucketEnd = bucketStart.plusMinutes(intervalMinutes);
+            } else if (!entry.startTime.isBefore(bucketEnd)) {
+                addAggregate(aggregated, bucketStart, lastEnd, weightedTotal, totalMinutes, minPrice, poolMode);
+                bucketStart = entry.startTime;
+                bucketEnd = bucketStart.plusMinutes(intervalMinutes);
+                weightedTotal = 0.0;
+                totalMinutes = 0L;
+                minPrice = Double.POSITIVE_INFINITY;
+            }
+
+            weightedTotal += entry.pricePerKwh * minutes;
+            totalMinutes += minutes;
+            minPrice = Math.min(minPrice, entry.pricePerKwh);
+            lastEnd = entry.endTime;
+        }
+
+        addAggregate(aggregated, bucketStart, lastEnd, weightedTotal, totalMinutes, minPrice, poolMode);
+        return aggregated;
+    }
+
+    private static List<PriceEntry> aggregateAligned(List<PriceEntry> entries, int intervalMinutes, int poolMode) {
         Map<OffsetDateTime, double[]> aggregates = new LinkedHashMap<>();
         for (PriceEntry entry : entries) {
             if (entry == null || entry.startTime == null || entry.endTime == null) {
                 continue;
             }
 
-            OffsetDateTime hourStart = entry.startTime.truncatedTo(ChronoUnit.HOURS);
             long minutes = Duration.between(entry.startTime, entry.endTime).toMinutes();
             if (minutes <= 0) {
                 continue;
             }
 
-            double[] agg = aggregates.computeIfAbsent(hourStart, k -> new double[2]);
+            OffsetDateTime bucketStart = getAlignedBucketStart(entry.startTime, intervalMinutes);
+            double[] agg = aggregates.computeIfAbsent(bucketStart, k -> new double[] {0.0, 0.0, Double.POSITIVE_INFINITY});
             agg[0] += entry.pricePerKwh * minutes;
             agg[1] += minutes;
+            agg[2] = Math.min(agg[2], entry.pricePerKwh);
         }
 
-        List<PriceEntry> hourly = new ArrayList<>(aggregates.size());
+        List<PriceEntry> aggregated = new ArrayList<>(aggregates.size());
         for (Map.Entry<OffsetDateTime, double[]> mapEntry : aggregates.entrySet()) {
             double[] agg = mapEntry.getValue();
             if (agg[1] <= 0) {
                 continue;
             }
 
-            PriceEntry hourlyEntry = new PriceEntry();
-            hourlyEntry.startTime = mapEntry.getKey();
-            hourlyEntry.endTime = mapEntry.getKey().plusHours(1);
-            hourlyEntry.pricePerKwh = agg[0] / agg[1];
-            hourly.add(hourlyEntry);
+            PriceEntry aggregatedEntry = new PriceEntry();
+            aggregatedEntry.startTime = mapEntry.getKey();
+            aggregatedEntry.endTime = mapEntry.getKey().plusMinutes(intervalMinutes);
+            aggregatedEntry.pricePerKwh = resolveAggregatedPrice(agg[0], agg[1], agg[2], poolMode);
+            aggregated.add(aggregatedEntry);
         }
 
-        hourly.sort(Comparator.comparing(o -> o.startTime));
-        return hourly;
+        aggregated.sort(Comparator.comparing(o -> o.startTime));
+        return aggregated;
+    }
+
+    private static OffsetDateTime getAlignedBucketStart(OffsetDateTime startTime, int intervalMinutes) {
+        OffsetDateTime localStart = startTime.atZoneSameInstant(ZoneId.systemDefault()).toOffsetDateTime();
+        OffsetDateTime dayStart = localStart.toLocalDate().atStartOfDay().atOffset(localStart.getOffset());
+        int minuteOfDay = (localStart.getHour() * 60) + localStart.getMinute();
+        int bucketMinuteOfDay = (minuteOfDay / intervalMinutes) * intervalMinutes;
+        return dayStart.plusMinutes(bucketMinuteOfDay);
+    }
+
+    private static void addAggregate(List<PriceEntry> output,
+                                     OffsetDateTime start,
+                                     OffsetDateTime end,
+                                     double weightedTotal,
+                                     long totalMinutes,
+                                     double minPrice,
+                                     int poolMode) {
+        if (start == null || end == null || totalMinutes <= 0) {
+            return;
+        }
+
+        PriceEntry aggregate = new PriceEntry();
+        aggregate.startTime = start;
+        aggregate.endTime = end;
+        aggregate.pricePerKwh = resolveAggregatedPrice(weightedTotal, totalMinutes, minPrice, poolMode);
+        output.add(aggregate);
+    }
+
+    private static double resolveAggregatedPrice(double weightedTotal,
+                                                 double totalMinutes,
+                                                 double minPrice,
+                                                 int poolMode) {
+        if (poolMode == WidgetPreferences.POOL_MODE_MIN) {
+            return minPrice;
+        }
+        return weightedTotal / totalMinutes;
     }
 }
-
