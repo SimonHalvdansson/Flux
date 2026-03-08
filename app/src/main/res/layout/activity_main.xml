@@ -50,7 +50,7 @@
                     android:orientation="vertical">
 
                     <TextView
-                        tools:text="15:30-15:45"
+                        tools:text="15:30-15:45:"
                         android:id="@+id/current_price_label"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"

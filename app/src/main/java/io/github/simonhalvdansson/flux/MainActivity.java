@@ -8,7 +8,10 @@ import android.content.SharedPreferences;
 import android.graphics.Outline;
 import android.os.Bundle;
 import android.text.Editable;
+import android.text.SpannableStringBuilder;
+import android.text.Spanned;
 import android.text.TextWatcher;
+import android.text.style.RelativeSizeSpan;
 import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewOutlineProvider;
@@ -41,6 +44,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
+    private static final float MAIN_PRICE_UNIT_RELATIVE_SIZE = 14f / 34f;
 
     public static final String EXTRA_DISABLE_CHART_ANIMATION =
             "io.github.simonhalvdansson.flux.extra.DISABLE_CHART_ANIMATION";
@@ -395,19 +399,38 @@ public class MainActivity extends AppCompatActivity {
 
     private String formatCurrentTimeRange(ZonedDateTime start, ZonedDateTime end) {
         return String.format(
-                "%02d:%02d-%02d:%02d",
+                "%02d:%02d-%02d:%02d:",
                 start.getHour(),
                 start.getMinute(),
                 end.getHour(),
                 end.getMinute()
         );
     }
+    private CharSequence formatCurrentPriceText(String formattedPrice, String unitText) {
+        if (formattedPrice == null || formattedPrice.isEmpty()) {
+            return "";
+        }
+        if (unitText == null || unitText.isEmpty()) {
+            return formattedPrice;
+        }
 
+        SpannableStringBuilder text = new SpannableStringBuilder(formattedPrice)
+                .append(" ")
+                .append(unitText);
+        int unitStart = formattedPrice.length() + 1;
+        text.setSpan(
+                new RelativeSizeSpan(MAIN_PRICE_UNIT_RELATIVE_SIZE),
+                unitStart,
+                text.length(),
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+        );
+        return text;
+    }
     private void renderCurrentPrice() {
         updateCurrentPriceLabel();
         CurrentPriceResolver.Snapshot snapshot = CurrentPriceResolver.resolve(this);
         if (snapshot.hasData) {
-            currentPriceValue.setText(snapshot.getDisplayPrice());
+            currentPriceValue.setText(formatCurrentPriceText(snapshot.formattedPrice, snapshot.unitText));
         } else if (snapshot.apiError) {
             currentPriceValue.setText(R.string.current_price_unavailable);
         } else {
