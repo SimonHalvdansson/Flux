@@ -21,6 +21,7 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.interpolator.view.animation.LinearOutSlowInInterpolator;
 
@@ -88,6 +89,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
         setContentView(R.layout.activity_main);
 
         sharedPreferences = PriceRepository.getPreferences(this);
@@ -174,7 +176,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         updateRegionVisibility(regionContainer, areaDropdown, currentCountry);
-        vatSwitch.setChecked(sharedPreferences.getBoolean(PriceUpdateJobService.KEY_APPLY_VAT, false));
+        vatSwitch.setChecked(sharedPreferences.getBoolean(PriceUpdateJobService.KEY_APPLY_VAT, true));
         updateVatLabel(vatLabel);
         updateGridFeeUnit(gridFeeContainer, currentCountry.getCode());
 
@@ -289,12 +291,14 @@ public class MainActivity extends AppCompatActivity {
         int padBottom = root.getPaddingBottom();
 
         ViewCompat.setOnApplyWindowInsetsListener(root, (view, insets) -> {
-            Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            Insets safeArea = insets.getInsets(
+                    WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout()
+            );
             root.setPaddingRelative(
-                    padStart + bars.left,
-                    padTop + bars.top,
-                    padEnd + bars.right,
-                    padBottom + bars.bottom
+                    padStart + safeArea.left,
+                    padTop + safeArea.top,
+                    padEnd + safeArea.right,
+                    padBottom + safeArea.bottom
             );
             return insets;
         });

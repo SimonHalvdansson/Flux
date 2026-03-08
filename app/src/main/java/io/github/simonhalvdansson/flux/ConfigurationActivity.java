@@ -14,6 +14,7 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.google.android.material.button.MaterialButtonToggleGroup;
@@ -26,6 +27,7 @@ public class ConfigurationActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
         setContentView(R.layout.activity_configuration);
         applyWindowInsets();
 
@@ -148,12 +150,14 @@ public class ConfigurationActivity extends AppCompatActivity {
         int padBottom = root.getPaddingBottom();
 
         ViewCompat.setOnApplyWindowInsetsListener(root, (view, insets) -> {
-            Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            Insets safeArea = insets.getInsets(
+                    WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout()
+            );
             root.setPaddingRelative(
-                    padStart + bars.left,
-                    padTop + bars.top,
-                    padEnd + bars.right,
-                    padBottom + bars.bottom
+                    padStart + safeArea.left,
+                    padTop + safeArea.top,
+                    padEnd + safeArea.right,
+                    padBottom + safeArea.bottom
             );
             return insets;
         });
