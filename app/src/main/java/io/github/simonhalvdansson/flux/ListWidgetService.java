@@ -11,6 +11,7 @@ import android.view.View;
 import android.widget.RemoteViews;
 import android.widget.RemoteViewsService;
 
+import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
@@ -92,7 +93,9 @@ public class ListWidgetService extends RemoteViewsService {
             if (incrementMinutes == WidgetPreferences.INCREMENT_15_MINUTES) {
                 displayEntries = futureEntries;
             } else {
-                displayEntries = PriceFetcher.aggregateConsecutive(futureEntries, incrementMinutes, poolMode);
+                List<PriceFetcher.PriceEntry> alignedFutureEntries =
+                        trimToNextAlignedBoundary(futureEntries, incrementMinutes);
+                displayEntries = PriceFetcher.aggregateConsecutive(alignedFutureEntries, incrementMinutes, poolMode);
             }
 
             for (PriceFetcher.PriceEntry entry : displayEntries) {
@@ -156,6 +159,45 @@ public class ListWidgetService extends RemoteViewsService {
         private int dp(float d, Resources res) {
             return (int) TypedValue.applyDimension(
                     TypedValue.COMPLEX_UNIT_DIP, d, res.getDisplayMetrics());
+        }
+
+        private List<PriceFetcher.PriceEntry> trimToNextAlignedBoundary(List<PriceFetcher.PriceEntry> entries,
+                                                                        int incrementMinutes) {
+            if (entries.isEmpty()) {
+                return Collections.emptyList();
+            }
+
+            OffsetDateTime nextAlignedStart = getNextAlignedStart(incrementMinutes);
+            List<PriceFetcher.PriceEntry> trimmedEntries = new ArrayList<>();
+            boolean started = false;
+            for (PriceFetcher.PriceEntry entry : entries) {
+                if (entry == null || entry.startTime == null || entry.endTime == null) {
+                    continue;
+                }
+
+                ZonedDateTime entryStart = entry.startTime.atZoneSameInstant(ZoneId.systemDefault());
+                if (!started) {
+                    if (entryStart.toOffsetDateTime().isBefore(nextAlignedStart) || !isAlignedStart(entryStart, incrementMinutes)) {
+                        continue;
+                    }
+                    started = true;
+                }
+                trimmedEntries.add(entry);
+            }
+            return trimmedEntries;
+        }
+
+        private OffsetDateTime getNextAlignedStart(int incrementMinutes) {
+            ZonedDateTime now = ZonedDateTime.now(ZoneId.systemDefault());
+            ZonedDateTime dayStart = now.toLocalDate().atStartOfDay(now.getZone());
+            int minuteOfDay = (now.getHour() * 60) + now.getMinute();
+            int nextBucketMinuteOfDay = ((minuteOfDay / incrementMinutes) + 1) * incrementMinutes;
+            return dayStart.plusMinutes(nextBucketMinuteOfDay).toOffsetDateTime();
+        }
+
+        private boolean isAlignedStart(ZonedDateTime start, int incrementMinutes) {
+            int minuteOfDay = (start.getHour() * 60) + start.getMinute();
+            return minuteOfDay % incrementMinutes == 0;
         }
 
         private void updateMaxBarWidthPx() {

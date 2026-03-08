@@ -29,11 +29,12 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.interpolator.view.animation.LinearOutSlowInInterpolator;
 
 import com.google.android.material.button.MaterialButtonToggleGroup;
-
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.materialswitch.MaterialSwitch;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 
+import java.text.NumberFormat;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
@@ -192,6 +193,7 @@ public class MainActivity extends AppCompatActivity {
         vatSwitch.setChecked(sharedPreferences.getBoolean(PriceUpdateJobService.KEY_APPLY_VAT, true));
         updateVatLabel(vatLabel);
         updateGridFeeUnit(gridFeeContainer, currentCountry.getCode());
+        setupInfoDialogs();
 
         String savedGridFee = sharedPreferences.getString(PriceUpdateJobService.KEY_GRID_FEE, "");
         if (savedGridFee == null || savedGridFee.trim().isEmpty()) {
@@ -633,8 +635,52 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private void setupInfoDialogs() {
+        findViewById(R.id.stromstotte_info_trigger).setOnClickListener(v -> showInfoDialog(
+                R.string.stromstotte_info_title,
+                getString(R.string.stromstotte_info_message)
+        ));
+        findViewById(R.id.vat_info_trigger).setOnClickListener(v -> {
+            String countryCode = getSelectedCountryCode();
+            showInfoDialog(
+                    R.string.vat_info_title,
+                    getString(R.string.vat_info_message, formatVatPercent(RegionConfig.getVatPercent(countryCode)))
+            );
+        });
+        findViewById(R.id.grid_fee_info_trigger).setOnClickListener(v -> {
+            String countryCode = getSelectedCountryCode();
+            showInfoDialog(
+                    R.string.grid_fee_info_title,
+                    getString(
+                            R.string.grid_fee_info_message,
+                            PriceDisplayUtils.getUnitText(countryCode, sharedPreferences)
+                    )
+            );
+        });
+    }
+
+    private void showInfoDialog(int titleResId, String message) {
+        new MaterialAlertDialogBuilder(this)
+                .setTitle(titleResId)
+                .setMessage(message)
+                .setPositiveButton(android.R.string.ok, null)
+                .show();
+    }
+
+    private String getSelectedCountryCode() {
+        return sharedPreferences.getString(PriceUpdateJobService.KEY_SELECTED_COUNTRY, "NO");
+    }
+
+    private String formatVatPercent(double vatPercent) {
+        NumberFormat numberFormat = NumberFormat.getNumberInstance();
+        numberFormat.setGroupingUsed(false);
+        numberFormat.setMinimumFractionDigits(0);
+        numberFormat.setMaximumFractionDigits(1);
+        return numberFormat.format(vatPercent);
+    }
+
     private void updateVatLabel(TextView label) {
-        label.setText(R.string.vat_label);
+        label.setText(RegionConfig.getVatLabel(getSelectedCountryCode()));
     }
 
     private void updateGridFeeUnit(TextInputLayout layout, String countryCode) {

@@ -11,6 +11,7 @@
         android:layout_height="wrap_content"
         android:fontFamily="@font/productsans_bold"
         android:text="@string/price_settings_title"
+        android:textColor="@color/main_price_emphasis"
         android:textSize="18sp" />
 
     <LinearLayout
@@ -128,14 +129,36 @@
             android:layout_height="56dp"
             android:orientation="horizontal">
 
-            <TextView
+            <LinearLayout
+                android:id="@+id/stromstotte_info_trigger"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_vertical"
                 android:layout_weight="1"
-                android:fontFamily="@font/productsans_bold"
-                android:text="@string/stromstotte_label"
-                android:textSize="16sp" />
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackgroundBorderless"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/productsans_bold"
+                    android:text="@string/stromstotte_label"
+                    android:textSize="16sp" />
+
+                <ImageView
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:layout_marginStart="6dp"
+                    android:contentDescription="@null"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/ic_info_18"
+                    android:tint="@color/main_price_emphasis" />
+            </LinearLayout>
 
             <com.google.android.material.materialswitch.MaterialSwitch
                 android:id="@+id/stromstotte_switch"
@@ -149,15 +172,37 @@
             android:layout_height="56dp"
             android:orientation="horizontal">
 
-            <TextView
-                android:id="@+id/vat_label"
+            <LinearLayout
+                android:id="@+id/vat_info_trigger"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_vertical"
                 android:layout_weight="1"
-                android:fontFamily="@font/productsans_bold"
-                android:text="@string/vat_label"
-                android:textSize="16sp" />
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackgroundBorderless"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp">
+
+                <TextView
+                    android:id="@+id/vat_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/productsans_bold"
+                    android:text="@string/vat_label"
+                    android:textSize="16sp" />
+
+                <ImageView
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:layout_marginStart="6dp"
+                    android:contentDescription="@null"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/ic_info_18"
+                    android:tint="@color/main_price_emphasis" />
+            </LinearLayout>
 
             <com.google.android.material.materialswitch.MaterialSwitch
                 android:id="@+id/vat_switch"
@@ -171,14 +216,36 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal">
 
-            <TextView
+            <LinearLayout
+                android:id="@+id/grid_fee_info_trigger"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_vertical"
                 android:layout_weight="1"
-                android:fontFamily="@font/productsans_bold"
-                android:text="@string/grid_fee_label"
-                android:textSize="16sp" />
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackgroundBorderless"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/productsans_bold"
+                    android:text="@string/grid_fee_label"
+                    android:textSize="16sp" />
+
+                <ImageView
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:layout_marginStart="6dp"
+                    android:contentDescription="@null"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/ic_info_18"
+                    android:tint="@color/main_price_emphasis" />
+            </LinearLayout>
 
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/grid_fee_container"
