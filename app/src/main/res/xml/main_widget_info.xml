@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
-    android:configure=".ConfigurationActivity"
+    android:configure="io.github.simonhalvdansson.flux.ConfigurationActivity"
     android:description="@string/main_widget_description"
     android:initialKeyguardLayout="@layout/main_widget"
     android:initialLayout="@layout/main_widget"

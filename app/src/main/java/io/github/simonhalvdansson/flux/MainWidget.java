@@ -410,10 +410,20 @@ public class MainWidget extends AppWidgetProvider {
      */
     public static void updateAllWidgets(Context context) {
         AppWidgetManager manager = AppWidgetManager.getInstance(context);
-        int[] ids = manager.getAppWidgetIds(new ComponentName(context, MainWidget.class));
+        int[] ids;
+        try {
+            ids = manager.getAppWidgetIds(new ComponentName(context, MainWidget.class));
+        } catch (RuntimeException e) {
+            Log.w(TAG, "Skipping widget refresh because AppWidgetManager is unavailable", e);
+            return;
+        }
         if (ids != null && ids.length > 0) {
             for (int appWidgetId : ids) {
-                updateAppWidget(context, manager, appWidgetId);
+                try {
+                    updateAppWidget(context, manager, appWidgetId);
+                } catch (RuntimeException e) {
+                    Log.w(TAG, "Failed to refresh widget " + appWidgetId, e);
+                }
             }
         }
     }

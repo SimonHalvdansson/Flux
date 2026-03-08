@@ -3,11 +3,14 @@ package io.github.simonhalvdansson.flux;
 import android.appwidget.AppWidgetManager;
 import android.content.ComponentName;
 import android.content.Context;
+import android.util.Log;
 
 /**
  * Helper utilities related to widget instance bookkeeping.
  */
 final class WidgetPresenceUtils {
+
+    private static final String TAG = "WidgetPresenceUtils";
 
     private WidgetPresenceUtils() {
         // Utility class
@@ -25,8 +28,13 @@ final class WidgetPresenceUtils {
 
     private static boolean hasWidgets(Context context, AppWidgetManager manager, Class<?> widgetClass) {
         ComponentName componentName = new ComponentName(context, widgetClass);
-        int[] ids = manager.getAppWidgetIds(componentName);
+        int[] ids;
+        try {
+            ids = manager.getAppWidgetIds(componentName);
+        } catch (RuntimeException e) {
+            Log.w(TAG, "Unable to query widget instances for " + widgetClass.getSimpleName(), e);
+            return false;
+        }
         return ids != null && ids.length > 0;
     }
 }
-

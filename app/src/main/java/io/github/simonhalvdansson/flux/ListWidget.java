@@ -137,11 +137,25 @@ public class ListWidget extends AppWidgetProvider {
 
     public static void updateAllWidgets(Context context) {
         AppWidgetManager manager = AppWidgetManager.getInstance(context);
-        int[] ids = manager.getAppWidgetIds(new ComponentName(context, ListWidget.class));
+        int[] ids;
+        try {
+            ids = manager.getAppWidgetIds(new ComponentName(context, ListWidget.class));
+        } catch (RuntimeException e) {
+            Log.w(TAG, "Skipping list widget refresh because AppWidgetManager is unavailable", e);
+            return;
+        }
         if (ids != null && ids.length > 0) {
-            manager.notifyAppWidgetViewDataChanged(ids, R.id.list_view);
+            try {
+                manager.notifyAppWidgetViewDataChanged(ids, R.id.list_view);
+            } catch (RuntimeException e) {
+                Log.w(TAG, "Failed to notify list widget data changes", e);
+            }
             for (int id : ids) {
-                updateAppWidget(context, manager, id);
+                try {
+                    updateAppWidget(context, manager, id);
+                } catch (RuntimeException e) {
+                    Log.w(TAG, "Failed to refresh list widget " + id, e);
+                }
             }
         }
     }
