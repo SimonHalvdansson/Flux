@@ -200,7 +200,7 @@ public final class RegionConfig {
                 ZoneId.of("Europe/Warsaw"),
                 Locale.forLanguageTag("pl-PL"),
                 1.0,
-                "PLN/kWh",
+                "zł/kWh",
                 List.of(area("PL", "Poland", "10YPL-AREA-----S"))
         ));
 
@@ -213,7 +213,7 @@ public final class RegionConfig {
                 ZoneId.of("Europe/Belgrade"),
                 Locale.forLanguageTag("sr-RS"),
                 1.0,
-                "RSD/kWh",
+                "din/kWh",
                 List.of(area("RS", "Serbia", "10YCS-SERBIATSOV"))
         ));
 
@@ -239,7 +239,7 @@ public final class RegionConfig {
                 ZoneId.of("Europe/Bucharest"),
                 Locale.forLanguageTag("ro-RO"),
                 1.0,
-                "RON/kWh",
+                "lei/kWh",
                 List.of(area("RO", "Romania", "10YRO-TEL------P"))
         ));
 
@@ -265,7 +265,7 @@ public final class RegionConfig {
                 ZoneId.of("Europe/Budapest"),
                 Locale.forLanguageTag("hu-HU"),
                 1.0,
-                "HUF/kWh",
+                "Ft/kWh",
                 List.of(area("HU", "Hungary", "10YHU-MAVIR----U"))
         ));
 
@@ -330,7 +330,7 @@ public final class RegionConfig {
                 ZoneId.of("Europe/Prague"),
                 Locale.forLanguageTag("cs-CZ"),
                 1.0,
-                "CZK/kWh",
+                "Kč/kWh",
                 List.of(area("CZ", "Czech Republic", "10YCZ-CEPS-----N"))
         ));
 
