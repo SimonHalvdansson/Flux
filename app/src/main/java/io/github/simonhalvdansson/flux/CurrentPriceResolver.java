@@ -39,7 +39,7 @@ public final class CurrentPriceResolver {
     public static Snapshot resolve(Context context) {
         SharedPreferences prefs = PriceRepository.getPreferences(context);
         String country = prefs.getString(PriceUpdateJobService.KEY_SELECTED_COUNTRY, "NO");
-        String unitText = PriceDisplayUtils.getUnitText(country);
+        String unitText = PriceDisplayUtils.getUnitText(country, prefs);
         boolean apiError = prefs.getBoolean(PriceUpdateJobService.KEY_API_ERROR, false);
 
         List<PriceFetcher.PriceEntry> entries = getAdjustedEntries(prefs);
@@ -52,7 +52,7 @@ public final class CurrentPriceResolver {
                 true,
                 apiError,
                 country,
-                PriceDisplayUtils.formatPrice(currentEntry.pricePerKwh, country),
+                PriceDisplayUtils.formatPrice(currentEntry.pricePerKwh, country, prefs),
                 unitText
         );
     }
@@ -66,7 +66,11 @@ public final class CurrentPriceResolver {
         String country = prefs.getString(PriceUpdateJobService.KEY_SELECTED_COUNTRY, "NO");
         boolean applyVat = prefs.getBoolean(PriceUpdateJobService.KEY_APPLY_VAT, true);
         boolean applyStromstotte = prefs.getBoolean(PriceUpdateJobService.KEY_APPLY_STROMSTOTTE, false);
-        double gridFee = PriceDisplayUtils.parseGridFee(prefs.getString(PriceUpdateJobService.KEY_GRID_FEE, ""));
+        double gridFee = PriceDisplayUtils.parseGridFee(
+                prefs.getString(PriceUpdateJobService.KEY_GRID_FEE, ""),
+                country,
+                prefs
+        );
 
         List<PriceFetcher.PriceEntry> entries = PriceFetcher.parseCombinedJson(combinedJson);
         for (PriceFetcher.PriceEntry entry : entries) {

@@ -25,6 +25,8 @@ import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.interpolator.view.animation.LinearOutSlowInInterpolator;
 
+import com.google.android.material.button.MaterialButtonToggleGroup;
+
 import com.google.android.material.materialswitch.MaterialSwitch;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
@@ -79,12 +81,14 @@ public class MainActivity extends AppCompatActivity {
     private AutoCompleteTextView countryDropdown;
     private AutoCompleteTextView areaDropdown;
     private LinearLayout regionContainer;
+    private LinearLayout priceDisplayContainer;
     private LinearLayout stromstotteContainer;
     private MaterialSwitch stromstotteSwitch;
     private MaterialSwitch vatSwitch;
     private TextView vatLabel;
     private TextInputLayout gridFeeContainer;
     private TextInputEditText gridFeeInput;
+    private MaterialButtonToggleGroup swissPriceUnitToggleGroup;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -113,7 +117,8 @@ public class MainActivity extends AppCompatActivity {
                     || PriceUpdateJobService.KEY_SELECTED_AREA.equals(key)
                     || PriceUpdateJobService.KEY_APPLY_VAT.equals(key)
                     || PriceUpdateJobService.KEY_APPLY_STROMSTOTTE.equals(key)
-                    || PriceUpdateJobService.KEY_GRID_FEE.equals(key)) {
+                    || PriceUpdateJobService.KEY_GRID_FEE.equals(key)
+                    || PriceUpdateJobService.KEY_PRICE_DISPLAY_STYLE.equals(key)) {
                 runOnUiThread(this::renderCurrentPrice);
             }
         };
@@ -140,12 +145,15 @@ public class MainActivity extends AppCompatActivity {
         countryDropdown = findViewById(R.id.country_dropdown);
         areaDropdown = findViewById(R.id.area_dropdown);
         regionContainer = findViewById(R.id.region_container);
+        priceDisplayContainer = findViewById(R.id.price_display_container);
         stromstotteContainer = findViewById(R.id.stromstotte_container);
         stromstotteSwitch = findViewById(R.id.stromstotte_switch);
         vatSwitch = findViewById(R.id.vat_switch);
         vatLabel = findViewById(R.id.vat_label);
         gridFeeContainer = findViewById(R.id.grid_fee_container);
         gridFeeInput = findViewById(R.id.grid_fee_input);
+        swissPriceUnitToggleGroup = findViewById(R.id.swiss_price_unit_toggle_group);
+        swissPriceUnitToggleGroup.setSelectionRequired(true);
 
         List<String> countryNames = new ArrayList<>();
         for (RegionConfig.Country country : countries) {
@@ -176,6 +184,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         updateRegionVisibility(regionContainer, areaDropdown, currentCountry);
+        updatePriceDisplayVisibility(currentCountry.getCode());
         vatSwitch.setChecked(sharedPreferences.getBoolean(PriceUpdateJobService.KEY_APPLY_VAT, true));
         updateVatLabel(vatLabel);
         updateGridFeeUnit(gridFeeContainer, currentCountry.getCode());
@@ -202,6 +211,7 @@ public class MainActivity extends AppCompatActivity {
                 sharedPreferences.edit().putBoolean(PriceUpdateJobService.KEY_APPLY_STROMSTOTTE, false).apply();
             }
             updateRegionVisibility(regionContainer, areaDropdown, selected);
+            updatePriceDisplayVisibility(countryCode);
             updateVatLabel(vatLabel);
             updateGridFeeUnit(gridFeeContainer, countryCode);
 
@@ -236,6 +246,24 @@ public class MainActivity extends AppCompatActivity {
             if (countries.get(currentCountryIndex).hasMultipleAreas()) {
                 areaDropdown.showDropDown();
             }
+        });
+
+        swissPriceUnitToggleGroup.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
+            if (!isChecked) {
+                return;
+            }
+
+            String style = checkedId == R.id.swiss_unit_ct_button
+                    ? PriceDisplayUtils.DISPLAY_STYLE_SWISS_CENTIMES
+                    : PriceDisplayUtils.DISPLAY_STYLE_SWISS_RAPPEN;
+            sharedPreferences.edit()
+                    .putString(PriceUpdateJobService.KEY_PRICE_DISPLAY_STYLE, style)
+                    .apply();
+            updateGridFeeUnit(
+                    gridFeeContainer,
+                    sharedPreferences.getString(PriceUpdateJobService.KEY_SELECTED_COUNTRY, "NO")
+            );
+            updateWidgets();
         });
 
         stromstotteSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
@@ -514,8 +542,8 @@ public class MainActivity extends AppCompatActivity {
 
         String averageText = getString(
                 R.string.today_average_format,
-                PriceDisplayUtils.formatPrice(total / count, country),
-                PriceDisplayUtils.getUnitText(country)
+                PriceDisplayUtils.formatPrice(total / count, country, sharedPreferences),
+                PriceDisplayUtils.getUnitText(country, sharedPreferences)
         );
         todayAverageValue.setText(averageText);
     }
@@ -587,9 +615,23 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void updateGridFeeUnit(TextInputLayout layout, String countryCode) {
-        layout.setSuffixText(PriceDisplayUtils.getUnitText(countryCode));
+        layout.setSuffixText(PriceDisplayUtils.getUnitText(countryCode, sharedPreferences));
     }
 
+
+    private void updatePriceDisplayVisibility(String countryCode) {
+        boolean showPriceDisplaySelector = PriceDisplayUtils.supportsDisplayStyleSelection(countryCode);
+        priceDisplayContainer.setVisibility(showPriceDisplaySelector ? View.VISIBLE : View.GONE);
+        if (showPriceDisplaySelector) {
+            swissPriceUnitToggleGroup.check(getSwissPriceUnitButtonId());
+        }
+    }
+
+    private int getSwissPriceUnitButtonId() {
+        return PriceDisplayUtils.DISPLAY_STYLE_SWISS_CENTIMES.equals(
+                PriceDisplayUtils.getSwissDisplayStyle(sharedPreferences)
+        ) ? R.id.swiss_unit_ct_button : R.id.swiss_unit_rp_button;
+    }
     private void updateAreaDropdown(AutoCompleteTextView targetAreaDropdown,
                                     SharedPreferences prefs,
                                     RegionConfig.Country country) {

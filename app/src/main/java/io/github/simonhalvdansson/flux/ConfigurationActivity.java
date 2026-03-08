@@ -3,9 +3,12 @@ package io.github.simonhalvdansson.flux;
 import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProviderInfo;
 import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
@@ -230,14 +233,18 @@ public class ConfigurationActivity extends AppCompatActivity {
     }
 
     private void finishWithSuccess() {
+        Context appContext = getApplicationContext();
         WidgetPresenceUtils.ensureUpdateJobScheduled(this);
         PriceUpdateScheduler.schedulePriceUpdateJob(this);
-        MainWidget.updateAllWidgets(this);
-        ListWidget.updateAllWidgets(this);
 
         Intent result = new Intent();
         result.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId);
         setResult(RESULT_OK, result);
         finish();
+
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            MainWidget.updateAllWidgets(appContext);
+            ListWidget.updateAllWidgets(appContext);
+        }, 250L);
     }
 }

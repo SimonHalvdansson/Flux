@@ -121,7 +121,11 @@ public class ListWidgetService extends RemoteViewsService {
             PriceFetcher.PriceEntry e = items.get(position);
             ZonedDateTime s = e.startTime.atZoneSameInstant(ZoneId.systemDefault());
             String tText = String.format("%02d:%02d:", s.getHour(), s.getMinute());
-            String pText = PriceDisplayUtils.formatPrice(e.pricePerKwh, country);
+            String pText = PriceDisplayUtils.formatPrice(
+                    e.pricePerKwh,
+                    country,
+                    PriceRepository.getPreferences(context)
+            );
             RemoteViews rv = new RemoteViews(context.getPackageName(), R.layout.list_item);
             rv.setTextViewText(R.id.item_time, tText);
             rv.setTextViewText(R.id.item_price, pText);

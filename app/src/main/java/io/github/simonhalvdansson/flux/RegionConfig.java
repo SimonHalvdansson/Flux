@@ -136,7 +136,7 @@ public final class RegionConfig {
                 Locale.forLanguageTag("lv-LV"),
                 1.0,
                 "€/kWh",
-                Arrays.asList(area("LV", "Latvia", "10YLV-1001A00074"))
+                List.of(area("LV", "Latvia", "10YLV-1001A00074"))
         ));
 
         countries.add(new Country(
@@ -149,7 +149,7 @@ public final class RegionConfig {
                 Locale.forLanguageTag("lt-LT"),
                 1.0,
                 "€/kWh",
-                Arrays.asList(area("LT", "Lithuania", "10YLT-1001A0008Q"))
+                List.of(area("LT", "Lithuania", "10YLT-1001A0008Q"))
         ));
 
         countries.add(new Country(
@@ -162,7 +162,7 @@ public final class RegionConfig {
                 Locale.GERMANY,
                 1.0,
                 "€/kWh",
-                Arrays.asList(area("DE-LU", "Germany", "10Y1001A1001A82H"))
+                List.of(area("DE-LU", "Germany", "10Y1001A1001A82H"))
         ));
 
         countries.add(new Country(
@@ -175,7 +175,7 @@ public final class RegionConfig {
                 Locale.GERMANY,
                 1.0,
                 "€/kWh",
-                Arrays.asList(area("LU", "Luxembourg", "10Y1001A1001A82H"))
+                List.of(area("LU", "Luxembourg", "10Y1001A1001A82H"))
         ));
 
         countries.add(new Country(
@@ -188,7 +188,7 @@ public final class RegionConfig {
                 Locale.forLanguageTag("et-EE"),
                 1.0,
                 "€/kWh",
-                Arrays.asList(area("EE", "Estonia", "10Y1001A1001A39I"))
+                List.of(area("EE", "Estonia", "10Y1001A1001A39I"))
         ));
 
         countries.add(new Country(
@@ -201,7 +201,7 @@ public final class RegionConfig {
                 Locale.forLanguageTag("pl-PL"),
                 1.0,
                 "PLN/kWh",
-                Arrays.asList(area("PL", "Poland", "10YPL-AREA-----S"))
+                List.of(area("PL", "Poland", "10YPL-AREA-----S"))
         ));
 
         countries.add(new Country(
@@ -214,7 +214,7 @@ public final class RegionConfig {
                 Locale.forLanguageTag("sr-RS"),
                 1.0,
                 "RSD/kWh",
-                Arrays.asList(area("RS", "Serbia", "10YCS-SERBIATSOV"))
+                List.of(area("RS", "Serbia", "10YCS-SERBIATSOV"))
         ));
 
         countries.add(new Country(
@@ -227,7 +227,7 @@ public final class RegionConfig {
                 Locale.forLanguageTag("bg-BG"),
                 1.0,
                 "BGN/kWh",
-                Arrays.asList(area("BG", "Bulgaria", "10YCA-BULGARIA-R"))
+                List.of(area("BG", "Bulgaria", "10YCA-BULGARIA-R"))
         ));
 
         countries.add(new Country(
@@ -240,7 +240,7 @@ public final class RegionConfig {
                 Locale.forLanguageTag("ro-RO"),
                 1.0,
                 "RON/kWh",
-                Arrays.asList(area("RO", "Romania", "10YRO-TEL------P"))
+                List.of(area("RO", "Romania", "10YRO-TEL------P"))
         ));
 
         countries.add(new Country(
@@ -253,7 +253,7 @@ public final class RegionConfig {
                 Locale.forLanguageTag("sk-SK"),
                 1.0,
                 "€/kWh",
-                Arrays.asList(area("SK", "Slovakia", "10YSK-SEPS-----K"))
+                List.of(area("SK", "Slovakia", "10YSK-SEPS-----K"))
         ));
 
         countries.add(new Country(
@@ -266,7 +266,7 @@ public final class RegionConfig {
                 Locale.forLanguageTag("hu-HU"),
                 1.0,
                 "HUF/kWh",
-                Arrays.asList(area("HU", "Hungary", "10YHU-MAVIR----U"))
+                List.of(area("HU", "Hungary", "10YHU-MAVIR----U"))
         ));
 
         countries.add(new Country(
@@ -279,7 +279,7 @@ public final class RegionConfig {
                 Locale.forLanguageTag("hr-HR"),
                 1.0,
                 "€/kWh",
-                Arrays.asList(area("HR", "Croatia", "10YHR-HEP------M"))
+                List.of(area("HR", "Croatia", "10YHR-HEP------M"))
         ));
 
         countries.add(new Country(
@@ -292,7 +292,7 @@ public final class RegionConfig {
                 Locale.forLanguageTag("sl-SI"),
                 1.0,
                 "€/kWh",
-                Arrays.asList(area("SI", "Slovenia", "10YSI-ELES-----O"))
+                List.of(area("SI", "Slovenia", "10YSI-ELES-----O"))
         ));
 
         countries.add(new Country(
@@ -305,7 +305,7 @@ public final class RegionConfig {
                 Locale.forLanguageTag("el-GR"),
                 1.0,
                 "€/kWh",
-                Arrays.asList(area("GR", "Greece", "10YGR-HTSO-----Y"))
+                List.of(area("GR", "Greece", "10YGR-HTSO-----Y"))
         ));
 
         countries.add(new Country(
@@ -318,7 +318,7 @@ public final class RegionConfig {
                 Locale.forLanguageTag("de-AT"),
                 1.0,
                 "€/kWh",
-                Arrays.asList(area("AT", "Austria", "10YAT-APG------L"))
+                List.of(area("AT", "Austria", "10YAT-APG------L"))
         ));
 
         countries.add(new Country(
@@ -331,7 +331,7 @@ public final class RegionConfig {
                 Locale.forLanguageTag("cs-CZ"),
                 1.0,
                 "CZK/kWh",
-                Arrays.asList(area("CZ", "Czech Republic", "10YCZ-CEPS-----N"))
+                List.of(area("CZ", "Czech Republic", "10YCZ-CEPS-----N"))
         ));
 
         countries.add(new Country(
@@ -342,9 +342,9 @@ public final class RegionConfig {
                 "CHF",
                 ZoneId.of("Europe/Zurich"),
                 Locale.forLanguageTag("de-CH"),
-                1.0,
-                "CHF/kWh",
-                Arrays.asList(area("CH", "Switzerland", "10YCH-SWISSGRIDZ"))
+                100.0,
+                "Rp./kWh",
+                List.of(area("CH", "Switzerland", "10YCH-SWISSGRIDZ"))
         ));
 
         countries.add(new Country(
@@ -412,7 +412,7 @@ public final class RegionConfig {
                 Locale.forLanguageTag("nl-NL"),
                 1.0,
                 "€/kWh",
-                Arrays.asList(area("NL", "Netherlands", "10YNL----------L"))
+                List.of(area("NL", "Netherlands", "10YNL----------L"))
         ));
 
         countries.add(new Country(
@@ -425,7 +425,7 @@ public final class RegionConfig {
                 Locale.forLanguageTag("nl-BE"),
                 1.0,
                 "€/kWh",
-                Arrays.asList(area("BE", "Belgium", "10YBE----------2"))
+                List.of(area("BE", "Belgium", "10YBE----------2"))
         ));
 
         countries.add(new Country(
@@ -438,7 +438,7 @@ public final class RegionConfig {
                 Locale.forLanguageTag("pt-PT"),
                 1.0,
                 "€/kWh",
-                Arrays.asList(area("PT", "Portugal", "10YPT-REN------W"))
+                List.of(area("PT", "Portugal", "10YPT-REN------W"))
         ));
 
         countries.add(new Country(
@@ -451,7 +451,7 @@ public final class RegionConfig {
                 Locale.forLanguageTag("es-ES"),
                 1.0,
                 "€/kWh",
-                Arrays.asList(area("ES", "Spain", "10YES-REE------0"))
+                List.of(area("ES", "Spain", "10YES-REE------0"))
         ));
 
         countries.add(new Country(
@@ -464,7 +464,7 @@ public final class RegionConfig {
                 Locale.forLanguageTag("fi-FI"),
                 100.0,
                 "c/kWh",
-                Arrays.asList(area("FI", "Finland", "10YFI-1--------U"))
+                List.of(area("FI", "Finland", "10YFI-1--------U"))
         ));
 
         countries.add(new Country(
@@ -496,7 +496,7 @@ public final class RegionConfig {
                 Locale.FRANCE,
                 1.0,
                 "€/kWh",
-                Arrays.asList(area("FR", "France", "10YFR-RTE------C"))
+                List.of(area("FR", "France", "10YFR-RTE------C"))
         ));
 
         countries.sort(Comparator.comparing(Country::getDisplayName, String.CASE_INSENSITIVE_ORDER));

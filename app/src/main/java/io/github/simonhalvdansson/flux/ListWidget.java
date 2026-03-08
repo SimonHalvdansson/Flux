@@ -81,7 +81,7 @@ public class ListWidget extends AppWidgetProvider {
         views.setViewVisibility(R.id.current_price_imageview, View.VISIBLE);
         views.setViewVisibility(R.id.current_price_unit, View.VISIBLE);
 
-        String unitText = PriceDisplayUtils.getUnitText(country);
+        String unitText = PriceDisplayUtils.getUnitText(country, prefs);
         views.setTextViewText(R.id.current_price_unit, unitText);
 
         if (apiError || combinedJson == null || combinedJson.trim().isEmpty()) {
@@ -101,7 +101,7 @@ public class ListWidget extends AppWidgetProvider {
 
         PriceFetcher.PriceEntry currentEntry = allData.get(currentIndex);
         double currentPrice = currentEntry.pricePerKwh;
-        String priceText = PriceDisplayUtils.formatPrice(currentPrice, country);
+        String priceText = PriceDisplayUtils.formatPrice(currentPrice, country, prefs);
         views.setTextViewText(R.id.current_price_imageview, priceText);
 
         ZonedDateTime start = currentEntry.startTime.atZoneSameInstant(ZoneId.systemDefault());

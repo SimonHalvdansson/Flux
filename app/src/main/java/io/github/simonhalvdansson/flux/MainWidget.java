@@ -149,10 +149,10 @@ public class MainWidget extends AppWidgetProvider {
         // set padding to 12dp if < 120dp
         if (shortWidget) {
             views.setViewPadding(R.id.widget_root, dp16, dp10, dp16, dp10);
-            views.setViewPadding(R.id.widget_time_container, 0, dp1, 0, 0); // “top margin” ≈ top padding
+            views.setViewPadding(R.id.widget_time_container, 0, dp1, 0, 0); // ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“top marginÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â°Ãƒâ€¹Ã¢â‚¬Â  top padding
         } else {
             views.setViewPadding(R.id.widget_root, dp16, dp16, dp16, dp16);
-            views.setViewPadding(R.id.widget_time_container, 0, dp4, 0, 0); // “top margin” ≈ top padding
+            views.setViewPadding(R.id.widget_time_container, 0, dp4, 0, 0); // ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“top marginÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â°Ãƒâ€¹Ã¢â‚¬Â  top padding
 
         }
 
@@ -164,7 +164,7 @@ public class MainWidget extends AppWidgetProvider {
         }
 
         String country = prefs.getString(PriceUpdateJobService.KEY_SELECTED_COUNTRY, "NO");
-        String unitText = PriceDisplayUtils.getUnitText(country);
+        String unitText = PriceDisplayUtils.getUnitText(country, prefs);
         views.setTextViewText(R.id.current_price_unit, unitText);
 
         // Parse JSON
@@ -256,7 +256,7 @@ public class MainWidget extends AppWidgetProvider {
         if (maxEntry != null) {
             ZonedDateTime s = maxEntry.startTime.atZoneSameInstant(ZoneId.systemDefault());
             ZonedDateTime eTime = maxEntry.endTime.atZoneSameInstant(ZoneId.systemDefault());
-            String maxPriceText = PriceDisplayUtils.formatPrice(maxEntry.pricePerKwh, country);
+            String maxPriceText = PriceDisplayUtils.formatPrice(maxEntry.pricePerKwh, country, prefs);
             maxText = String.format("\u2191 %s %s", maxPriceText, formatTimeRange(s, eTime));
         }
 
@@ -264,7 +264,7 @@ public class MainWidget extends AppWidgetProvider {
         if (minEntry != null) {
             ZonedDateTime s = minEntry.startTime.atZoneSameInstant(ZoneId.systemDefault());
             ZonedDateTime eTime = minEntry.endTime.atZoneSameInstant(ZoneId.systemDefault());
-            String minPriceText = PriceDisplayUtils.formatPrice(minEntry.pricePerKwh, country);
+            String minPriceText = PriceDisplayUtils.formatPrice(minEntry.pricePerKwh, country, prefs);
             minText = String.format("\u2193 %s %s", minPriceText, formatTimeRange(s, eTime));
         }
 
@@ -334,7 +334,7 @@ public class MainWidget extends AppWidgetProvider {
         }
 
         double currentPrice = currentEntry.pricePerKwh;
-        String priceText = PriceDisplayUtils.formatPrice(currentPrice, country);
+        String priceText = PriceDisplayUtils.formatPrice(currentPrice, country, prefs);
         views.setTextViewText(R.id.current_price_imageview, priceText);
 
         ZonedDateTime currentStart = currentEntry.startTime.atZoneSameInstant(ZoneId.systemDefault());
