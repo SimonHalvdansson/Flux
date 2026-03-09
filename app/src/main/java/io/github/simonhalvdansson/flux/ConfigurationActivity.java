@@ -115,6 +115,8 @@ public class ConfigurationActivity extends AppCompatActivity {
             int barPoolMode = WidgetPreferences.getMainBarPoolMode(prefs);
             barPoolToggleGroup.check(barPoolMode == WidgetPreferences.POOL_MODE_MIN
                     ? R.id.bar_pool_min_button
+                    : barPoolMode == WidgetPreferences.POOL_MODE_MAX
+                    ? R.id.bar_pool_max_button
                     : R.id.bar_pool_average_button);
             updateBarPoolVisibility(barPoolContainer, chartMode);
 
@@ -133,6 +135,8 @@ public class ConfigurationActivity extends AppCompatActivity {
                 }
                 int poolMode = checkedId == R.id.bar_pool_min_button
                         ? WidgetPreferences.POOL_MODE_MIN
+                        : checkedId == R.id.bar_pool_max_button
+                        ? WidgetPreferences.POOL_MODE_MAX
                         : WidgetPreferences.POOL_MODE_AVERAGE;
                 prefs.edit().putInt(WidgetPreferences.KEY_MAIN_BAR_POOL_MODE, poolMode).apply();
             });
