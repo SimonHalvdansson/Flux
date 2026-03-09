@@ -155,6 +155,7 @@ public class MainActivity extends AppCompatActivity {
         configureAppIconShadow(appIconView);
         configureBarShadows();
         applyWindowInsets();
+        setupAboutButton();
 
         preferenceChangeListener = (prefs, key) -> {
             if (PriceRepository.KEY_JSON_DATA.equals(key)
@@ -1075,6 +1076,11 @@ public class MainActivity extends AppCompatActivity {
                     )
             );
         });
+    }
+
+    private void setupAboutButton() {
+        findViewById(R.id.about_button).setOnClickListener(v ->
+                new AboutDialogFragment().show(getSupportFragmentManager(), "about_dialog"));
     }
 
     private void showInfoDialog(int titleResId, String message) {

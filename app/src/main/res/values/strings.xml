@@ -28,6 +28,13 @@
     <string name="vat_info_message">Adds the current VAT or energy tax rate (%1$s percent) to the spot price before the grid fee is added.</string>
     <string name="grid_fee_info_title">Grid fee</string>
     <string name="grid_fee_info_message">Adds a fixed surcharge to every displayed kWh price. Enter the value in the same unit currently shown in the app, such as %1$s.</string>
+    <string name="about_button_label">About</string>
+    <string name="about_version_format">Version %1$s</string>
+    <string name="about_description">Flux is a compact electricity price app for quickly checking the current spot price, browsing the next hours, and configuring homescreen widgets without extra clutter.</string>
+    <string name="about_libraries_title">Libraries</string>
+    <string name="about_library_material">&#8226; Material Components by Google</string>
+    <string name="about_library_androidx_core">&#8226; AndroidX Core KTX by Google</string>
+    <string name="about_library_okhttp">&#8226; OkHttp by Square</string>
     <string name="main_chart_mode_title">Display mode</string>
     <string name="main_bar_pool_title">Bar pooling</string>
     <string name="widget_settings_title">Widget settings</string>
