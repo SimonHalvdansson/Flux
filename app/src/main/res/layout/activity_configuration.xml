@@ -223,6 +223,15 @@
                         app:singleSelection="true">
 
                         <com.google.android.material.button.MaterialButton
+                            android:id="@+id/list_pool_min_button"
+                            style="?attr/materialButtonOutlinedStyle"
+                            android:layout_width="0dp"
+                            android:layout_height="56dp"
+                            android:layout_weight="1"
+                            android:fontFamily="@font/productsans_bold"
+                            android:text="@string/pool_min" />
+
+                        <com.google.android.material.button.MaterialButton
                             android:id="@+id/list_pool_average_button"
                             style="?attr/materialButtonOutlinedStyle"
                             android:layout_width="0dp"
@@ -232,13 +241,13 @@
                             android:text="@string/pool_average" />
 
                         <com.google.android.material.button.MaterialButton
-                            android:id="@+id/list_pool_min_button"
+                            android:id="@+id/list_pool_max_button"
                             style="?attr/materialButtonOutlinedStyle"
                             android:layout_width="0dp"
                             android:layout_height="56dp"
                             android:layout_weight="1"
                             android:fontFamily="@font/productsans_bold"
-                            android:text="@string/pool_min" />
+                            android:text="@string/pool_max" />
                     </com.google.android.material.button.MaterialButtonToggleGroup>
                 </LinearLayout>
             </LinearLayout>

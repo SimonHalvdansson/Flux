@@ -1,5 +1,6 @@
 package io.github.simonhalvdansson.flux;
 
+import android.animation.ValueAnimator;
 import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProviderInfo;
 import android.content.ComponentName;
@@ -19,10 +20,14 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.interpolator.view.animation.FastOutSlowInInterpolator;
 
 import com.google.android.material.button.MaterialButtonToggleGroup;
 
 public class ConfigurationActivity extends AppCompatActivity {
+    private static final long SECTION_VISIBILITY_ANIMATION_MS = 180L;
+    private static final FastOutSlowInInterpolator SECTION_VISIBILITY_INTERPOLATOR =
+            new FastOutSlowInInterpolator();
 
     private int appWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID;
     private boolean isListWidget;
@@ -83,6 +88,8 @@ public class ConfigurationActivity extends AppCompatActivity {
             int listPoolMode = WidgetPreferences.getListPoolMode(prefs);
             listPoolToggleGroup.check(listPoolMode == WidgetPreferences.POOL_MODE_MIN
                     ? R.id.list_pool_min_button
+                    : listPoolMode == WidgetPreferences.POOL_MODE_MAX
+                    ? R.id.list_pool_max_button
                     : R.id.list_pool_average_button);
             updateListPoolVisibility(listPoolContainer, incrementMinutes, false);
 
@@ -101,6 +108,8 @@ public class ConfigurationActivity extends AppCompatActivity {
                 }
                 int poolMode = checkedId == R.id.list_pool_min_button
                         ? WidgetPreferences.POOL_MODE_MIN
+                        : checkedId == R.id.list_pool_max_button
+                        ? WidgetPreferences.POOL_MODE_MAX
                         : WidgetPreferences.POOL_MODE_AVERAGE;
                 prefs.edit().putInt(WidgetPreferences.KEY_LIST_POOL_MODE, poolMode).apply();
             });
@@ -118,7 +127,7 @@ public class ConfigurationActivity extends AppCompatActivity {
                     : barPoolMode == WidgetPreferences.POOL_MODE_MAX
                     ? R.id.bar_pool_max_button
                     : R.id.bar_pool_average_button);
-            updateBarPoolVisibility(barPoolContainer, chartMode);
+            updateBarPoolVisibility(barPoolContainer, chartMode, false);
 
             chartToggleGroup.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
                 if (!isChecked) {
@@ -126,7 +135,7 @@ public class ConfigurationActivity extends AppCompatActivity {
                 }
                 int mode = getChartModeForButton(checkedId);
                 prefs.edit().putInt(PriceUpdateJobService.KEY_CHART_MODE, mode).apply();
-                updateBarPoolVisibility(barPoolContainer, mode);
+                updateBarPoolVisibility(barPoolContainer, mode, true);
             });
 
             barPoolToggleGroup.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
@@ -167,8 +176,8 @@ public class ConfigurationActivity extends AppCompatActivity {
         ViewCompat.requestApplyInsets(root);
     }
 
-    private void updateBarPoolVisibility(View container, int chartMode) {
-        container.setVisibility(chartMode == WidgetPreferences.CHART_MODE_BARS ? View.VISIBLE : View.GONE);
+    private void updateBarPoolVisibility(View container, int chartMode, boolean animate) {
+        updateSectionVisibility(container, chartMode == WidgetPreferences.CHART_MODE_BARS, animate);
     }
 
     private int getChartButtonId(int chartMode) {
@@ -212,6 +221,125 @@ public class ConfigurationActivity extends AppCompatActivity {
         } else {
             container.setAlpha(targetAlpha);
             setViewEnabled(container, enabled);
+        }
+    }
+
+    private void updateSectionVisibility(View container, boolean visible, boolean animate) {
+        container.animate().cancel();
+        ValueAnimator runningAnimator = (ValueAnimator) container.getTag(R.id.done_button);
+        if (runningAnimator != null) {
+            runningAnimator.cancel();
+            container.setTag(R.id.done_button, null);
+        }
+
+        if (!animate) {
+            ViewGroup.LayoutParams params = container.getLayoutParams();
+            params.height = ViewGroup.LayoutParams.WRAP_CONTENT;
+            container.setLayoutParams(params);
+            container.setAlpha(visible ? 1f : 0f);
+            container.setVisibility(visible ? View.VISIBLE : View.GONE);
+            setViewEnabled(container, visible);
+            return;
+        }
+
+        if (visible) {
+            expandSection(container);
+        } else {
+            collapseSection(container);
+        }
+    }
+
+    private void expandSection(View container) {
+        container.setVisibility(View.VISIBLE);
+        setViewEnabled(container, true);
+
+        int widthSpec = View.MeasureSpec.makeMeasureSpec(
+                ((View) container.getParent()).getWidth(),
+                View.MeasureSpec.AT_MOST
+        );
+        int heightSpec = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED);
+        container.measure(widthSpec, heightSpec);
+        int targetHeight = container.getMeasuredHeight();
+
+        ViewGroup.LayoutParams params = container.getLayoutParams();
+        params.height = 0;
+        container.setLayoutParams(params);
+        container.setAlpha(0f);
+
+        ValueAnimator animator = ValueAnimator.ofInt(0, targetHeight);
+        animator.setDuration(SECTION_VISIBILITY_ANIMATION_MS);
+        animator.setInterpolator(SECTION_VISIBILITY_INTERPOLATOR);
+        animator.addUpdateListener(valueAnimator -> {
+            params.height = (int) valueAnimator.getAnimatedValue();
+            container.setLayoutParams(params);
+            container.setAlpha(valueAnimator.getAnimatedFraction());
+        });
+        animator.addListener(new SimpleAnimatorListener() {
+            @Override
+            public void onAnimationEnd(android.animation.Animator animation) {
+                params.height = ViewGroup.LayoutParams.WRAP_CONTENT;
+                container.setLayoutParams(params);
+                container.setAlpha(1f);
+                container.setTag(R.id.done_button, null);
+            }
+
+            @Override
+            public void onAnimationCancel(android.animation.Animator animation) {
+                container.setTag(R.id.done_button, null);
+            }
+        });
+        container.setTag(R.id.done_button, animator);
+        animator.start();
+    }
+
+    private void collapseSection(View container) {
+        int initialHeight = container.getHeight();
+        if (initialHeight <= 0) {
+            container.setAlpha(0f);
+            container.setVisibility(View.GONE);
+            setViewEnabled(container, false);
+            return;
+        }
+
+        ViewGroup.LayoutParams params = container.getLayoutParams();
+        params.height = initialHeight;
+        container.setLayoutParams(params);
+
+        ValueAnimator animator = ValueAnimator.ofInt(initialHeight, 0);
+        animator.setDuration(SECTION_VISIBILITY_ANIMATION_MS);
+        animator.setInterpolator(SECTION_VISIBILITY_INTERPOLATOR);
+        animator.addUpdateListener(valueAnimator -> {
+            params.height = (int) valueAnimator.getAnimatedValue();
+            container.setLayoutParams(params);
+            container.setAlpha(1f - valueAnimator.getAnimatedFraction());
+        });
+        animator.addListener(new SimpleAnimatorListener() {
+            @Override
+            public void onAnimationEnd(android.animation.Animator animation) {
+                params.height = ViewGroup.LayoutParams.WRAP_CONTENT;
+                container.setLayoutParams(params);
+                container.setAlpha(0f);
+                container.setVisibility(View.GONE);
+                setViewEnabled(container, false);
+                container.setTag(R.id.done_button, null);
+            }
+
+            @Override
+            public void onAnimationCancel(android.animation.Animator animation) {
+                container.setTag(R.id.done_button, null);
+            }
+        });
+        container.setTag(R.id.done_button, animator);
+        animator.start();
+    }
+
+    private abstract static class SimpleAnimatorListener implements android.animation.Animator.AnimatorListener {
+        @Override
+        public void onAnimationStart(android.animation.Animator animation) {
+        }
+
+        @Override
+        public void onAnimationRepeat(android.animation.Animator animation) {
         }
     }
 

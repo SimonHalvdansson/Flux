@@ -10,7 +10,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.DialogFragment;
 
-import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 public class InfoDialogFragment extends DialogFragment {
@@ -35,14 +34,13 @@ public class InfoDialogFragment extends DialogFragment {
         Bundle args = requireArguments();
         TextView titleView = contentView.findViewById(R.id.info_dialog_title);
         TextView messageView = contentView.findViewById(R.id.info_dialog_message);
-        MaterialButton closeButton = contentView.findViewById(R.id.info_dialog_close_button);
 
         titleView.setText(args.getString(ARG_TITLE));
         messageView.setText(args.getString(ARG_MESSAGE));
-        closeButton.setOnClickListener(v -> dismiss());
 
         return new MaterialAlertDialogBuilder(requireContext())
                 .setView(contentView)
+                .setPositiveButton(android.R.string.ok, null)
                 .create();
     }
 }
