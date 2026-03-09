@@ -297,18 +297,22 @@ public class GraphUtils {
         OffsetDateTime windowStart = data.get(0).startTime;
         OffsetDateTime windowEnd = data.get(data.size() - 1).endTime;
         long totalMinutes = Math.max(1L, Duration.between(windowStart, windowEnd).toMinutes());
+        ZonedDateTime now = ZonedDateTime.now(ZoneId.systemDefault());
+
+        int colorPast = ContextCompat.getColor(context, android.R.color.system_accent3_200);
+        int colorCurrent = ContextCompat.getColor(context, android.R.color.system_accent3_700);
+        int colorFuture = ContextCompat.getColor(context, android.R.color.system_accent3_500);
 
         Paint line = new Paint(Paint.ANTI_ALIAS_FLAG);
         line.setStyle(Paint.Style.STROKE);
         line.setStrokeWidth(lineWidthPx);
         line.setStrokeCap(Paint.Cap.BUTT);
         line.setStrokeJoin(Paint.Join.MITER);
-        line.setColor(ContextCompat.getColor(context, R.color.main_lines_chart));
 
         Paint guide = new Paint(Paint.ANTI_ALIAS_FLAG);
         guide.setStyle(Paint.Style.STROKE);
         guide.setStrokeWidth(Math.max(1f, lineWidthPx * 0.55f));
-        guide.setColor(ContextCompat.getColor(context, R.color.main_lines_chart_guide));
+        guide.setAlpha(128);
 
         for (int i = 0; i < data.size(); i++) {
             PriceFetcher.PriceEntry entry = data.get(i);
@@ -318,17 +322,28 @@ public class GraphUtils {
             float endX = leftX + (usableW * endFraction);
             float y = bottomY - ((float) entry.pricePerKwh / (float) maxPrice) * usableH;
             y = Math.max(topY, Math.min(bottomY, y));
+            ZonedDateTime start = entry.startTime.atZoneSameInstant(ZoneId.systemDefault());
+            ZonedDateTime end = entry.endTime.atZoneSameInstant(ZoneId.systemDefault());
+            boolean isCurrent = (now.isEqual(start) || now.isAfter(start)) && now.isBefore(end);
+            boolean isPast = now.isAfter(end);
+            int segmentColor = isCurrent ? colorCurrent : (isPast ? colorPast : colorFuture);
 
-            OffsetDateTime localStart = entry.startTime.atZoneSameInstant(ZoneId.systemDefault()).toOffsetDateTime();
-            if (localStart.getMinute() == 0) {
+            if (start.getMinute() == 0) {
+                guide.setColor(isPast ? colorPast : colorFuture);
                 canvas.drawLine(startX, bottomY, startX, y, guide);
             }
+            line.setColor(segmentColor);
             canvas.drawLine(startX, y, endX, y, line);
 
             if (i < data.size() - 1) {
                 PriceFetcher.PriceEntry next = data.get(i + 1);
                 float nextY = bottomY - ((float) next.pricePerKwh / (float) maxPrice) * usableH;
                 nextY = Math.max(topY, Math.min(bottomY, nextY));
+                ZonedDateTime nextStart = next.startTime.atZoneSameInstant(ZoneId.systemDefault());
+                ZonedDateTime nextEnd = next.endTime.atZoneSameInstant(ZoneId.systemDefault());
+                boolean nextIsCurrent = (now.isEqual(nextStart) || now.isAfter(nextStart)) && now.isBefore(nextEnd);
+                boolean nextIsPast = now.isAfter(nextEnd);
+                line.setColor(nextIsCurrent ? colorCurrent : (nextIsPast ? colorPast : colorFuture));
                 canvas.drawLine(endX, y, endX, nextY, line);
             }
         }
@@ -341,4 +356,3 @@ public class GraphUtils {
 
 
 }
-
