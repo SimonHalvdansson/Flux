@@ -413,16 +413,17 @@ public class MainActivity extends AppCompatActivity {
 
     private void applyWindowInsets() {
         View root = findViewById(R.id.main_container);
-        int padStart = root.getPaddingStart();
-        int padTop = root.getPaddingTop();
-        int padEnd = root.getPaddingEnd();
-        int padBottom = root.getPaddingBottom();
+        View content = findViewById(R.id.main_content);
+        int padStart = content.getPaddingStart();
+        int padTop = content.getPaddingTop();
+        int padEnd = content.getPaddingEnd();
+        int padBottom = content.getPaddingBottom();
 
         ViewCompat.setOnApplyWindowInsetsListener(root, (view, insets) -> {
             Insets safeArea = insets.getInsets(
                     WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout()
             );
-            root.setPaddingRelative(
+            content.setPaddingRelative(
                     padStart + safeArea.left,
                     padTop + safeArea.top,
                     padEnd + safeArea.right,
