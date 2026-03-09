@@ -36,7 +36,6 @@ import androidx.interpolator.view.animation.LinearOutSlowInInterpolator;
 
 import com.google.android.material.button.MaterialButtonToggleGroup;
 import com.google.android.material.color.MaterialColors;
-import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.materialswitch.MaterialSwitch;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
@@ -1084,11 +1083,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void showInfoDialog(int titleResId, String message) {
-        new MaterialAlertDialogBuilder(this)
-                .setTitle(titleResId)
-                .setMessage(message)
-                .setPositiveButton(android.R.string.ok, null)
-                .show();
+        InfoDialogFragment.newInstance(getString(titleResId), message)
+                .show(getSupportFragmentManager(), "info_dialog");
     }
 
     private String getSelectedCountryCode() {
