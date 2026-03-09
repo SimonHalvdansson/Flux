@@ -92,6 +92,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView currentPriceValue;
     private TextView currentPriceUnit;
     private TextView todayAverageValue;
+    private TextView tomorrowAverageValue;
     private View chartContainer;
     private LinearLayout barChartContainer;
     private ImageView graphImageView;
@@ -140,6 +141,7 @@ public class MainActivity extends AppCompatActivity {
         currentPriceValue = findViewById(R.id.current_price_value);
         currentPriceUnit = findViewById(R.id.current_price_unit);
         todayAverageValue = findViewById(R.id.today_average_value);
+        tomorrowAverageValue = findViewById(R.id.tomorrow_average_value);
         chartContainer = findViewById(R.id.bar_chart_section);
         barChartContainer = findViewById(R.id.bar_chart_container);
         graphImageView = findViewById(R.id.graph_image);
@@ -555,7 +557,7 @@ public class MainActivity extends AppCompatActivity {
             clearChartData();
             cancelBarAnimation();
             chartContainer.setVisibility(View.GONE);
-            todayAverageValue.setText(R.string.today_average_unavailable);
+            renderAverageSummaries(new ArrayList<>());
             return;
         }
 
@@ -564,7 +566,7 @@ public class MainActivity extends AppCompatActivity {
             clearChartData();
             cancelBarAnimation();
             chartContainer.setVisibility(View.GONE);
-            todayAverageValue.setText(R.string.today_average_unavailable);
+            renderAverageSummaries(hourlyData);
             return;
         }
 
@@ -627,7 +629,7 @@ public class MainActivity extends AppCompatActivity {
 
         logChartDiagnostics(allData, hourlyData, graphDisplayEntries, chartMode);
         updateTimeLabels(displayedBarEntries);
-        renderTodayAverage(hourlyData);
+        renderAverageSummaries(hourlyData);
     }
 
     private void clearChartData() {
@@ -966,30 +968,52 @@ public class MainActivity extends AppCompatActivity {
         return WidgetPreferences.POOL_MODE_AVERAGE;
     }
 
-    private void renderTodayAverage(List<PriceFetcher.PriceEntry> hourlyData) {
+    private void renderAverageSummaries(List<PriceFetcher.PriceEntry> hourlyData) {
         String country = sharedPreferences.getString(PriceUpdateJobService.KEY_SELECTED_COUNTRY, "NO");
-        LocalDate today = LocalDate.now(ZoneId.systemDefault());
-        double total = 0.0;
-        int count = 0;
+        ZoneId zoneId = ZoneId.systemDefault();
+        LocalDate today = LocalDate.now(zoneId);
+        LocalDate tomorrow = today.plusDays(1);
+
+        double todayTotal = 0.0;
+        int todayCount = 0;
+        double tomorrowTotal = 0.0;
+        int tomorrowCount = 0;
 
         for (PriceFetcher.PriceEntry entry : hourlyData) {
-            if (entry.startTime != null && today.equals(entry.startTime.atZoneSameInstant(ZoneId.systemDefault()).toLocalDate())) {
-                total += entry.pricePerKwh;
-                count++;
+            if (entry.startTime == null) {
+                continue;
+            }
+            LocalDate entryDate = entry.startTime.atZoneSameInstant(zoneId).toLocalDate();
+            if (today.equals(entryDate)) {
+                todayTotal += entry.pricePerKwh;
+                todayCount++;
+            } else if (tomorrow.equals(entryDate)) {
+                tomorrowTotal += entry.pricePerKwh;
+                tomorrowCount++;
             }
         }
 
-        if (count == 0) {
+        if (todayCount == 0) {
             todayAverageValue.setText(R.string.today_average_unavailable);
-            return;
+        } else {
+            String averageText = getString(
+                    R.string.today_average_format,
+                    PriceDisplayUtils.formatPrice(todayTotal / todayCount, country, sharedPreferences),
+                    PriceDisplayUtils.getUnitText(country, sharedPreferences)
+            );
+            todayAverageValue.setText(averageText);
         }
 
-        String averageText = getString(
-                R.string.today_average_format,
-                PriceDisplayUtils.formatPrice(total / count, country, sharedPreferences),
-                PriceDisplayUtils.getUnitText(country, sharedPreferences)
-        );
-        todayAverageValue.setText(averageText);
+        if (tomorrowCount == 0) {
+            tomorrowAverageValue.setText(R.string.tomorrow_average_pending);
+        } else {
+            String tomorrowText = getString(
+                    R.string.tomorrow_average_format,
+                    PriceDisplayUtils.formatPrice(tomorrowTotal / tomorrowCount, country, sharedPreferences),
+                    PriceDisplayUtils.getUnitText(country, sharedPreferences)
+            );
+            tomorrowAverageValue.setText(tomorrowText);
+        }
     }
 
     private void animateBars(int[] targetHeightsPx, int visibleBarCount) {

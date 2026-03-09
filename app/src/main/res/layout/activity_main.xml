@@ -244,6 +244,15 @@
                     android:fontFamily="@font/productsans_medium"
                     android:text="@string/today_average_unavailable"
                     android:textSize="14sp" />
+
+                <TextView
+                    android:id="@+id/tomorrow_average_value"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:fontFamily="@font/productsans_medium"
+                    android:text="@string/tomorrow_average_pending"
+                    android:textSize="14sp" />
             </LinearLayout>
 
             <include layout="@layout/view_app_settings" />
