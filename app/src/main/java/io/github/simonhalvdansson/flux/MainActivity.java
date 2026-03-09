@@ -12,10 +12,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.Editable;
-import android.text.SpannableStringBuilder;
-import android.text.Spanned;
 import android.text.TextWatcher;
-import android.text.style.RelativeSizeSpan;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.Gravity;
@@ -56,7 +53,6 @@ import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
-    private static final float MAIN_PRICE_UNIT_RELATIVE_SIZE = 14f / 34f;
     private static final String KEY_MAIN_ACTIVITY_CHART_MODE = "main_activity_chart_mode";
     private static final String KEY_MAIN_ACTIVITY_BAR_POOL_MODE = "main_activity_bar_pool_mode";
     private static final int MAIN_CHART_MODE_BARS = 0;
@@ -95,6 +91,7 @@ public class MainActivity extends AppCompatActivity {
 
     private TextView currentPriceLabel;
     private TextView currentPriceValue;
+    private TextView currentPriceUnit;
     private TextView todayAverageValue;
     private View chartContainer;
     private LinearLayout barChartContainer;
@@ -142,6 +139,7 @@ public class MainActivity extends AppCompatActivity {
         ImageView appIconView = findViewById(R.id.app_icon);
         currentPriceLabel = findViewById(R.id.current_price_label);
         currentPriceValue = findViewById(R.id.current_price_value);
+        currentPriceUnit = findViewById(R.id.current_price_unit);
         todayAverageValue = findViewById(R.id.today_average_value);
         chartContainer = findViewById(R.id.bar_chart_section);
         barChartContainer = findViewById(R.id.bar_chart_container);
@@ -523,35 +521,26 @@ public class MainActivity extends AppCompatActivity {
                 end.getMinute()
         );
     }
-    private CharSequence formatCurrentPriceText(String formattedPrice, String unitText) {
-        if (formattedPrice == null || formattedPrice.isEmpty()) {
-            return "";
-        }
-        if (unitText == null || unitText.isEmpty()) {
-            return formattedPrice;
-        }
-
-        SpannableStringBuilder text = new SpannableStringBuilder(formattedPrice)
-                .append(" ")
-                .append(unitText);
-        int unitStart = formattedPrice.length() + 1;
-        text.setSpan(
-                new RelativeSizeSpan(MAIN_PRICE_UNIT_RELATIVE_SIZE),
-                unitStart,
-                text.length(),
-                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-        );
-        return text;
-    }
     private void renderCurrentPrice() {
         updateCurrentPriceLabel();
         CurrentPriceResolver.Snapshot snapshot = CurrentPriceResolver.resolve(this);
         if (snapshot.hasData) {
-            currentPriceValue.setText(formatCurrentPriceText(snapshot.formattedPrice, snapshot.unitText));
+            currentPriceValue.setText(snapshot.formattedPrice);
+            if (snapshot.unitText != null && !snapshot.unitText.isEmpty()) {
+                currentPriceUnit.setText(snapshot.unitText);
+                currentPriceUnit.setVisibility(View.VISIBLE);
+            } else {
+                currentPriceUnit.setText("");
+                currentPriceUnit.setVisibility(View.GONE);
+            }
         } else if (snapshot.apiError) {
             currentPriceValue.setText(R.string.current_price_unavailable);
+            currentPriceUnit.setText("");
+            currentPriceUnit.setVisibility(View.GONE);
         } else {
             currentPriceValue.setText(R.string.current_price_loading);
+            currentPriceUnit.setText("");
+            currentPriceUnit.setVisibility(View.GONE);
         }
 
         renderBarChart();

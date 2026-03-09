@@ -58,16 +58,34 @@
                         android:fontFamily="@font/productsans_bold"
                         android:textSize="14sp" />
 
-                    <TextView
-                        tools:text="1,12 kr/kWh"
-                        android:id="@+id/current_price_value"
+                    <LinearLayout
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="0dp"
-                        android:fontFamily="@font/productsans_bold"
-                        android:text="@string/current_price_loading"
-                        android:textColor="@color/main_price_emphasis"
-                        android:textSize="42sp" />
+                        android:baselineAligned="true"
+                        android:gravity="bottom"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/current_price_value"
+                            tools:text="1,12"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="@font/productsans_bold"
+                            android:text="@string/current_price_loading"
+                            android:textColor="@color/main_price_emphasis"
+                            android:textSize="45sp" />
+
+                        <TextView
+                            android:id="@+id/current_price_unit"
+                            tools:text="kr/kWh"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="4dp"
+                            android:fontFamily="@font/productsans_bold"
+                            android:textColor="@color/main_price_emphasis"
+                            android:textSize="16sp" />
+                    </LinearLayout>
                 </LinearLayout>
 
                 <FrameLayout
