@@ -21,6 +21,7 @@ import android.view.View;
 import android.view.ViewOutlineProvider;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
@@ -869,26 +870,34 @@ public class MainActivity extends AppCompatActivity {
                 com.google.android.material.R.attr.colorSurfaceContainerHighest
         ));
         background.setCornerRadius(dpToPx(14));
-        background.setStroke(dpToPx(1), MaterialColors.getColor(
-                tooltipView,
-                com.google.android.material.R.attr.colorOutlineVariant
-        ));
         tooltipView.setBackground(background);
+        tooltipView.setElevation(dpToPx(12));
 
-        tooltipView.measure(
+        int shadowPadding = dpToPx(24);
+        FrameLayout tooltipContainer = new FrameLayout(this);
+        tooltipContainer.setClipChildren(false);
+        tooltipContainer.setClipToPadding(false);
+        tooltipContainer.setPadding(shadowPadding, shadowPadding, shadowPadding, shadowPadding);
+        tooltipContainer.addView(tooltipView, new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT
+        ));
+
+        tooltipContainer.measure(
                 View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
                 View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
         );
 
-        chartTooltipPopup = new PopupWindow(tooltipView, -2, -2, false);
+        chartTooltipPopup = new PopupWindow(tooltipContainer, -2, -2, false);
         chartTooltipPopup.setAnimationStyle(R.style.ChartTooltipAnimation);
         chartTooltipPopup.setBackgroundDrawable(new ColorDrawable(android.graphics.Color.TRANSPARENT));
         chartTooltipPopup.setOutsideTouchable(true);
+        chartTooltipPopup.setClippingEnabled(false);
 
         View root = getWindow().getDecorView();
-        int popupWidth = tooltipView.getMeasuredWidth();
-        int popupHeight = tooltipView.getMeasuredHeight();
-        int margin = dpToPx(8);
+        int popupWidth = tooltipContainer.getMeasuredWidth();
+        int popupHeight = tooltipContainer.getMeasuredHeight();
+        int margin = dpToPx(4);
         int x = Math.round(rawX - (popupWidth / 2f));
         x = Math.max(margin, Math.min(x, root.getWidth() - popupWidth - margin));
         int y = Math.round(rawY - popupHeight - dpToPx(TOOLTIP_VERTICAL_OFFSET_DP));
