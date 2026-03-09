@@ -4,12 +4,9 @@ local.properties
 .idea/misc.xml
 /build
 /.gradle
-gradle/wrapper/gradle-wrapper.properties
-gradle/libs.versions.toml
 .idea/misc.xml
 .idea/caches/deviceStreaming.xml
 .idea/AndroidProjectSystem.xml
 /.idea
 .DS_Store
-gradle/wrapper/gradle-wrapper.jar
 gradle/gradle-daemon-jvm.properties
