@@ -7,6 +7,7 @@
     <string name="welcome_text">Welcome to Flux!</string>
     <string name="chart_bars">Bars</string>
     <string name="chart_graph">Graph</string>
+    <string name="chart_lines">Lines</string>
     <string name="current_price_label">Current price</string>
     <string name="current_price_loading">Loading current price...</string>
     <string name="current_price_unavailable">Price unavailable</string>
@@ -18,15 +19,17 @@
     <string name="price_display_label">Price display</string>
     <string name="swiss_price_unit_rappen">Rp./kWh</string>
     <string name="swiss_price_unit_centimes">ct/kWh</string>
-    <string name="stromstotte_label">Strømstøtte (-90 % > 0,77 kr/kWh)</string>
-    <string name="vat_label">VAT (+25 %)</string>
+    <string name="stromstotte_label">Str&#248;mst&#248;tte</string>
+    <string name="vat_label">VAT</string>
     <string name="grid_fee_label">Grid fee</string>
-    <string name="stromstotte_info_title">Stromstotte</string>
+    <string name="stromstotte_info_title">Str&#248;mst&#248;tte</string>
     <string name="stromstotte_info_message">Reduces the part of the spot price above 0.77 kr/kWh by 90 percent before VAT and grid fee are added.</string>
     <string name="vat_info_title">VAT</string>
     <string name="vat_info_message">Adds the current VAT or energy tax rate (%1$s percent) to the spot price before the grid fee is added.</string>
     <string name="grid_fee_info_title">Grid fee</string>
     <string name="grid_fee_info_message">Adds a fixed surcharge to every displayed kWh price. Enter the value in the same unit currently shown in the app, such as %1$s.</string>
+    <string name="main_chart_mode_title">Display mode</string>
+    <string name="main_bar_pool_title">Bar pooling</string>
     <string name="widget_settings_title">Widget settings</string>
     <string name="main_widget_settings_title">Main widget settings</string>
     <string name="list_widget_settings_title">List widget settings</string>
@@ -36,6 +39,7 @@
     <string name="widget_list_pool_title">Pool prices by</string>
     <string name="pool_average">Average</string>
     <string name="pool_min">Min</string>
+    <string name="pool_max">Max</string>
     <string name="increment_15_minutes">15m</string>
     <string name="increment_30_minutes">30m</string>
     <string name="increment_1_hour">1h</string>

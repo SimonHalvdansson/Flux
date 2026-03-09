@@ -80,6 +80,15 @@
                         android:layout_weight="1"
                         android:fontFamily="@font/productsans_bold"
                         android:text="@string/chart_graph" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/chart_lines_button"
+                        style="?attr/materialButtonOutlinedStyle"
+                        android:layout_width="0dp"
+                        android:layout_height="56dp"
+                        android:layout_weight="1"
+                        android:fontFamily="@font/productsans_bold"
+                        android:text="@string/chart_lines" />
                 </com.google.android.material.button.MaterialButtonToggleGroup>
 
                 <LinearLayout

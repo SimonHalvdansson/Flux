@@ -73,4 +73,9 @@
         <item name="android:textSize">10sp</item>
     </style>
 
+    <style name="ChartTooltipAnimation">
+        <item name="android:windowEnterAnimation">@anim/chart_tooltip_fade_in</item>
+        <item name="android:windowExitAnimation">@anim/chart_tooltip_fade_out</item>
+    </style>
+
 </resources>

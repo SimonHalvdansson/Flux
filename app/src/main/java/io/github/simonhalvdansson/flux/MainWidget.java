@@ -139,7 +139,7 @@ public class MainWidget extends AppWidgetProvider {
         boolean shortWidget = hDp > 0 && hDp < 120;
         int barMaxHeightDp = 110;
         if (maxHeightDp > 0) {
-            if (chartMode == 0) { //bar mode
+            if (chartMode == WidgetPreferences.CHART_MODE_BARS) {
                 barMaxHeightDp = shortWidget ? maxHeightDp - 80 : maxHeightDp - 110;
             } else {
                 barMaxHeightDp = shortWidget ? maxHeightDp - 78 : maxHeightDp - 85;
@@ -271,7 +271,7 @@ public class MainWidget extends AppWidgetProvider {
         views.setTextViewText(R.id.max_price_text, maxText);
         views.setTextViewText(R.id.min_price_text, minText);
 
-        if (chartMode == 0) {
+        if (chartMode == WidgetPreferences.CHART_MODE_BARS) {
             views.setViewVisibility(R.id.bar_graph_container, View.VISIBLE);
             views.setViewVisibility(R.id.graph_image, View.GONE);
 
@@ -326,10 +326,22 @@ public class MainWidget extends AppWidgetProvider {
                 graphScaleMax = 1.0;
             }
 
-            Bitmap graphBitmap = GraphUtils.createLineGraphBitmapCubic(
-                    context.getApplicationContext(), graphDisplayList, graphScaleMax,
-                    graphWidthPx, graphHeightPx, now
-            );
+            Bitmap graphBitmap = chartMode == WidgetPreferences.CHART_MODE_LINES
+                    ? GraphUtils.createStepLineGraphBitmap(
+                            context.getApplicationContext(),
+                            graphDisplayList,
+                            graphScaleMax,
+                            graphWidthPx,
+                            graphHeightPx
+                    )
+                    : GraphUtils.createLineGraphBitmapCubic(
+                            context.getApplicationContext(),
+                            graphDisplayList,
+                            graphScaleMax,
+                            graphWidthPx,
+                            graphHeightPx,
+                            now
+                    );
             views.setImageViewBitmap(R.id.graph_image, graphBitmap);
         }
 
@@ -392,7 +404,7 @@ public class MainWidget extends AppWidgetProvider {
             views.setViewVisibility(barId, View.GONE);
         }
 
-        if (chartMode == 0) {
+        if (chartMode == WidgetPreferences.CHART_MODE_BARS) {
             views.setViewVisibility(R.id.bar_graph_container, View.VISIBLE);
             views.setViewVisibility(R.id.graph_image, View.GONE);
         } else {

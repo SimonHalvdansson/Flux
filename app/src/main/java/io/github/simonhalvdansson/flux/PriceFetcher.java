@@ -31,6 +31,7 @@ import okhttp3.ResponseBody;
 public class PriceFetcher {
 
     private static final String TAG = "PriceFetcher";
+    private static final DateTimeFormatter LOG_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
     public static final double VAT_RATE = 1.25;
     public static final double STROMSTOTTE_THRESHOLD = 0.77;
     public static final double STROMSTOTTE_PERCENT = 0.9;
@@ -250,6 +251,7 @@ public class PriceFetcher {
         }
 
         entries.sort(Comparator.comparing(o -> o.startTime));
+        Log.d(TAG, describeEntriesForLog("parseMirrorResponse area=" + areaCode, entries));
         return new MirrorParseResult(entries, apiError);
     }
 
@@ -328,7 +330,82 @@ public class PriceFetcher {
             Log.e(TAG, "JSON parse error in parseCombinedJson()", e);
         }
 
+        Log.d(TAG, describeEntriesForLog("parseCombinedJson", list));
         return list;
+    }
+
+    static String describeEntriesForLog(String label, List<PriceEntry> entries) {
+        StringBuilder sb = new StringBuilder(label);
+        sb.append(" count=").append(entries == null ? 0 : entries.size());
+        if (entries == null || entries.isEmpty()) {
+            return sb.toString();
+        }
+
+        PriceEntry first = entries.get(0);
+        PriceEntry last = entries.get(entries.size() - 1);
+        sb.append(" range=")
+                .append(formatLogTime(first.startTime))
+                .append(" -> ")
+                .append(formatLogTime(last.endTime));
+
+        int anomalyCount = 0;
+        StringBuilder anomalies = new StringBuilder();
+        for (int i = 1; i < entries.size(); i++) {
+            PriceEntry previous = entries.get(i - 1);
+            PriceEntry current = entries.get(i);
+            long expectedMinutes = Duration.between(previous.startTime, previous.endTime).toMinutes();
+            long actualMinutes = Duration.between(previous.startTime, current.startTime).toMinutes();
+            if (expectedMinutes > 0 && actualMinutes != expectedMinutes) {
+                anomalyCount++;
+                if (anomalyCount <= 4) {
+                    if (anomalies.length() == 0) {
+                        anomalies.append(" anomalies=");
+                    } else {
+                        anomalies.append(", ");
+                    }
+                    anomalies.append(formatLogTime(previous.startTime))
+                            .append("->")
+                            .append(formatLogTime(current.startTime))
+                            .append(" actual=")
+                            .append(actualMinutes)
+                            .append("m expected=")
+                            .append(expectedMinutes)
+                            .append("m");
+                }
+            }
+        }
+        if (anomalyCount == 0) {
+            sb.append(" anomalies=none");
+        } else {
+            sb.append(" anomalyCount=").append(anomalyCount).append(anomalies);
+        }
+        return sb.toString();
+    }
+
+    static String describeEntryTimesForLog(List<PriceEntry> entries) {
+        if (entries == null || entries.isEmpty()) {
+            return "[]";
+        }
+
+        StringBuilder sb = new StringBuilder("[");
+        for (int i = 0; i < entries.size(); i++) {
+            if (i > 0) {
+                sb.append(", ");
+            }
+            PriceEntry entry = entries.get(i);
+            sb.append(formatLogTime(entry.startTime))
+                    .append("=")
+                    .append(String.format(java.util.Locale.US, "%.4f", entry.pricePerKwh));
+        }
+        sb.append("]");
+        return sb.toString();
+    }
+
+    private static String formatLogTime(OffsetDateTime time) {
+        if (time == null) {
+            return "null";
+        }
+        return time.atZoneSameInstant(ZoneId.systemDefault()).format(LOG_TIME_FORMATTER);
     }
 
     public static List<PriceEntry> aggregateToHourly(List<PriceEntry> entries) {
@@ -359,6 +436,7 @@ public class PriceFetcher {
         double weightedTotal = 0.0;
         long totalMinutes = 0L;
         double minPrice = Double.POSITIVE_INFINITY;
+        double maxPrice = Double.NEGATIVE_INFINITY;
 
         for (PriceEntry entry : sorted) {
             long minutes = Duration.between(entry.startTime, entry.endTime).toMinutes();
@@ -370,21 +448,23 @@ public class PriceFetcher {
                 bucketStart = entry.startTime;
                 bucketEnd = bucketStart.plusMinutes(intervalMinutes);
             } else if (!entry.startTime.isBefore(bucketEnd)) {
-                addAggregate(aggregated, bucketStart, lastEnd, weightedTotal, totalMinutes, minPrice, poolMode);
+                addAggregate(aggregated, bucketStart, lastEnd, weightedTotal, totalMinutes, minPrice, maxPrice, poolMode);
                 bucketStart = entry.startTime;
                 bucketEnd = bucketStart.plusMinutes(intervalMinutes);
                 weightedTotal = 0.0;
                 totalMinutes = 0L;
                 minPrice = Double.POSITIVE_INFINITY;
+                maxPrice = Double.NEGATIVE_INFINITY;
             }
 
             weightedTotal += entry.pricePerKwh * minutes;
             totalMinutes += minutes;
             minPrice = Math.min(minPrice, entry.pricePerKwh);
+            maxPrice = Math.max(maxPrice, entry.pricePerKwh);
             lastEnd = entry.endTime;
         }
 
-        addAggregate(aggregated, bucketStart, lastEnd, weightedTotal, totalMinutes, minPrice, poolMode);
+        addAggregate(aggregated, bucketStart, lastEnd, weightedTotal, totalMinutes, minPrice, maxPrice, poolMode);
         return aggregated;
     }
 
@@ -401,10 +481,14 @@ public class PriceFetcher {
             }
 
             OffsetDateTime bucketStart = getAlignedBucketStart(entry.startTime, intervalMinutes);
-            double[] agg = aggregates.computeIfAbsent(bucketStart, k -> new double[] {0.0, 0.0, Double.POSITIVE_INFINITY});
+            double[] agg = aggregates.computeIfAbsent(
+                    bucketStart,
+                    k -> new double[] {0.0, 0.0, Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY}
+            );
             agg[0] += entry.pricePerKwh * minutes;
             agg[1] += minutes;
             agg[2] = Math.min(agg[2], entry.pricePerKwh);
+            agg[3] = Math.max(agg[3], entry.pricePerKwh);
         }
 
         List<PriceEntry> aggregated = new ArrayList<>(aggregates.size());
@@ -417,7 +501,7 @@ public class PriceFetcher {
             PriceEntry aggregatedEntry = new PriceEntry();
             aggregatedEntry.startTime = mapEntry.getKey();
             aggregatedEntry.endTime = mapEntry.getKey().plusMinutes(intervalMinutes);
-            aggregatedEntry.pricePerKwh = resolveAggregatedPrice(agg[0], agg[1], agg[2], poolMode);
+            aggregatedEntry.pricePerKwh = resolveAggregatedPrice(agg[0], agg[1], agg[2], agg[3], poolMode);
             aggregated.add(aggregatedEntry);
         }
 
@@ -439,6 +523,7 @@ public class PriceFetcher {
                                      double weightedTotal,
                                      long totalMinutes,
                                      double minPrice,
+                                     double maxPrice,
                                      int poolMode) {
         if (start == null || end == null || totalMinutes <= 0) {
             return;
@@ -447,16 +532,20 @@ public class PriceFetcher {
         PriceEntry aggregate = new PriceEntry();
         aggregate.startTime = start;
         aggregate.endTime = end;
-        aggregate.pricePerKwh = resolveAggregatedPrice(weightedTotal, totalMinutes, minPrice, poolMode);
+        aggregate.pricePerKwh = resolveAggregatedPrice(weightedTotal, totalMinutes, minPrice, maxPrice, poolMode);
         output.add(aggregate);
     }
 
     private static double resolveAggregatedPrice(double weightedTotal,
                                                  double totalMinutes,
                                                  double minPrice,
+                                                 double maxPrice,
                                                  int poolMode) {
         if (poolMode == WidgetPreferences.POOL_MODE_MIN) {
             return minPrice;
+        }
+        if (poolMode == WidgetPreferences.POOL_MODE_MAX) {
+            return maxPrice;
         }
         return weightedTotal / totalMinutes;
     }

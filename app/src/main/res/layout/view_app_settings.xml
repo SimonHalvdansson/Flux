@@ -131,17 +131,18 @@
 
             <LinearLayout
                 android:id="@+id/stromstotte_info_trigger"
-                android:layout_width="0dp"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_vertical"
-                android:layout_weight="1"
                 android:clickable="true"
                 android:focusable="true"
                 android:foreground="?attr/selectableItemBackgroundBorderless"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
-                android:paddingTop="8dp"
-                android:paddingBottom="8dp">
+                android:paddingStart="4dp"
+                android:paddingTop="10dp"
+                android:paddingEnd="6dp"
+                android:paddingBottom="10dp">
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -160,6 +161,11 @@
                     android:tint="@color/main_price_emphasis" />
             </LinearLayout>
 
+            <View
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
+
             <com.google.android.material.materialswitch.MaterialSwitch
                 android:id="@+id/stromstotte_switch"
                 android:layout_width="wrap_content"
@@ -174,17 +180,18 @@
 
             <LinearLayout
                 android:id="@+id/vat_info_trigger"
-                android:layout_width="0dp"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_vertical"
-                android:layout_weight="1"
                 android:clickable="true"
                 android:focusable="true"
                 android:foreground="?attr/selectableItemBackgroundBorderless"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
-                android:paddingTop="8dp"
-                android:paddingBottom="8dp">
+                android:paddingStart="4dp"
+                android:paddingTop="10dp"
+                android:paddingEnd="6dp"
+                android:paddingBottom="10dp">
 
                 <TextView
                     android:id="@+id/vat_label"
@@ -204,6 +211,11 @@
                     android:tint="@color/main_price_emphasis" />
             </LinearLayout>
 
+            <View
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
+
             <com.google.android.material.materialswitch.MaterialSwitch
                 android:id="@+id/vat_switch"
                 android:layout_width="wrap_content"
@@ -218,17 +230,18 @@
 
             <LinearLayout
                 android:id="@+id/grid_fee_info_trigger"
-                android:layout_width="0dp"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_vertical"
-                android:layout_weight="1"
                 android:clickable="true"
                 android:focusable="true"
                 android:foreground="?attr/selectableItemBackgroundBorderless"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
-                android:paddingTop="8dp"
-                android:paddingBottom="8dp">
+                android:paddingStart="4dp"
+                android:paddingTop="10dp"
+                android:paddingEnd="6dp"
+                android:paddingBottom="10dp">
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -247,6 +260,11 @@
                     android:tint="@color/main_price_emphasis" />
             </LinearLayout>
 
+            <View
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
+
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/grid_fee_container"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
@@ -263,6 +281,56 @@
                     android:inputType="numberDecimal" />
 
             </com.google.android.material.textfield.TextInputLayout>
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/main_bar_pool_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/productsans_bold"
+                android:text="@string/main_bar_pool_title"
+                android:textSize="16sp" />
+
+            <com.google.android.material.button.MaterialButtonToggleGroup
+                android:id="@+id/main_bar_pool_toggle_group"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                app:singleSelection="true">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/main_bar_pool_average_button"
+                    style="?attr/materialButtonOutlinedStyle"
+                    android:layout_width="0dp"
+                    android:layout_height="56dp"
+                    android:layout_weight="1"
+                    android:fontFamily="@font/productsans_bold"
+                    android:text="@string/pool_average" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/main_bar_pool_min_button"
+                    style="?attr/materialButtonOutlinedStyle"
+                    android:layout_width="0dp"
+                    android:layout_height="56dp"
+                    android:layout_weight="1"
+                    android:fontFamily="@font/productsans_bold"
+                    android:text="@string/pool_min" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/main_bar_pool_max_button"
+                    style="?attr/materialButtonOutlinedStyle"
+                    android:layout_width="0dp"
+                    android:layout_height="56dp"
+                    android:layout_weight="1"
+                    android:fontFamily="@font/productsans_bold"
+                    android:text="@string/pool_max" />
+            </com.google.android.material.button.MaterialButtonToggleGroup>
         </LinearLayout>
     </LinearLayout>
 </LinearLayout>

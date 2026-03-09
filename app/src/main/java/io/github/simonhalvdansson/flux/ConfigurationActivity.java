@@ -110,9 +110,7 @@ public class ConfigurationActivity extends AppCompatActivity {
             listWidgetSection.setVisibility(View.GONE);
 
             int chartMode = WidgetPreferences.getChartMode(prefs);
-            chartToggleGroup.check(chartMode == WidgetPreferences.CHART_MODE_GRAPH
-                    ? R.id.chart_graph_button
-                    : R.id.chart_bars_button);
+            chartToggleGroup.check(getChartButtonId(chartMode));
 
             int barPoolMode = WidgetPreferences.getMainBarPoolMode(prefs);
             barPoolToggleGroup.check(barPoolMode == WidgetPreferences.POOL_MODE_MIN
@@ -124,9 +122,7 @@ public class ConfigurationActivity extends AppCompatActivity {
                 if (!isChecked) {
                     return;
                 }
-                int mode = checkedId == R.id.chart_graph_button
-                        ? WidgetPreferences.CHART_MODE_GRAPH
-                        : WidgetPreferences.CHART_MODE_BARS;
+                int mode = getChartModeForButton(checkedId);
                 prefs.edit().putInt(PriceUpdateJobService.KEY_CHART_MODE, mode).apply();
                 updateBarPoolVisibility(barPoolContainer, mode);
             });
@@ -169,6 +165,26 @@ public class ConfigurationActivity extends AppCompatActivity {
 
     private void updateBarPoolVisibility(View container, int chartMode) {
         container.setVisibility(chartMode == WidgetPreferences.CHART_MODE_BARS ? View.VISIBLE : View.GONE);
+    }
+
+    private int getChartButtonId(int chartMode) {
+        if (chartMode == WidgetPreferences.CHART_MODE_GRAPH) {
+            return R.id.chart_graph_button;
+        }
+        if (chartMode == WidgetPreferences.CHART_MODE_LINES) {
+            return R.id.chart_lines_button;
+        }
+        return R.id.chart_bars_button;
+    }
+
+    private int getChartModeForButton(int checkedId) {
+        if (checkedId == R.id.chart_graph_button) {
+            return WidgetPreferences.CHART_MODE_GRAPH;
+        }
+        if (checkedId == R.id.chart_lines_button) {
+            return WidgetPreferences.CHART_MODE_LINES;
+        }
+        return WidgetPreferences.CHART_MODE_BARS;
     }
 
     private void updateListPoolVisibility(View container, int incrementMinutes, boolean animate) {

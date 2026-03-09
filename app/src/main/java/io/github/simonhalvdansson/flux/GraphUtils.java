@@ -10,12 +10,14 @@ import androidx.core.content.ContextCompat;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.Duration;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 public class GraphUtils {
 
     // Add these globals near the top of GraphUtils (dp-based sizing)
     private static final float LINE_WIDTH_DP   = 4f;
+    private static final float STEP_LINE_WIDTH_DP = 2.5f;
     private static final float CIRCLE_RADIUS_DP = 6f;
     private static final float PAD_SLOP_DP      = 1f;
 
@@ -253,6 +255,84 @@ public class GraphUtils {
         canvas.drawRect(0, 0, widthPx, heightPx, mask);
 
         canvas.restoreToCount(layerId);
+        return bitmap;
+    }
+
+    public static Bitmap createStepLineGraphBitmap(
+            Context context,
+            List<PriceFetcher.PriceEntry> data,
+            double maxPrice,
+            int widthPx,
+            int heightPx) {
+
+        Bitmap bitmap = Bitmap.createBitmap(widthPx, heightPx, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+        if (data == null || data.isEmpty() || maxPrice <= 0) {
+            return bitmap;
+        }
+
+        android.util.DisplayMetrics dm = context.getResources().getDisplayMetrics();
+        float lineWidthPx = android.util.TypedValue.applyDimension(
+                android.util.TypedValue.COMPLEX_UNIT_DIP,
+                STEP_LINE_WIDTH_DP,
+                dm
+        );
+        float padX = lineWidthPx / 2f + android.util.TypedValue.applyDimension(
+                android.util.TypedValue.COMPLEX_UNIT_DIP,
+                PAD_SLOP_DP,
+                dm
+        );
+        float padY = lineWidthPx / 2f + android.util.TypedValue.applyDimension(
+                android.util.TypedValue.COMPLEX_UNIT_DIP,
+                PAD_SLOP_DP,
+                dm
+        );
+
+        float usableW = Math.max(1f, widthPx - (2f * padX));
+        float usableH = Math.max(1f, heightPx - (2f * padY));
+        float leftX = padX;
+        float topY = padY;
+        float bottomY = heightPx - padY;
+
+        OffsetDateTime windowStart = data.get(0).startTime;
+        OffsetDateTime windowEnd = data.get(data.size() - 1).endTime;
+        long totalMinutes = Math.max(1L, Duration.between(windowStart, windowEnd).toMinutes());
+
+        Paint line = new Paint(Paint.ANTI_ALIAS_FLAG);
+        line.setStyle(Paint.Style.STROKE);
+        line.setStrokeWidth(lineWidthPx);
+        line.setStrokeCap(Paint.Cap.BUTT);
+        line.setStrokeJoin(Paint.Join.MITER);
+        line.setColor(ContextCompat.getColor(context, R.color.main_lines_chart));
+
+        Paint guide = new Paint(Paint.ANTI_ALIAS_FLAG);
+        guide.setStyle(Paint.Style.STROKE);
+        guide.setStrokeWidth(Math.max(1f, lineWidthPx * 0.55f));
+        guide.setColor(ContextCompat.getColor(context, R.color.main_lines_chart_guide));
+
+        for (int i = 0; i < data.size(); i++) {
+            PriceFetcher.PriceEntry entry = data.get(i);
+            float startFraction = Duration.between(windowStart, entry.startTime).toMinutes() / (float) totalMinutes;
+            float endFraction = Duration.between(windowStart, entry.endTime).toMinutes() / (float) totalMinutes;
+            float startX = leftX + (usableW * startFraction);
+            float endX = leftX + (usableW * endFraction);
+            float y = bottomY - ((float) entry.pricePerKwh / (float) maxPrice) * usableH;
+            y = Math.max(topY, Math.min(bottomY, y));
+
+            OffsetDateTime localStart = entry.startTime.atZoneSameInstant(ZoneId.systemDefault()).toOffsetDateTime();
+            if (localStart.getMinute() == 0) {
+                canvas.drawLine(startX, bottomY, startX, y, guide);
+            }
+            canvas.drawLine(startX, y, endX, y, line);
+
+            if (i < data.size() - 1) {
+                PriceFetcher.PriceEntry next = data.get(i + 1);
+                float nextY = bottomY - ((float) next.pricePerKwh / (float) maxPrice) * usableH;
+                nextY = Math.max(topY, Math.min(bottomY, nextY));
+                canvas.drawLine(endX, y, endX, nextY, line);
+            }
+        }
+
         return bitmap;
     }
 

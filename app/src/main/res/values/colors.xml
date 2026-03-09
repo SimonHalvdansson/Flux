@@ -12,4 +12,6 @@
     <color name="main_backdrop_blob_mist">#DDD8FF</color>
     <color name="main_backdrop_noise_light">#FFFFFF</color>
     <color name="main_backdrop_noise_dark">#A9B2D4</color>
+    <color name="main_lines_chart">#2F4DFF</color>
+    <color name="main_lines_chart_guide">#6D84FF</color>
 </resources>

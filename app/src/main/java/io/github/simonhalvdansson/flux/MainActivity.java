@@ -6,29 +6,39 @@ import android.animation.AnimatorSet;
 import android.animation.ValueAnimator;
 import android.content.SharedPreferences;
 import android.graphics.Outline;
+import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.text.Editable;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.TextWatcher;
 import android.text.style.RelativeSizeSpan;
+import android.util.Log;
 import android.util.TypedValue;
+import android.view.Gravity;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewOutlineProvider;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.PopupWindow;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
+import androidx.core.content.res.ResourcesCompat;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.interpolator.view.animation.LinearOutSlowInInterpolator;
 
 import com.google.android.material.button.MaterialButtonToggleGroup;
+import com.google.android.material.color.MaterialColors;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.materialswitch.MaterialSwitch;
 import com.google.android.material.textfield.TextInputEditText;
@@ -45,7 +55,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
+    private static final String TAG = "MainActivity";
     private static final float MAIN_PRICE_UNIT_RELATIVE_SIZE = 14f / 34f;
+    private static final String KEY_MAIN_ACTIVITY_CHART_MODE = "main_activity_chart_mode";
+    private static final String KEY_MAIN_ACTIVITY_BAR_POOL_MODE = "main_activity_bar_pool_mode";
+    private static final int MAIN_CHART_MODE_BARS = 0;
+    private static final int MAIN_CHART_MODE_GRAPH = 1;
+    private static final int MAIN_CHART_MODE_LINES = 2;
+    private static final int TOOLTIP_VERTICAL_OFFSET_DP = 16;
+    private static final int TOOLTIP_HORIZONTAL_PADDING_DP = 12;
+    private static final int TOOLTIP_VERTICAL_PADDING_DP = 10;
 
     public static final String EXTRA_DISABLE_CHART_ANIMATION =
             "io.github.simonhalvdansson.flux.extra.DISABLE_CHART_ANIMATION";
@@ -70,6 +89,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int MIN_BAR_HEIGHT_DP = 8;
     private static final long BAR_ANIMATION_DURATION_MS = 468L;
     private static final long BAR_ANIMATION_STAGGER_MS = 20L;
+    private static final long QUARTER_REFRESH_SLOP_MS = 250L;
 
     private final List<RegionConfig.Country> countries = RegionConfig.getCountries();
 
@@ -77,11 +97,26 @@ public class MainActivity extends AppCompatActivity {
     private TextView currentPriceValue;
     private TextView todayAverageValue;
     private View chartContainer;
+    private LinearLayout barChartContainer;
+    private ImageView graphImageView;
+    private View chartTouchOverlay;
+    private MaterialButtonToggleGroup mainChartToggleGroup;
     private SharedPreferences sharedPreferences;
     private SharedPreferences.OnSharedPreferenceChangeListener preferenceChangeListener;
     private AnimatorSet barAnimator;
+    private PopupWindow chartTooltipPopup;
+    private final Handler quarterRefreshHandler = new Handler(Looper.getMainLooper());
+    private final Runnable quarterRefreshRunnable = new Runnable() {
+        @Override
+        public void run() {
+            renderCurrentPrice();
+            scheduleQuarterBoundaryRefresh();
+        }
+    };
     private boolean shouldAnimateBars;
     private int currentCountryIndex = 0;
+    private List<PriceFetcher.PriceEntry> displayedBarEntries = new ArrayList<>();
+    private List<List<PriceFetcher.PriceEntry>> displayedBucketEntries = new ArrayList<>();
 
     private AutoCompleteTextView countryDropdown;
     private AutoCompleteTextView areaDropdown;
@@ -94,6 +129,8 @@ public class MainActivity extends AppCompatActivity {
     private TextInputLayout gridFeeContainer;
     private TextInputEditText gridFeeInput;
     private MaterialButtonToggleGroup swissPriceUnitToggleGroup;
+    private View mainBarPoolContainer;
+    private MaterialButtonToggleGroup mainBarPoolToggleGroup;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -107,10 +144,16 @@ public class MainActivity extends AppCompatActivity {
         currentPriceValue = findViewById(R.id.current_price_value);
         todayAverageValue = findViewById(R.id.today_average_value);
         chartContainer = findViewById(R.id.bar_chart_section);
+        barChartContainer = findViewById(R.id.bar_chart_container);
+        graphImageView = findViewById(R.id.graph_image);
+        chartTouchOverlay = findViewById(R.id.chart_touch_overlay);
+        mainChartToggleGroup = findViewById(R.id.main_chart_toggle_group);
         shouldAnimateBars = savedInstanceState == null
                 && !getIntent().getBooleanExtra(EXTRA_DISABLE_CHART_ANIMATION, false);
 
         setupAppSettings();
+        setupMainChartModeToggle();
+        setupChartTouchOverlay();
         configureAppIconShadow(appIconView);
         configureBarShadows();
         applyWindowInsets();
@@ -123,7 +166,9 @@ public class MainActivity extends AppCompatActivity {
                     || PriceUpdateJobService.KEY_APPLY_VAT.equals(key)
                     || PriceUpdateJobService.KEY_APPLY_STROMSTOTTE.equals(key)
                     || PriceUpdateJobService.KEY_GRID_FEE.equals(key)
-                    || PriceUpdateJobService.KEY_PRICE_DISPLAY_STYLE.equals(key)) {
+                    || PriceUpdateJobService.KEY_PRICE_DISPLAY_STYLE.equals(key)
+                    || KEY_MAIN_ACTIVITY_CHART_MODE.equals(key)
+                    || KEY_MAIN_ACTIVITY_BAR_POOL_MODE.equals(key)) {
                 runOnUiThread(this::renderCurrentPrice);
             }
         };
@@ -137,11 +182,14 @@ public class MainActivity extends AppCompatActivity {
         super.onStart();
         sharedPreferences.registerOnSharedPreferenceChangeListener(preferenceChangeListener);
         renderCurrentPrice();
+        scheduleQuarterBoundaryRefresh();
     }
 
     @Override
     protected void onStop() {
         cancelBarAnimation();
+        dismissChartTooltip();
+        cancelQuarterBoundaryRefresh();
         sharedPreferences.unregisterOnSharedPreferenceChangeListener(preferenceChangeListener);
         super.onStop();
     }
@@ -158,7 +206,10 @@ public class MainActivity extends AppCompatActivity {
         gridFeeContainer = findViewById(R.id.grid_fee_container);
         gridFeeInput = findViewById(R.id.grid_fee_input);
         swissPriceUnitToggleGroup = findViewById(R.id.swiss_price_unit_toggle_group);
+        mainBarPoolContainer = findViewById(R.id.main_bar_pool_container);
+        mainBarPoolToggleGroup = findViewById(R.id.main_bar_pool_toggle_group);
         swissPriceUnitToggleGroup.setSelectionRequired(true);
+        mainBarPoolToggleGroup.setSelectionRequired(true);
 
         List<String> countryNames = new ArrayList<>();
         for (RegionConfig.Country country : countries) {
@@ -193,6 +244,7 @@ public class MainActivity extends AppCompatActivity {
         vatSwitch.setChecked(sharedPreferences.getBoolean(PriceUpdateJobService.KEY_APPLY_VAT, true));
         updateVatLabel(vatLabel);
         updateGridFeeUnit(gridFeeContainer, currentCountry.getCode());
+        mainBarPoolToggleGroup.check(getMainBarPoolButtonId(getMainBarPoolMode()));
         setupInfoDialogs();
 
         String savedGridFee = sharedPreferences.getString(PriceUpdateJobService.KEY_GRID_FEE, "");
@@ -310,6 +362,50 @@ public class MainActivity extends AppCompatActivity {
                 gridFeeInput.setText("0");
             }
         });
+
+        mainBarPoolToggleGroup.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
+            if (!isChecked) {
+                return;
+            }
+            sharedPreferences.edit()
+                    .putInt(KEY_MAIN_ACTIVITY_BAR_POOL_MODE, getMainBarPoolModeForButton(checkedId))
+                    .apply();
+            dismissChartTooltip();
+            renderCurrentPrice();
+        });
+    }
+
+    private void setupMainChartModeToggle() {
+        mainChartToggleGroup.setSelectionRequired(true);
+        mainChartToggleGroup.check(getMainChartModeButtonId(getMainChartMode()));
+        updateMainBarPoolVisibility(getMainChartMode());
+        mainChartToggleGroup.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
+            if (!isChecked) {
+                return;
+            }
+            int chartMode = getMainChartModeForButton(checkedId);
+            sharedPreferences.edit()
+                    .putInt(KEY_MAIN_ACTIVITY_CHART_MODE, chartMode)
+                    .apply();
+            updateMainBarPoolVisibility(chartMode);
+            dismissChartTooltip();
+            renderCurrentPrice();
+        });
+    }
+
+    private void updateMainBarPoolVisibility(int chartMode) {
+        mainBarPoolContainer.setVisibility(chartMode == MAIN_CHART_MODE_BARS ? View.VISIBLE : View.GONE);
+    }
+
+    private void setupChartTouchOverlay() {
+        chartTouchOverlay.setOnTouchListener((v, event) -> {
+            if (event.getAction() == MotionEvent.ACTION_UP) {
+                v.performClick();
+                showChartTooltip(event);
+                return true;
+            }
+            return event.getAction() == MotionEvent.ACTION_DOWN;
+        });
     }
 
     private void updateWidgets() {
@@ -385,6 +481,25 @@ public class MainActivity extends AppCompatActivity {
         refreshThread.start();
     }
 
+    private void scheduleQuarterBoundaryRefresh() {
+        cancelQuarterBoundaryRefresh();
+        ZonedDateTime now = ZonedDateTime.now(ZoneId.systemDefault());
+        ZonedDateTime nextQuarter = now.truncatedTo(ChronoUnit.MINUTES)
+                .plusMinutes(15 - (now.getMinute() % 15 == 0 ? 0 : now.getMinute() % 15));
+        if (!nextQuarter.isAfter(now)) {
+            nextQuarter = nextQuarter.plusMinutes(15);
+        }
+        long delayMs = Math.max(
+                QUARTER_REFRESH_SLOP_MS,
+                Duration.between(now, nextQuarter).toMillis() + QUARTER_REFRESH_SLOP_MS
+        );
+        quarterRefreshHandler.postDelayed(quarterRefreshRunnable, delayMs);
+    }
+
+    private void cancelQuarterBoundaryRefresh() {
+        quarterRefreshHandler.removeCallbacks(quarterRefreshRunnable);
+    }
+
     private void updateCurrentPriceLabel() {
         List<PriceFetcher.PriceEntry> allData = CurrentPriceResolver.getAdjustedEntries(sharedPreferences);
         if (allData.isEmpty()) {
@@ -443,16 +558,20 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void renderBarChart() {
+        dismissChartTooltip();
+
         List<PriceFetcher.PriceEntry> allData = CurrentPriceResolver.getAdjustedEntries(sharedPreferences);
         if (allData.isEmpty()) {
+            clearChartData();
             cancelBarAnimation();
             chartContainer.setVisibility(View.GONE);
             todayAverageValue.setText(R.string.today_average_unavailable);
             return;
         }
 
-        List<PriceFetcher.PriceEntry> hourlyData = PriceFetcher.aggregateToHourly(allData);
+        List<PriceFetcher.PriceEntry> hourlyData = PriceFetcher.aggregateToHourly(allData, getMainBarPoolMode());
         if (hourlyData.isEmpty()) {
+            clearChartData();
             cancelBarAnimation();
             chartContainer.setVisibility(View.GONE);
             todayAverageValue.setText(R.string.today_average_unavailable);
@@ -460,6 +579,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         chartContainer.setVisibility(View.VISIBLE);
+        chartTouchOverlay.setEnabled(true);
 
         int currentIndex = CurrentPriceResolver.findCurrentIndex(allData);
         PriceFetcher.PriceEntry currentEntry = allData.get(currentIndex);
@@ -484,14 +604,52 @@ public class MainActivity extends AppCompatActivity {
             lastHourIndex = Math.min(hourlyData.size() - 1, firstHourIndex + desiredCount - 1);
         }
 
-        List<PriceFetcher.PriceEntry> displayEntries = hourlyData.subList(firstHourIndex, lastHourIndex + 1);
-        double maxPrice = 0.0;
-        for (PriceFetcher.PriceEntry entry : displayEntries) {
-            maxPrice = Math.max(maxPrice, entry.pricePerKwh);
+        displayedBarEntries = new ArrayList<>(hourlyData.subList(firstHourIndex, lastHourIndex + 1));
+        displayedBucketEntries = buildDisplayedBucketEntries(displayedBarEntries, allData);
+
+        double barMaxPrice = 0.0;
+        for (PriceFetcher.PriceEntry entry : displayedBarEntries) {
+            barMaxPrice = Math.max(barMaxPrice, entry.pricePerKwh);
         }
-        if (maxPrice <= 0.0) {
-            maxPrice = 1.0;
+        if (barMaxPrice <= 0.0) {
+            barMaxPrice = 1.0;
         }
+
+        List<PriceFetcher.PriceEntry> graphDisplayEntries = getEntriesInRange(
+                allData,
+                displayedBarEntries.get(0).startTime,
+                displayedBarEntries.get(displayedBarEntries.size() - 1).endTime
+        );
+        double graphMaxPrice = barMaxPrice;
+        for (PriceFetcher.PriceEntry entry : graphDisplayEntries) {
+            graphMaxPrice = Math.max(graphMaxPrice, entry.pricePerKwh);
+        }
+        if (graphMaxPrice <= 0.0) {
+            graphMaxPrice = 1.0;
+        }
+
+        int chartMode = getMainChartMode();
+        if (chartMode == MAIN_CHART_MODE_BARS) {
+            renderBars(displayedBarEntries, barMaxPrice);
+        } else {
+            renderGraph(chartMode, graphDisplayEntries, graphMaxPrice);
+        }
+
+        logChartDiagnostics(allData, hourlyData, graphDisplayEntries, chartMode);
+        updateTimeLabels(displayedBarEntries);
+        renderTodayAverage(hourlyData);
+    }
+
+    private void clearChartData() {
+        displayedBarEntries = new ArrayList<>();
+        displayedBucketEntries = new ArrayList<>();
+        chartTouchOverlay.setEnabled(false);
+        graphImageView.setImageDrawable(null);
+    }
+
+    private void renderBars(List<PriceFetcher.PriceEntry> displayEntries, double maxPrice) {
+        barChartContainer.setVisibility(View.VISIBLE);
+        graphImageView.setVisibility(View.GONE);
 
         ZonedDateTime now = ZonedDateTime.now(ZoneId.systemDefault());
         int[] targetHeightsPx = new int[BAR_IDS.length];
@@ -532,7 +690,42 @@ public class MainActivity extends AppCompatActivity {
             cancelBarAnimation();
             applyBarHeights(targetHeightsPx);
         }
+    }
 
+    private void renderGraph(int chartMode, List<PriceFetcher.PriceEntry> graphDisplayEntries, double graphMaxPrice) {
+        cancelBarAnimation();
+        barChartContainer.setVisibility(View.GONE);
+        graphImageView.setVisibility(View.VISIBLE);
+
+        int width = graphImageView.getWidth();
+        int height = graphImageView.getHeight();
+        if (width <= 0 || height <= 0) {
+            graphImageView.post(this::renderCurrentPrice);
+            return;
+        }
+
+        if (chartMode == MAIN_CHART_MODE_LINES) {
+            graphImageView.setImageBitmap(GraphUtils.createStepLineGraphBitmap(
+                    this,
+                    graphDisplayEntries,
+                    graphMaxPrice,
+                    width,
+                    height
+            ));
+            return;
+        }
+
+        graphImageView.setImageBitmap(GraphUtils.createLineGraphBitmapCubic(
+                this,
+                graphDisplayEntries,
+                graphMaxPrice,
+                width,
+                height,
+                ZonedDateTime.now(ZoneId.systemDefault())
+        ));
+    }
+
+    private void updateTimeLabels(List<PriceFetcher.PriceEntry> displayEntries) {
         for (int i = 0; i < TIME_LABEL_IDS.length; i++) {
             TextView label = findViewById(TIME_LABEL_IDS[i]);
             int barIndex = TIME_BAR_INDICES[i];
@@ -543,8 +736,244 @@ public class MainActivity extends AppCompatActivity {
                 label.setText("");
             }
         }
+    }
 
-        renderTodayAverage(hourlyData);
+    private List<PriceFetcher.PriceEntry> getEntriesInRange(List<PriceFetcher.PriceEntry> allEntries,
+                                                            OffsetDateTime start,
+                                                            OffsetDateTime end) {
+        List<PriceFetcher.PriceEntry> entriesInRange = new ArrayList<>();
+        for (PriceFetcher.PriceEntry entry : allEntries) {
+            if (entry.endTime.isAfter(start) && entry.startTime.isBefore(end)) {
+                entriesInRange.add(entry);
+            } else if (entry.startTime.isAfter(end)) {
+                break;
+            }
+        }
+        if (entriesInRange.isEmpty() && !allEntries.isEmpty()) {
+            entriesInRange.add(allEntries.get(Math.max(0, CurrentPriceResolver.findCurrentIndex(allEntries))));
+        }
+        return entriesInRange;
+    }
+
+    private List<List<PriceFetcher.PriceEntry>> buildDisplayedBucketEntries(List<PriceFetcher.PriceEntry> buckets,
+                                                                            List<PriceFetcher.PriceEntry> allEntries) {
+        List<List<PriceFetcher.PriceEntry>> bucketEntries = new ArrayList<>();
+        for (PriceFetcher.PriceEntry bucket : buckets) {
+            List<PriceFetcher.PriceEntry> entries = new ArrayList<>();
+            for (PriceFetcher.PriceEntry entry : allEntries) {
+                if (entry.endTime.isAfter(bucket.startTime) && entry.startTime.isBefore(bucket.endTime)) {
+                    entries.add(entry);
+                } else if (entry.startTime.isAfter(bucket.endTime)) {
+                    break;
+                }
+            }
+            bucketEntries.add(entries);
+        }
+        return bucketEntries;
+    }
+
+    private void showChartTooltip(MotionEvent event) {
+        if (displayedBarEntries.isEmpty()) {
+            return;
+        }
+
+        int width = chartTouchOverlay.getWidth();
+        if (width <= 0) {
+            return;
+        }
+
+        float clampedX = Math.max(0f, Math.min(event.getX(), width - 1f));
+        int bucketIndex = Math.min(
+                displayedBarEntries.size() - 1,
+                Math.max(0, (int) ((clampedX / (float) width) * displayedBarEntries.size()))
+        );
+        showTooltipPopup(
+                buildTooltipText(bucketIndex),
+                event.getRawX(),
+                event.getRawY()
+        );
+    }
+
+    private String buildTooltipText(int bucketIndex) {
+        if (bucketIndex < 0 || bucketIndex >= displayedBucketEntries.size()) {
+            return "";
+        }
+
+        String country = getSelectedCountryCode();
+        List<PriceFetcher.PriceEntry> bucketEntries = displayedBucketEntries.get(bucketIndex);
+        if (bucketEntries.isEmpty()) {
+            PriceFetcher.PriceEntry bucket = displayedBarEntries.get(bucketIndex);
+            return String.format(
+                    "%s: %s",
+                    formatTimeRangeForTooltip(bucket.startTime, bucket.endTime),
+                    PriceDisplayUtils.formatPrice(bucket.pricePerKwh, country, sharedPreferences)
+            );
+        }
+
+        StringBuilder text = new StringBuilder();
+        for (int i = 0; i < bucketEntries.size(); i++) {
+            PriceFetcher.PriceEntry entry = bucketEntries.get(i);
+            if (i > 0) {
+                text.append('\n');
+            }
+            text.append(formatTimeRangeForTooltip(entry.startTime, entry.endTime))
+                    .append(": ")
+                    .append(PriceDisplayUtils.formatPrice(entry.pricePerKwh, country, sharedPreferences));
+        }
+        return text.toString();
+    }
+
+    private void logChartDiagnostics(List<PriceFetcher.PriceEntry> allData,
+                                     List<PriceFetcher.PriceEntry> hourlyData,
+                                     List<PriceFetcher.PriceEntry> graphDisplayEntries,
+                                     int chartMode) {
+        Log.d(TAG, "renderBarChart mode=" + chartMode
+                + " displayedBuckets=" + displayedBarEntries.size()
+                + " graphEntries=" + graphDisplayEntries.size());
+        Log.d(TAG, PriceFetcher.describeEntriesForLog("renderBarChart allData", allData));
+        Log.d(TAG, PriceFetcher.describeEntriesForLog("renderBarChart hourlyData", hourlyData));
+        Log.d(TAG, "renderBarChart graphWindow="
+                + PriceFetcher.describeEntryTimesForLog(graphDisplayEntries));
+        for (int i = 0; i < displayedBarEntries.size() && i < displayedBucketEntries.size(); i++) {
+            PriceFetcher.PriceEntry bucket = displayedBarEntries.get(i);
+            List<PriceFetcher.PriceEntry> bucketEntries = displayedBucketEntries.get(i);
+            Log.d(TAG, "bucket[" + i + "] "
+                    + formatTimeRangeForTooltip(bucket.startTime, bucket.endTime)
+                    + " -> "
+                    + PriceFetcher.describeEntryTimesForLog(bucketEntries));
+        }
+    }
+
+    private String formatTimeRangeForTooltip(OffsetDateTime startTime, OffsetDateTime endTime) {
+        ZonedDateTime start = startTime.atZoneSameInstant(ZoneId.systemDefault());
+        ZonedDateTime end = endTime.atZoneSameInstant(ZoneId.systemDefault());
+        long minutes = Duration.between(start, end).toMinutes();
+        if (minutes == 15) {
+            return String.format("%02d:%02d", start.getHour(), start.getMinute());
+        }
+        return String.format("%02d:%02d-%02d:%02d", start.getHour(), start.getMinute(), end.getHour(), end.getMinute());
+    }
+
+    private void showTooltipPopup(String text, float rawX, float rawY) {
+        if (text == null || text.isEmpty()) {
+            dismissChartTooltip();
+            return;
+        }
+
+        dismissChartTooltip();
+
+        TextView tooltipView = new TextView(this);
+        tooltipView.setText(text);
+        tooltipView.setTextColor(MaterialColors.getColor(tooltipView, com.google.android.material.R.attr.colorOnSurface));
+        tooltipView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f);
+        tooltipView.setTypeface(ResourcesCompat.getFont(this, R.font.productsans_bold));
+        int horizontalPadding = dpToPx(TOOLTIP_HORIZONTAL_PADDING_DP);
+        int verticalPadding = dpToPx(TOOLTIP_VERTICAL_PADDING_DP);
+        tooltipView.setPadding(horizontalPadding, verticalPadding, horizontalPadding, verticalPadding);
+
+        GradientDrawable background = new GradientDrawable();
+        background.setColor(MaterialColors.getColor(
+                tooltipView,
+                com.google.android.material.R.attr.colorSurfaceContainerHighest
+        ));
+        background.setCornerRadius(dpToPx(14));
+        background.setStroke(dpToPx(1), MaterialColors.getColor(
+                tooltipView,
+                com.google.android.material.R.attr.colorOutlineVariant
+        ));
+        tooltipView.setBackground(background);
+
+        tooltipView.measure(
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+        );
+
+        chartTooltipPopup = new PopupWindow(tooltipView, -2, -2, false);
+        chartTooltipPopup.setAnimationStyle(R.style.ChartTooltipAnimation);
+        chartTooltipPopup.setBackgroundDrawable(new ColorDrawable(android.graphics.Color.TRANSPARENT));
+        chartTooltipPopup.setOutsideTouchable(true);
+
+        View root = getWindow().getDecorView();
+        int popupWidth = tooltipView.getMeasuredWidth();
+        int popupHeight = tooltipView.getMeasuredHeight();
+        int margin = dpToPx(8);
+        int x = Math.round(rawX - (popupWidth / 2f));
+        x = Math.max(margin, Math.min(x, root.getWidth() - popupWidth - margin));
+        int y = Math.round(rawY - popupHeight - dpToPx(TOOLTIP_VERTICAL_OFFSET_DP));
+        y = Math.max(margin, y);
+
+        chartTooltipPopup.showAtLocation(root, Gravity.NO_GRAVITY, x, y);
+    }
+
+    private void dismissChartTooltip() {
+        if (chartTooltipPopup != null) {
+            chartTooltipPopup.dismiss();
+            chartTooltipPopup = null;
+        }
+    }
+
+    private int dpToPx(int dp) {
+        return Math.round(TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP,
+                dp,
+                getResources().getDisplayMetrics()
+        ));
+    }
+
+    private int getMainChartMode() {
+        int storedMode = sharedPreferences.getInt(KEY_MAIN_ACTIVITY_CHART_MODE, MAIN_CHART_MODE_BARS);
+        if (storedMode == MAIN_CHART_MODE_GRAPH || storedMode == MAIN_CHART_MODE_LINES) {
+            return storedMode;
+        }
+        return MAIN_CHART_MODE_BARS;
+    }
+
+    private int getMainChartModeButtonId(int chartMode) {
+        if (chartMode == MAIN_CHART_MODE_GRAPH) {
+            return R.id.main_chart_graph_button;
+        }
+        if (chartMode == MAIN_CHART_MODE_LINES) {
+            return R.id.main_chart_lines_button;
+        }
+        return R.id.main_chart_bars_button;
+    }
+
+    private int getMainChartModeForButton(int buttonId) {
+        if (buttonId == R.id.main_chart_graph_button) {
+            return MAIN_CHART_MODE_GRAPH;
+        }
+        if (buttonId == R.id.main_chart_lines_button) {
+            return MAIN_CHART_MODE_LINES;
+        }
+        return MAIN_CHART_MODE_BARS;
+    }
+
+    private int getMainBarPoolMode() {
+        int storedMode = sharedPreferences.getInt(KEY_MAIN_ACTIVITY_BAR_POOL_MODE, WidgetPreferences.POOL_MODE_AVERAGE);
+        if (storedMode == WidgetPreferences.POOL_MODE_MIN || storedMode == WidgetPreferences.POOL_MODE_MAX) {
+            return storedMode;
+        }
+        return WidgetPreferences.POOL_MODE_AVERAGE;
+    }
+
+    private int getMainBarPoolButtonId(int poolMode) {
+        if (poolMode == WidgetPreferences.POOL_MODE_MIN) {
+            return R.id.main_bar_pool_min_button;
+        }
+        if (poolMode == WidgetPreferences.POOL_MODE_MAX) {
+            return R.id.main_bar_pool_max_button;
+        }
+        return R.id.main_bar_pool_average_button;
+    }
+
+    private int getMainBarPoolModeForButton(int buttonId) {
+        if (buttonId == R.id.main_bar_pool_min_button) {
+            return WidgetPreferences.POOL_MODE_MIN;
+        }
+        if (buttonId == R.id.main_bar_pool_max_button) {
+            return WidgetPreferences.POOL_MODE_MAX;
+        }
+        return WidgetPreferences.POOL_MODE_AVERAGE;
     }
 
     private void renderTodayAverage(List<PriceFetcher.PriceEntry> hourlyData) {
@@ -680,7 +1109,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void updateVatLabel(TextView label) {
-        label.setText(RegionConfig.getVatLabel(getSelectedCountryCode()));
+        label.setText(R.string.vat_label);
     }
 
     private void updateGridFeeUnit(TextInputLayout layout, String countryCode) {

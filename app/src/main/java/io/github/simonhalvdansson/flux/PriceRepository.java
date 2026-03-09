@@ -52,6 +52,10 @@ public final class PriceRepository {
 
         PriceFetcher.PriceFetchResult result = PriceFetcher.fetchAvailablePrices(country, area);
         boolean apiError = result.apiError;
+        Log.d(TAG, PriceFetcher.describeEntriesForLog(
+                "refreshCachedPrices fetched country=" + country + " area=" + area,
+                result.entries
+        ));
 
         ZoneId zoneId = RegionConfig.getZoneId(country);
         OffsetDateTime now = OffsetDateTime.now(zoneId);
@@ -89,6 +93,8 @@ public final class PriceRepository {
                 .putString(KEY_JSON_DATA, combined.toString())
                 .putBoolean(PriceUpdateJobService.KEY_API_ERROR, apiError)
                 .apply();
+
+        Log.d(TAG, "refreshCachedPrices storedEntryCount=" + combined.length() + " apiError=" + apiError);
 
         MainWidget.updateAllWidgets(appContext);
         ListWidget.updateAllWidgets(appContext);
