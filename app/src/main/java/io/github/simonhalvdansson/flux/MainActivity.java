@@ -21,6 +21,7 @@ import android.view.View;
 import android.view.ViewOutlineProvider;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
+import android.widget.Filter;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -218,7 +219,7 @@ public class MainActivity extends AppCompatActivity {
         for (RegionConfig.Country country : countries) {
             countryNames.add(country.getDisplayName());
         }
-        ArrayAdapter<String> countryAdapter = new ArrayAdapter<>(this, R.layout.spinner_dropdown_item, countryNames);
+        ArrayAdapter<String> countryAdapter = createDropdownAdapter(countryNames);
         countryDropdown.setAdapter(countryAdapter);
 
         String selectedCountry = sharedPreferences.getString(PriceUpdateJobService.KEY_SELECTED_COUNTRY, "NO");
@@ -258,8 +259,12 @@ public class MainActivity extends AppCompatActivity {
         gridFeeInput.setText(savedGridFee);
 
         countryDropdown.setOnItemClickListener((parent, view, position, id) -> {
-            currentCountryIndex = position;
-            RegionConfig.Country selected = countries.get(position);
+            String selectedLabel = (String) parent.getItemAtPosition(position);
+            RegionConfig.Country selected = findCountryByLabel(selectedLabel);
+            if (selected == null) {
+                return;
+            }
+            currentCountryIndex = countries.indexOf(selected);
             String countryCode = selected.getCode();
             sharedPreferences.edit().putString(PriceUpdateJobService.KEY_SELECTED_COUNTRY, countryCode).apply();
 
@@ -289,10 +294,12 @@ public class MainActivity extends AppCompatActivity {
 
         areaDropdown.setOnItemClickListener((parent, view, position, id) -> {
             List<RegionConfig.Area> areas = countries.get(currentCountryIndex).getAreas();
-            if (position < 0 || position >= areas.size()) {
+            String selectedLabel = (String) parent.getItemAtPosition(position);
+            RegionConfig.Area selectedArea = findAreaByLabel(areas, selectedLabel);
+            if (selectedArea == null) {
                 return;
             }
-            String area = areas.get(position).getCode();
+            String area = selectedArea.getCode();
             sharedPreferences.edit().putString(PriceUpdateJobService.KEY_SELECTED_AREA, area).apply();
             PriceUpdateScheduler.schedulePriceUpdateJob(MainActivity.this);
             refreshPrices();
@@ -1193,7 +1200,7 @@ public class MainActivity extends AppCompatActivity {
         for (RegionConfig.Area area : areas) {
             labels.add(area.getLabel());
         }
-        ArrayAdapter<String> areaAdapter = new ArrayAdapter<>(this, R.layout.spinner_dropdown_item, labels);
+        ArrayAdapter<String> areaAdapter = createDropdownAdapter(labels);
         targetAreaDropdown.setAdapter(areaAdapter);
 
         String defaultAreaCode = areas.isEmpty() ? null : areas.get(0).getCode();
@@ -1224,5 +1231,61 @@ public class MainActivity extends AppCompatActivity {
         targetAreaDropdown.setEnabled(showRegion);
         targetAreaDropdown.setFocusable(showRegion);
         targetAreaDropdown.setFocusableInTouchMode(showRegion);
+    }
+
+    private ArrayAdapter<String> createDropdownAdapter(List<String> items) {
+        return new ArrayAdapter<String>(this, R.layout.spinner_dropdown_item, new ArrayList<>(items)) {
+            private final List<String> allItems = new ArrayList<>(items);
+            private final Filter unfilteredResults = new Filter() {
+                @Override
+                protected FilterResults performFiltering(CharSequence constraint) {
+                    FilterResults results = new FilterResults();
+                    results.values = new ArrayList<>(allItems);
+                    results.count = allItems.size();
+                    return results;
+                }
+
+                @Override
+                protected void publishResults(CharSequence constraint, FilterResults results) {
+                    clear();
+                    if (results.values instanceof List<?>) {
+                        for (Object value : (List<?>) results.values) {
+                            if (value instanceof String) {
+                                add((String) value);
+                            }
+                        }
+                    }
+                    notifyDataSetChanged();
+                }
+
+                @Override
+                public CharSequence convertResultToString(Object resultValue) {
+                    return resultValue instanceof CharSequence ? (CharSequence) resultValue : super.convertResultToString(resultValue);
+                }
+            };
+
+            @Override
+            public Filter getFilter() {
+                return unfilteredResults;
+            }
+        };
+    }
+
+    private RegionConfig.Country findCountryByLabel(String label) {
+        for (RegionConfig.Country country : countries) {
+            if (country.getDisplayName().equals(label)) {
+                return country;
+            }
+        }
+        return null;
+    }
+
+    private RegionConfig.Area findAreaByLabel(List<RegionConfig.Area> areas, String label) {
+        for (RegionConfig.Area area : areas) {
+            if (area.getLabel().equals(label)) {
+                return area;
+            }
+        }
+        return null;
     }
 }
