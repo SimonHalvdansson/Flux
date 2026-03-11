@@ -19,7 +19,9 @@ import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.ViewOutlineProvider;
+import android.view.ViewParent;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Filter;
@@ -62,6 +64,8 @@ public class MainActivity extends AppCompatActivity {
     private static final int TOOLTIP_VERTICAL_OFFSET_DP = 16;
     private static final int TOOLTIP_HORIZONTAL_PADDING_DP = 12;
     private static final int TOOLTIP_VERTICAL_PADDING_DP = 10;
+    private static final long CHART_MODE_TRANSITION_DURATION_MS = 100L;
+    private static final long SECTION_VISIBILITY_ANIMATION_MS = 180L;
 
     public static final String EXTRA_DISABLE_CHART_ANIMATION =
             "io.github.simonhalvdansson.flux.extra.DISABLE_CHART_ANIMATION";
@@ -100,6 +104,7 @@ public class MainActivity extends AppCompatActivity {
     private ImageView settingsToggleCaret;
     private View settingsExpandableContainer;
     private View chartContainer;
+    private View chartVisualContainer;
     private LinearLayout barChartContainer;
     private ImageView graphImageView;
     private View chartTouchOverlay;
@@ -107,6 +112,7 @@ public class MainActivity extends AppCompatActivity {
     private SharedPreferences sharedPreferences;
     private SharedPreferences.OnSharedPreferenceChangeListener preferenceChangeListener;
     private AnimatorSet barAnimator;
+    private ValueAnimator sectionVisibilityAnimator;
     private PopupWindow chartTooltipPopup;
     private final Handler quarterRefreshHandler = new Handler(Looper.getMainLooper());
     private final Runnable quarterRefreshRunnable = new Runnable() {
@@ -117,6 +123,8 @@ public class MainActivity extends AppCompatActivity {
         }
     };
     private boolean shouldAnimateInitialChart;
+    private boolean suppressNextChartModePreferenceRender;
+    private int chartModeTransitionId = 0;
     private int currentCountryIndex = 0;
     private List<PriceFetcher.PriceEntry> displayedBarEntries = new ArrayList<>();
     private List<List<PriceFetcher.PriceEntry>> displayedBucketEntries = new ArrayList<>();
@@ -152,6 +160,7 @@ public class MainActivity extends AppCompatActivity {
         settingsToggleCaret = findViewById(R.id.settings_toggle_caret);
         settingsExpandableContainer = findViewById(R.id.settings_expandable_container);
         chartContainer = findViewById(R.id.bar_chart_section);
+        chartVisualContainer = findViewById(R.id.chart_visual_container);
         barChartContainer = findViewById(R.id.bar_chart_container);
         graphImageView = findViewById(R.id.graph_image);
         chartTouchOverlay = findViewById(R.id.chart_touch_overlay);
@@ -169,6 +178,10 @@ public class MainActivity extends AppCompatActivity {
         setupAboutDialogTrigger();
 
         preferenceChangeListener = (prefs, key) -> {
+            if (KEY_MAIN_ACTIVITY_CHART_MODE.equals(key) && suppressNextChartModePreferenceRender) {
+                suppressNextChartModePreferenceRender = false;
+                return;
+            }
             if (PriceRepository.KEY_JSON_DATA.equals(key)
                     || PriceUpdateJobService.KEY_API_ERROR.equals(key)
                     || PriceUpdateJobService.KEY_SELECTED_COUNTRY.equals(key)
@@ -228,6 +241,7 @@ public class MainActivity extends AppCompatActivity {
         }
         ArrayAdapter<String> countryAdapter = createDropdownAdapter(countryNames);
         countryDropdown.setAdapter(countryAdapter);
+        stabilizeDropdownWidth(countryDropdown, countryNames);
 
         String selectedCountry = sharedPreferences.getString(PriceUpdateJobService.KEY_SELECTED_COUNTRY, "NO");
         currentCountryIndex = RegionConfig.indexOfCountryCode(selectedCountry);
@@ -395,18 +409,22 @@ public class MainActivity extends AppCompatActivity {
     private void setupMainChartModeToggle() {
         mainChartToggleGroup.setSelectionRequired(true);
         mainChartToggleGroup.check(getMainChartModeButtonId(getMainChartMode()));
-        updateMainBarPoolVisibility(getMainChartMode());
+        updateMainBarPoolVisibility(getMainChartMode(), false);
         mainChartToggleGroup.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
             if (!isChecked) {
                 return;
             }
             int chartMode = getMainChartModeForButton(checkedId);
+            if (chartMode == getMainChartMode()) {
+                return;
+            }
+            suppressNextChartModePreferenceRender = true;
             sharedPreferences.edit()
                     .putInt(KEY_MAIN_ACTIVITY_CHART_MODE, chartMode)
                     .apply();
-            updateMainBarPoolVisibility(chartMode);
+            updateMainBarPoolVisibility(chartMode, true);
             dismissChartTooltip();
-            renderCurrentPrice();
+            animateChartModeChange();
         });
     }
 
@@ -431,8 +449,91 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void updateMainBarPoolVisibility(int chartMode) {
-        mainBarPoolContainer.setVisibility(chartMode == MAIN_CHART_MODE_BARS ? View.VISIBLE : View.GONE);
+    private void updateMainBarPoolVisibility(int chartMode, boolean animate) {
+        updateSectionVisibility(mainBarPoolContainer, chartMode == MAIN_CHART_MODE_BARS, animate);
+    }
+
+    private void updateSectionVisibility(View container, boolean visible, boolean animate) {
+        container.animate().cancel();
+        if (sectionVisibilityAnimator != null) {
+            sectionVisibilityAnimator.cancel();
+            sectionVisibilityAnimator = null;
+        }
+
+        if (!animate) {
+            container.setAlpha(visible ? 1f : 0f);
+            container.setVisibility(visible ? View.VISIBLE : View.GONE);
+            setViewEnabled(container, visible);
+            return;
+        }
+
+        if (visible) {
+            fadeSectionIn(container);
+        } else {
+            fadeSectionOut(container);
+        }
+    }
+
+    private void fadeSectionIn(View container) {
+        container.setVisibility(View.VISIBLE);
+        setViewEnabled(container, true);
+        container.setAlpha(0f);
+
+        ValueAnimator animator = ValueAnimator.ofFloat(0f, 1f);
+        animator.setDuration(SECTION_VISIBILITY_ANIMATION_MS);
+        animator.setInterpolator(new LinearOutSlowInInterpolator());
+        animator.addUpdateListener(valueAnimator -> {
+            container.setAlpha((float) valueAnimator.getAnimatedValue());
+        });
+        animator.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                container.setAlpha(1f);
+                sectionVisibilityAnimator = null;
+            }
+
+            @Override
+            public void onAnimationCancel(Animator animation) {
+                sectionVisibilityAnimator = null;
+            }
+        });
+        sectionVisibilityAnimator = animator;
+        animator.start();
+    }
+
+    private void fadeSectionOut(View container) {
+        ValueAnimator animator = ValueAnimator.ofFloat(container.getAlpha(), 0f);
+        animator.setDuration(SECTION_VISIBILITY_ANIMATION_MS);
+        animator.setInterpolator(new LinearOutSlowInInterpolator());
+        animator.addUpdateListener(valueAnimator -> {
+            container.setAlpha((float) valueAnimator.getAnimatedValue());
+        });
+        animator.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                container.setAlpha(0f);
+                container.setVisibility(View.GONE);
+                setViewEnabled(container, false);
+                sectionVisibilityAnimator = null;
+            }
+
+            @Override
+            public void onAnimationCancel(Animator animation) {
+                sectionVisibilityAnimator = null;
+            }
+        });
+        sectionVisibilityAnimator = animator;
+        animator.start();
+    }
+
+    private void setViewEnabled(View view, boolean enabled) {
+        view.setEnabled(enabled);
+        if (view instanceof ViewGroup) {
+            ViewGroup group = (ViewGroup) view;
+            for (int i = 0; i < group.getChildCount(); i++) {
+                setViewEnabled(group.getChildAt(i), enabled);
+            }
+        }
     }
 
     private void setupChartTouchOverlay() {
@@ -444,6 +545,47 @@ public class MainActivity extends AppCompatActivity {
             }
             return event.getAction() == MotionEvent.ACTION_DOWN;
         });
+    }
+
+    private void animateChartModeChange() {
+        chartModeTransitionId++;
+        int transitionId = chartModeTransitionId;
+        chartVisualContainer.animate().cancel();
+
+        if (chartContainer.getVisibility() != View.VISIBLE) {
+            chartVisualContainer.setAlpha(1f);
+            renderCurrentPrice();
+            return;
+        }
+
+        chartTouchOverlay.setEnabled(false);
+        chartVisualContainer.animate()
+                .alpha(0f)
+                .setDuration(CHART_MODE_TRANSITION_DURATION_MS)
+                .setInterpolator(new LinearOutSlowInInterpolator())
+                .withEndAction(() -> {
+                    if (transitionId != chartModeTransitionId) {
+                        return;
+                    }
+                    renderCurrentPrice();
+                    if (chartContainer.getVisibility() != View.VISIBLE) {
+                        chartVisualContainer.setAlpha(1f);
+                        return;
+                    }
+                    chartVisualContainer.setAlpha(0f);
+                    chartVisualContainer.animate()
+                            .alpha(1f)
+                            .setDuration(CHART_MODE_TRANSITION_DURATION_MS)
+                            .setInterpolator(new LinearOutSlowInInterpolator())
+                            .withEndAction(() -> {
+                                if (transitionId != chartModeTransitionId) {
+                                    return;
+                                }
+                                chartVisualContainer.setAlpha(1f);
+                            })
+                            .start();
+                })
+                .start();
     }
 
     private void updateWidgets() {
@@ -1230,6 +1372,7 @@ public class MainActivity extends AppCompatActivity {
         }
         ArrayAdapter<String> areaAdapter = createDropdownAdapter(labels);
         targetAreaDropdown.setAdapter(areaAdapter);
+        stabilizeDropdownWidth(targetAreaDropdown, labels);
 
         String defaultAreaCode = areas.isEmpty() ? null : areas.get(0).getCode();
         String selectedArea = prefs.getString(PriceUpdateJobService.KEY_SELECTED_AREA, defaultAreaCode);
@@ -1297,6 +1440,28 @@ public class MainActivity extends AppCompatActivity {
                 return unfilteredResults;
             }
         };
+    }
+
+    private void stabilizeDropdownWidth(AutoCompleteTextView dropdown, List<String> items) {
+        ViewParent parent = dropdown.getParent();
+        if (!(parent instanceof TextInputLayout)) {
+            return;
+        }
+
+        TextInputLayout inputLayout = (TextInputLayout) parent;
+        float maxTextWidthPx = 0f;
+        for (String item : items) {
+            maxTextWidthPx = Math.max(maxTextWidthPx, dropdown.getPaint().measureText(item));
+        }
+
+        int desiredMinWidthPx = (int) Math.ceil(maxTextWidthPx)
+                + dropdown.getCompoundPaddingLeft()
+                + dropdown.getCompoundPaddingRight()
+                + inputLayout.getPaddingLeft()
+                + inputLayout.getPaddingRight()
+                + dpToPx(56)
+                + dpToPx(8);
+        inputLayout.setMinWidth(desiredMinWidthPx);
     }
 
     private RegionConfig.Country findCountryByLabel(String label) {
