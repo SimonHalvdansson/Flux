@@ -1,6 +1,5 @@
 package io.github.simonhalvdansson.flux;
 
-import android.animation.ValueAnimator;
 import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProviderInfo;
 import android.content.ComponentName;
@@ -20,14 +19,11 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
-import androidx.interpolator.view.animation.FastOutSlowInInterpolator;
 
 import com.google.android.material.button.MaterialButtonToggleGroup;
 
 public class ConfigurationActivity extends AppCompatActivity {
     private static final long SECTION_VISIBILITY_ANIMATION_MS = 180L;
-    private static final FastOutSlowInInterpolator SECTION_VISIBILITY_INTERPOLATOR =
-            new FastOutSlowInInterpolator();
 
     private int appWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID;
     private boolean isListWidget;
@@ -162,25 +158,37 @@ public class ConfigurationActivity extends AppCompatActivity {
     }
 
     private void applyWindowInsets() {
-        View root = findViewById(R.id.main_container);
-        int padStart = root.getPaddingStart();
-        int padTop = root.getPaddingTop();
-        int padEnd = root.getPaddingEnd();
-        int padBottom = root.getPaddingBottom();
+        View scrollView = findViewById(R.id.main_container);
+        View doneButtonContainer = findViewById(R.id.done_button_container);
+        View scaffold = findViewById(R.id.config_scaffold);
+        int scrollPadStart = scrollView.getPaddingStart();
+        int scrollPadTop = scrollView.getPaddingTop();
+        int scrollPadEnd = scrollView.getPaddingEnd();
+        int scrollPadBottom = scrollView.getPaddingBottom();
+        int buttonPadStart = doneButtonContainer.getPaddingStart();
+        int buttonPadTop = doneButtonContainer.getPaddingTop();
+        int buttonPadEnd = doneButtonContainer.getPaddingEnd();
+        int buttonPadBottom = doneButtonContainer.getPaddingBottom();
 
-        ViewCompat.setOnApplyWindowInsetsListener(root, (view, insets) -> {
+        ViewCompat.setOnApplyWindowInsetsListener(scaffold, (view, insets) -> {
             Insets safeArea = insets.getInsets(
                     WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout()
             );
-            root.setPaddingRelative(
-                    padStart + safeArea.left,
-                    padTop + safeArea.top,
-                    padEnd + safeArea.right,
-                    padBottom + safeArea.bottom
+            scrollView.setPaddingRelative(
+                    scrollPadStart + safeArea.left,
+                    scrollPadTop + safeArea.top,
+                    scrollPadEnd + safeArea.right,
+                    scrollPadBottom
+            );
+            doneButtonContainer.setPaddingRelative(
+                    buttonPadStart + safeArea.left,
+                    buttonPadTop,
+                    buttonPadEnd + safeArea.right,
+                    buttonPadBottom + safeArea.bottom
             );
             return insets;
         });
-        ViewCompat.requestApplyInsets(root);
+        ViewCompat.requestApplyInsets(scaffold);
     }
 
     private void updateBarPoolVisibility(View container, int chartMode, boolean animate) {
@@ -240,17 +248,9 @@ public class ConfigurationActivity extends AppCompatActivity {
 
     private void updateSectionVisibility(View container, boolean visible, boolean animate) {
         container.animate().cancel();
-        ValueAnimator runningAnimator = (ValueAnimator) container.getTag(R.id.section_visibility_animator);
-        if (runningAnimator != null) {
-            runningAnimator.cancel();
-            container.setTag(R.id.section_visibility_animator, null);
-        }
+        container.clearAnimation();
 
         if (!animate) {
-            ViewGroup.LayoutParams params = container.getLayoutParams();
-            params.height = ViewGroup.LayoutParams.WRAP_CONTENT;
-            restoreSectionMargins(container, params);
-            container.setLayoutParams(params);
             container.setAlpha(visible ? 1f : 0f);
             container.setVisibility(visible ? View.VISIBLE : View.GONE);
             setViewEnabled(container, visible);
@@ -258,180 +258,26 @@ public class ConfigurationActivity extends AppCompatActivity {
         }
 
         if (visible) {
-            expandSection(container);
-        } else {
-            collapseSection(container);
-        }
-    }
-
-    private void expandSection(View container) {
-        rememberSectionMargins(container);
-        container.setVisibility(View.VISIBLE);
-        setViewEnabled(container, true);
-
-        ViewGroup.LayoutParams params = container.getLayoutParams();
-        restoreSectionMargins(container, params);
-        params.height = ViewGroup.LayoutParams.WRAP_CONTENT;
-        container.setLayoutParams(params);
-
-        int widthSpec = View.MeasureSpec.makeMeasureSpec(
-                ((View) container.getParent()).getWidth(),
-                View.MeasureSpec.AT_MOST
-        );
-        int heightSpec = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED);
-        container.measure(widthSpec, heightSpec);
-        int targetHeight = container.getMeasuredHeight();
-        SectionMargins originalMargins = getSectionMargins(container);
-
-        params.height = 0;
-        applySectionMargins(params, 0, 0);
-        container.setLayoutParams(params);
-        container.setAlpha(0f);
-
-        ValueAnimator animator = ValueAnimator.ofFloat(0f, 1f);
-        animator.setDuration(SECTION_VISIBILITY_ANIMATION_MS);
-        animator.setInterpolator(SECTION_VISIBILITY_INTERPOLATOR);
-        animator.addUpdateListener(valueAnimator -> {
-            float fraction = valueAnimator.getAnimatedFraction();
-            params.height = Math.round(targetHeight * fraction);
-            applySectionMargins(
-                    params,
-                    Math.round(originalMargins.top * fraction),
-                    Math.round(originalMargins.bottom * fraction)
-            );
-            container.setLayoutParams(params);
-            container.setAlpha(fraction);
-        });
-        animator.addListener(new SimpleAnimatorListener() {
-            @Override
-            public void onAnimationEnd(android.animation.Animator animation) {
-                params.height = ViewGroup.LayoutParams.WRAP_CONTENT;
-                restoreSectionMargins(container, params);
-                container.setLayoutParams(params);
-                container.setAlpha(1f);
-                container.setTag(R.id.section_visibility_animator, null);
-            }
-
-            @Override
-            public void onAnimationCancel(android.animation.Animator animation) {
-                container.setTag(R.id.section_visibility_animator, null);
-            }
-        });
-        container.setTag(R.id.section_visibility_animator, animator);
-        animator.start();
-    }
-
-    private void collapseSection(View container) {
-        rememberSectionMargins(container);
-        int initialHeight = container.getHeight();
-        if (initialHeight <= 0) {
-            ViewGroup.LayoutParams params = container.getLayoutParams();
-            params.height = ViewGroup.LayoutParams.WRAP_CONTENT;
-            restoreSectionMargins(container, params);
-            container.setLayoutParams(params);
             container.setAlpha(0f);
-            container.setVisibility(View.GONE);
-            setViewEnabled(container, false);
+            container.setVisibility(View.VISIBLE);
+            setViewEnabled(container, true);
+            container.animate()
+                    .alpha(1f)
+                    .setDuration(SECTION_VISIBILITY_ANIMATION_MS)
+                    .withEndAction(null)
+                    .start();
             return;
         }
 
-        ViewGroup.LayoutParams params = container.getLayoutParams();
-        params.height = initialHeight;
-        container.setLayoutParams(params);
-        SectionMargins originalMargins = getSectionMargins(container);
-
-        ValueAnimator animator = ValueAnimator.ofFloat(0f, 1f);
-        animator.setDuration(SECTION_VISIBILITY_ANIMATION_MS);
-        animator.setInterpolator(SECTION_VISIBILITY_INTERPOLATOR);
-        animator.addUpdateListener(valueAnimator -> {
-            float fraction = valueAnimator.getAnimatedFraction();
-            params.height = Math.round(initialHeight * (1f - fraction));
-            applySectionMargins(
-                    params,
-                    Math.round(originalMargins.top * (1f - fraction)),
-                    Math.round(originalMargins.bottom * (1f - fraction))
-            );
-            container.setLayoutParams(params);
-            container.setAlpha(1f - fraction);
-        });
-        animator.addListener(new SimpleAnimatorListener() {
-            @Override
-            public void onAnimationEnd(android.animation.Animator animation) {
-                container.setVisibility(View.GONE);
-                params.height = ViewGroup.LayoutParams.WRAP_CONTENT;
-                restoreSectionMargins(container, params);
-                container.setLayoutParams(params);
-                container.setAlpha(0f);
-                setViewEnabled(container, false);
-                container.setTag(R.id.section_visibility_animator, null);
-            }
-
-            @Override
-            public void onAnimationCancel(android.animation.Animator animation) {
-                container.setTag(R.id.section_visibility_animator, null);
-            }
-        });
-        container.setTag(R.id.section_visibility_animator, animator);
-        animator.start();
-    }
-
-    private void rememberSectionMargins(View container) {
-        if (container.getTag(R.id.section_original_margins) != null) {
-            return;
-        }
-        ViewGroup.LayoutParams params = container.getLayoutParams();
-        if (params instanceof ViewGroup.MarginLayoutParams) {
-            ViewGroup.MarginLayoutParams marginParams = (ViewGroup.MarginLayoutParams) params;
-            container.setTag(
-                    R.id.section_original_margins,
-                    new SectionMargins(marginParams.topMargin, marginParams.bottomMargin)
-            );
-        } else {
-            container.setTag(R.id.section_original_margins, new SectionMargins(0, 0));
-        }
-    }
-
-    private SectionMargins getSectionMargins(View container) {
-        SectionMargins margins = (SectionMargins) container.getTag(R.id.section_original_margins);
-        if (margins == null) {
-            rememberSectionMargins(container);
-            margins = (SectionMargins) container.getTag(R.id.section_original_margins);
-        }
-        return margins != null ? margins : new SectionMargins(0, 0);
-    }
-
-    private void restoreSectionMargins(View container, ViewGroup.LayoutParams params) {
-        SectionMargins margins = getSectionMargins(container);
-        applySectionMargins(params, margins.top, margins.bottom);
-    }
-
-    private void applySectionMargins(ViewGroup.LayoutParams params, int topMargin, int bottomMargin) {
-        if (!(params instanceof ViewGroup.MarginLayoutParams)) {
-            return;
-        }
-        ViewGroup.MarginLayoutParams marginParams = (ViewGroup.MarginLayoutParams) params;
-        marginParams.topMargin = topMargin;
-        marginParams.bottomMargin = bottomMargin;
-    }
-
-    private abstract static class SimpleAnimatorListener implements android.animation.Animator.AnimatorListener {
-        @Override
-        public void onAnimationStart(android.animation.Animator animation) {
-        }
-
-        @Override
-        public void onAnimationRepeat(android.animation.Animator animation) {
-        }
-    }
-
-    private static final class SectionMargins {
-        final int top;
-        final int bottom;
-
-        SectionMargins(int top, int bottom) {
-            this.top = top;
-            this.bottom = bottom;
-        }
+        container.setAlpha(1f);
+        container.animate()
+                .alpha(0f)
+                .setDuration(SECTION_VISIBILITY_ANIMATION_MS)
+                .withEndAction(() -> {
+                    container.setVisibility(View.GONE);
+                    setViewEnabled(container, false);
+                })
+                .start();
     }
 
     private void setViewEnabled(View view, boolean enabled) {
