@@ -134,8 +134,8 @@ public final class RegionConfig {
                 "EUR",
                 ZoneId.of("Europe/Riga"),
                 Locale.forLanguageTag("lv-LV"),
-                1.0,
-                "€/kWh",
+                100.0,
+                "c/kWh",
                 List.of(area("LV", "Latvia", "10YLV-1001A00074"))
         ));
 
@@ -147,8 +147,8 @@ public final class RegionConfig {
                 "EUR",
                 ZoneId.of("Europe/Vilnius"),
                 Locale.forLanguageTag("lt-LT"),
-                1.0,
-                "€/kWh",
+                100.0,
+                "c/kWh",
                 List.of(area("LT", "Lithuania", "10YLT-1001A0008Q"))
         ));
 
@@ -160,8 +160,8 @@ public final class RegionConfig {
                 "EUR",
                 ZoneId.of("Europe/Berlin"),
                 Locale.GERMANY,
-                1.0,
-                "€/kWh",
+                100.0,
+                "c/kWh",
                 List.of(area("DE-LU", "Germany", "10Y1001A1001A82H"))
         ));
 
@@ -173,8 +173,8 @@ public final class RegionConfig {
                 "EUR",
                 ZoneId.of("Europe/Luxembourg"),
                 Locale.GERMANY,
-                1.0,
-                "€/kWh",
+                100.0,
+                "c/kWh",
                 List.of(area("LU", "Luxembourg", "10Y1001A1001A82H"))
         ));
 
@@ -186,8 +186,8 @@ public final class RegionConfig {
                 "EUR",
                 ZoneId.of("Europe/Tallinn"),
                 Locale.forLanguageTag("et-EE"),
-                1.0,
-                "€/kWh",
+                100.0,
+                "c/kWh",
                 List.of(area("EE", "Estonia", "10Y1001A1001A39I"))
         ));
 
@@ -251,8 +251,8 @@ public final class RegionConfig {
                 "EUR",
                 ZoneId.of("Europe/Bratislava"),
                 Locale.forLanguageTag("sk-SK"),
-                1.0,
-                "€/kWh",
+                100.0,
+                "c/kWh",
                 List.of(area("SK", "Slovakia", "10YSK-SEPS-----K"))
         ));
 
@@ -277,8 +277,8 @@ public final class RegionConfig {
                 "EUR",
                 ZoneId.of("Europe/Zagreb"),
                 Locale.forLanguageTag("hr-HR"),
-                1.0,
-                "€/kWh",
+                100.0,
+                "c/kWh",
                 List.of(area("HR", "Croatia", "10YHR-HEP------M"))
         ));
 
@@ -290,8 +290,8 @@ public final class RegionConfig {
                 "EUR",
                 ZoneId.of("Europe/Ljubljana"),
                 Locale.forLanguageTag("sl-SI"),
-                1.0,
-                "€/kWh",
+                100.0,
+                "c/kWh",
                 List.of(area("SI", "Slovenia", "10YSI-ELES-----O"))
         ));
 
@@ -303,8 +303,8 @@ public final class RegionConfig {
                 "EUR",
                 ZoneId.of("Europe/Athens"),
                 Locale.forLanguageTag("el-GR"),
-                1.0,
-                "€/kWh",
+                100.0,
+                "c/kWh",
                 List.of(area("GR", "Greece", "10YGR-HTSO-----Y"))
         ));
 
@@ -316,8 +316,8 @@ public final class RegionConfig {
                 "EUR",
                 ZoneId.of("Europe/Vienna"),
                 Locale.forLanguageTag("de-AT"),
-                1.0,
-                "€/kWh",
+                100.0,
+                "c/kWh",
                 List.of(area("AT", "Austria", "10YAT-APG------L"))
         ));
 
@@ -355,8 +355,8 @@ public final class RegionConfig {
                 "EUR",
                 ZoneId.of("Europe/Rome"),
                 Locale.ITALY,
-                1.0,
-                "€/kWh",
+                100.0,
+                "c/kWh",
                 Arrays.asList(
                         area("IT-CNOR", "Italy (Centre-North)", "10Y1001A1001A70O"),
                         area("IT-CSUD", "Italy (Centre-South)", "10Y1001A1001A71M"),
@@ -410,8 +410,8 @@ public final class RegionConfig {
                 "EUR",
                 ZoneId.of("Europe/Amsterdam"),
                 Locale.forLanguageTag("nl-NL"),
-                1.0,
-                "€/kWh",
+                100.0,
+                "c/kWh",
                 List.of(area("NL", "Netherlands", "10YNL----------L"))
         ));
 
@@ -423,8 +423,8 @@ public final class RegionConfig {
                 "EUR",
                 ZoneId.of("Europe/Brussels"),
                 Locale.forLanguageTag("nl-BE"),
-                1.0,
-                "€/kWh",
+                100.0,
+                "c/kWh",
                 List.of(area("BE", "Belgium", "10YBE----------2"))
         ));
 
@@ -436,8 +436,8 @@ public final class RegionConfig {
                 "EUR",
                 ZoneId.of("Europe/Lisbon"),
                 Locale.forLanguageTag("pt-PT"),
-                1.0,
-                "€/kWh",
+                100.0,
+                "c/kWh",
                 List.of(area("PT", "Portugal", "10YPT-REN------W"))
         ));
 
@@ -449,8 +449,8 @@ public final class RegionConfig {
                 "EUR",
                 ZoneId.of("Europe/Madrid"),
                 Locale.forLanguageTag("es-ES"),
-                1.0,
-                "€/kWh",
+                100.0,
+                "c/kWh",
                 List.of(area("ES", "Spain", "10YES-REE------0"))
         ));
 
@@ -494,8 +494,8 @@ public final class RegionConfig {
                 "EUR",
                 ZoneId.of("Europe/Paris"),
                 Locale.FRANCE,
-                1.0,
-                "€/kWh",
+                100.0,
+                "c/kWh",
                 List.of(area("FR", "France", "10YFR-RTE------C"))
         ));
 
