@@ -60,7 +60,7 @@
             android:lineSpacingExtra="3dp"
             android:text="@string/about_description"
             android:textColor="?attr/colorOnSurface"
-            android:textSize="16sp" />
+            android:textSize="15sp" />
 
         <TextView
             android:layout_width="wrap_content"
@@ -80,7 +80,7 @@
             android:fontFamily="@font/productsans_medium"
             android:text="@string/about_library_material"
             android:textColor="?attr/colorOnSurface"
-            android:textSize="15sp" />
+            android:textSize="14sp" />
 
         <TextView
             android:layout_width="match_parent"
@@ -89,7 +89,7 @@
             android:fontFamily="@font/productsans_medium"
             android:text="@string/about_library_androidx_core"
             android:textColor="?attr/colorOnSurface"
-            android:textSize="15sp" />
+            android:textSize="14sp" />
 
         <TextView
             android:layout_width="match_parent"
@@ -98,7 +98,7 @@
             android:fontFamily="@font/productsans_medium"
             android:text="@string/about_library_okhttp"
             android:textColor="?attr/colorOnSurface"
-            android:textSize="15sp" />
+            android:textSize="14sp" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/about_button_flux_github"
