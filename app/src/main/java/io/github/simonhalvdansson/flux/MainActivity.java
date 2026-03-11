@@ -833,17 +833,15 @@ public class MainActivity extends AppCompatActivity {
         graphImageView.setVisibility(View.GONE);
 
         ZonedDateTime now = ZonedDateTime.now(ZoneId.systemDefault());
+        int maxBarHeightPx = resolveMaxBarHeightPx();
         int[] targetHeightsPx = new int[BAR_IDS.length];
         for (int i = 0; i < BAR_IDS.length; i++) {
             ImageView bar = findViewById(BAR_IDS[i]);
             if (i < displayEntries.size()) {
                 PriceFetcher.PriceEntry entry = displayEntries.get(i);
-                float barHeightDp = (float) ((Math.abs(entry.pricePerKwh) / scaleMax) * CHART_MAX_HEIGHT_DP);
-                targetHeightsPx[i] = Math.round(TypedValue.applyDimension(
-                        TypedValue.COMPLEX_UNIT_DIP,
-                        barHeightDp,
-                        getResources().getDisplayMetrics()
-                ));
+                targetHeightsPx[i] = Math.round(
+                        (float) ((Math.abs(entry.pricePerKwh) / scaleMax) * maxBarHeightPx)
+                );
                 bar.setVisibility(View.VISIBLE);
                 bar.setBackgroundResource(BarChartUtils.resolveBarBackgroundRes(entry, now));
             } else {
@@ -860,6 +858,20 @@ public class MainActivity extends AppCompatActivity {
             cancelBarAnimation();
             applyBarHeights(targetHeightsPx);
         }
+    }
+
+    private int resolveMaxBarHeightPx() {
+        int fallbackHeightPx = Math.round(TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP,
+                CHART_MAX_HEIGHT_DP,
+                getResources().getDisplayMetrics()
+        ));
+        int containerHeightPx = chartVisualContainer != null ? chartVisualContainer.getHeight() : 0;
+        if (containerHeightPx <= 0) {
+            containerHeightPx = fallbackHeightPx;
+        }
+        int availableHeightPx = containerHeightPx - barChartContainer.getPaddingTop() - barChartContainer.getPaddingBottom();
+        return Math.max(0, availableHeightPx);
     }
 
     private void renderGraph(int chartMode, List<PriceFetcher.PriceEntry> graphDisplayEntries, double graphMaxPrice) {
