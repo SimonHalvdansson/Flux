@@ -227,11 +227,48 @@
                         android:textSize="14sp" />
                 </LinearLayout>
 
+                <com.google.android.material.button.MaterialButtonToggleGroup
+                    android:id="@+id/main_chart_toggle_group"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingEnd="@dimen/main_content_inner_padding"
+                    android:paddingStart="@dimen/main_content_inner_padding"
+                    android:layout_marginTop="8dp"
+                    app:singleSelection="true">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/main_chart_bars_button"
+                        style="?attr/materialButtonOutlinedStyle"
+                        android:layout_width="0dp"
+                        android:layout_height="56dp"
+                        android:layout_weight="1"
+                        android:fontFamily="@font/productsans_bold"
+                        android:text="@string/chart_bars" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/main_chart_graph_button"
+                        style="?attr/materialButtonOutlinedStyle"
+                        android:layout_width="0dp"
+                        android:layout_height="56dp"
+                        android:layout_weight="1"
+                        android:fontFamily="@font/productsans_bold"
+                        android:text="@string/chart_graph" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/main_chart_lines_button"
+                        style="?attr/materialButtonOutlinedStyle"
+                        android:layout_width="0dp"
+                        android:layout_height="56dp"
+                        android:layout_weight="1"
+                        android:fontFamily="@font/productsans_bold"
+                        android:text="@string/chart_lines" />
+                </com.google.android.material.button.MaterialButtonToggleGroup>
+
                 <LinearLayout
                     android:id="@+id/settings_section"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="24dp"
+                    android:layout_marginTop="12dp"
                     android:animateLayoutChanges="true"
                     android:orientation="vertical">
 
@@ -262,7 +299,7 @@
                                 android:fontFamily="@font/productsans_bold"
                                 android:text="@string/configuration_label"
                                 android:textColor="@color/main_price_emphasis"
-                                android:textSize="16sp" />
+                                android:textSize="17sp" />
 
                             <ImageView
                                 android:id="@+id/settings_toggle_caret"
@@ -281,43 +318,6 @@
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
                         android:visibility="gone">
-
-                        <com.google.android.material.button.MaterialButtonToggleGroup
-                            android:id="@+id/main_chart_toggle_group"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:paddingEnd="@dimen/main_content_inner_padding"
-                            android:paddingStart="@dimen/main_content_inner_padding"
-                            android:layout_marginTop="8dp"
-                            app:singleSelection="true">
-
-                            <com.google.android.material.button.MaterialButton
-                                android:id="@+id/main_chart_bars_button"
-                                style="?attr/materialButtonOutlinedStyle"
-                                android:layout_width="0dp"
-                                android:layout_height="56dp"
-                                android:layout_weight="1"
-                                android:fontFamily="@font/productsans_bold"
-                                android:text="@string/chart_bars" />
-
-                            <com.google.android.material.button.MaterialButton
-                                android:id="@+id/main_chart_graph_button"
-                                style="?attr/materialButtonOutlinedStyle"
-                                android:layout_width="0dp"
-                                android:layout_height="56dp"
-                                android:layout_weight="1"
-                                android:fontFamily="@font/productsans_bold"
-                                android:text="@string/chart_graph" />
-
-                            <com.google.android.material.button.MaterialButton
-                                android:id="@+id/main_chart_lines_button"
-                                style="?attr/materialButtonOutlinedStyle"
-                                android:layout_width="0dp"
-                                android:layout_height="56dp"
-                                android:layout_weight="1"
-                                android:fontFamily="@font/productsans_bold"
-                                android:text="@string/chart_lines" />
-                        </com.google.android.material.button.MaterialButtonToggleGroup>
 
                         <include layout="@layout/view_app_settings" />
                     </LinearLayout>
