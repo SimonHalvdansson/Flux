@@ -35,18 +35,18 @@ public class ListWidgetService extends RemoteViewsService {
     static class PriceRemoteViewsFactory implements RemoteViewsFactory {
         private static final int ITEM_TIME_WIDTH_DP = 39;
         private static final int ITEM_TIME_MARGIN_END_DP = 4;
+        private static final int ITEM_PRICE_BASE_CHAR_COUNT = 4;
         private static final int ITEM_PRICE_WIDTH_DP = 36;
         private static final int ITEM_BAR_MARGIN_START_DP = 2;
         private static final int ITEM_HORIZONTAL_PADDING_DP = 32; // 16dp left + 16dp right
-        private static final int NON_BAR_CONTENT_WIDTH_DP =
-                ITEM_HORIZONTAL_PADDING_DP + ITEM_TIME_WIDTH_DP + ITEM_TIME_MARGIN_END_DP
-                        + ITEM_PRICE_WIDTH_DP + ITEM_BAR_MARGIN_START_DP;
 
         private final Context context;
         private final List<PriceFetcher.PriceEntry> items = new ArrayList<>();
+        private final List<String> priceTexts = new ArrayList<>();
         private final boolean showBar;
         private double maxPrice = 0.0;
         private int maxBarWidthPx;
+        private int priceColumnWidthDp;
         private final int appWidgetId;
         private String country = "NO";
 
@@ -55,6 +55,7 @@ public class ListWidgetService extends RemoteViewsService {
             this.showBar = intent.getBooleanExtra(EXTRA_SHOW_BAR, false);
             this.appWidgetId = intent.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, AppWidgetManager.INVALID_APPWIDGET_ID);
             this.maxBarWidthPx = 0;
+            this.priceColumnWidthDp = ITEM_PRICE_WIDTH_DP;
         }
 
         @Override
@@ -65,18 +66,21 @@ public class ListWidgetService extends RemoteViewsService {
         @Override
         public void onDataSetChanged() {
             items.clear();
+            priceTexts.clear();
             maxPrice = 0.0;
-            updateMaxBarWidthPx();
+            priceColumnWidthDp = ITEM_PRICE_WIDTH_DP;
             SharedPreferences prefs = PriceRepository.getPreferences(context);
             String combinedJson = prefs.getString(PriceRepository.KEY_JSON_DATA, null);
             country = prefs.getString(PriceUpdateJobService.KEY_SELECTED_COUNTRY, "NO");
 
             if (combinedJson == null || combinedJson.trim().isEmpty()) {
+                updateMaxBarWidthPx();
                 return;
             }
 
             List<PriceFetcher.PriceEntry> allData = CurrentPriceResolver.getAdjustedEntries(prefs);
             if (allData.isEmpty()) {
+                updateMaxBarWidthPx();
                 return;
             }
 
@@ -98,17 +102,24 @@ public class ListWidgetService extends RemoteViewsService {
                 displayEntries = PriceFetcher.aggregateConsecutive(alignedFutureEntries, incrementMinutes, poolMode);
             }
 
+            int maxPriceCharCount = ITEM_PRICE_BASE_CHAR_COUNT;
             for (PriceFetcher.PriceEntry entry : displayEntries) {
+                String priceText = PriceDisplayUtils.formatPrice(entry.pricePerKwh, country, prefs);
                 items.add(entry);
+                priceTexts.add(priceText);
+                maxPriceCharCount = Math.max(maxPriceCharCount, priceText.length());
                 if (entry.pricePerKwh > maxPrice) {
                     maxPrice = entry.pricePerKwh;
                 }
             }
+            updatePriceColumnWidth(maxPriceCharCount);
+            updateMaxBarWidthPx();
         }
 
         @Override
         public void onDestroy() {
             items.clear();
+            priceTexts.clear();
         }
 
         @Override
@@ -124,13 +135,10 @@ public class ListWidgetService extends RemoteViewsService {
             PriceFetcher.PriceEntry e = items.get(position);
             ZonedDateTime s = e.startTime.atZoneSameInstant(ZoneId.systemDefault());
             String tText = String.format("%02d:%02d", s.getHour(), s.getMinute());
-            String pText = PriceDisplayUtils.formatPrice(
-                    e.pricePerKwh,
-                    country,
-                    PriceRepository.getPreferences(context)
-            );
+            String pText = priceTexts.get(position);
             RemoteViews rv = new RemoteViews(context.getPackageName(), R.layout.list_item);
             rv.setTextViewText(R.id.item_time, tText);
+            rv.setViewLayoutWidth(R.id.item_price, priceColumnWidthDp, TypedValue.COMPLEX_UNIT_DIP);
             rv.setTextViewText(R.id.item_price, pText);
             if (showBar && maxPrice > 0) {
                 int barWidth = (int) (e.pricePerKwh / maxPrice * maxBarWidthPx);
@@ -211,14 +219,24 @@ public class ListWidgetService extends RemoteViewsService {
             }
 
             if (widgetWidthDp <= 0) {
-                widgetWidthDp = NON_BAR_CONTENT_WIDTH_DP;
+                widgetWidthDp = getNonBarContentWidthDp();
             }
 
-            int availableBarWidthDp = Math.max(0, widgetWidthDp - NON_BAR_CONTENT_WIDTH_DP);
+            int availableBarWidthDp = Math.max(0, widgetWidthDp - getNonBarContentWidthDp());
             maxBarWidthPx = (int) TypedValue.applyDimension(
                     TypedValue.COMPLEX_UNIT_DIP,
                     availableBarWidthDp,
                     context.getResources().getDisplayMetrics());
+        }
+
+        private void updatePriceColumnWidth(int maxPriceCharCount) {
+            int safeCharCount = Math.max(ITEM_PRICE_BASE_CHAR_COUNT, maxPriceCharCount);
+            priceColumnWidthDp = (ITEM_PRICE_WIDTH_DP * safeCharCount) / ITEM_PRICE_BASE_CHAR_COUNT;
+        }
+
+        private int getNonBarContentWidthDp() {
+            return ITEM_HORIZONTAL_PADDING_DP + ITEM_TIME_WIDTH_DP + ITEM_TIME_MARGIN_END_DP
+                    + priceColumnWidthDp + ITEM_BAR_MARGIN_START_DP;
         }
 
         @Override
