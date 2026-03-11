@@ -14,14 +14,8 @@ import android.view.View;
 import android.widget.RemoteViews;
 import android.graphics.Bitmap;
 
-import java.time.Duration;
-import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -73,6 +67,15 @@ public class MainWidget extends AppWidgetProvider {
     }
 
     @Override
+    public void onDeleted(Context context, int[] appWidgetIds) {
+        super.onDeleted(context, appWidgetIds);
+        SharedPreferences prefs = PriceRepository.getPreferences(context);
+        for (int appWidgetId : appWidgetIds) {
+            WidgetPreferences.clearWidgetPreferences(prefs, appWidgetId);
+        }
+    }
+
+    @Override
     public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
         for (int appWidgetId : appWidgetIds) {
             updateAppWidget(context, appWidgetManager, appWidgetId);
@@ -91,10 +94,10 @@ public class MainWidget extends AppWidgetProvider {
     static void updateAppWidget(Context context, AppWidgetManager appWidgetManager, int appWidgetId) {
 
         SharedPreferences prefs = PriceRepository.getPreferences(context);
-        String combinedJson = prefs.getString(PriceRepository.KEY_JSON_DATA, null);
-        int chartMode = WidgetPreferences.getChartMode(prefs);
-        int barPoolMode = WidgetPreferences.getMainBarPoolMode(prefs);
-        boolean apiError = prefs.getBoolean(PriceUpdateJobService.KEY_API_ERROR, false);
+        int chartMode = WidgetPreferences.getChartMode(prefs, appWidgetId);
+        int barPoolMode = WidgetPreferences.getMainBarPoolMode(prefs, appWidgetId);
+        MainWidgetRenderDataResolver.RenderData renderData =
+                MainWidgetRenderDataResolver.resolve(context, prefs, barPoolMode, false);
 
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.main_widget);
         // Reset visibility in case previous update showed API error state.
@@ -156,120 +159,19 @@ public class MainWidget extends AppWidgetProvider {
 
         }
 
-        // If no data, placeholders
-        if (apiError || combinedJson == null || combinedJson.trim().isEmpty()) {
+        if (!renderData.hasData) {
             Log.w(TAG, "No cached data found or API error; showing error message");
             showApiErrorState(appWidgetManager, appWidgetId, views);
             return;
         }
 
-        String country = prefs.getString(PriceUpdateJobService.KEY_SELECTED_COUNTRY, "NO");
-        String unitText = PriceDisplayUtils.getUnitText(country, prefs);
-        views.setTextViewText(R.id.current_price_unit, unitText);
-
-        // Parse JSON
-        List<PriceFetcher.PriceEntry> allData = CurrentPriceResolver.getAdjustedEntries(prefs);
-
-        if (allData.isEmpty()) {
-            showApiErrorState(appWidgetManager, appWidgetId, views);
-            return;
-        }
-
-        List<PriceFetcher.PriceEntry> hourlyData = PriceFetcher.aggregateToHourly(allData, barPoolMode);
-        if (hourlyData.isEmpty()) {
-            showApiErrorState(appWidgetManager, appWidgetId, views);
-            return;
-        }
-
         ZonedDateTime now = ZonedDateTime.now(ZoneId.systemDefault());
-
-        int currentIndex = CurrentPriceResolver.findCurrentIndex(allData);
-
-        PriceFetcher.PriceEntry currentEntry = allData.get(currentIndex);
-
-        OffsetDateTime currentHourStart = currentEntry.startTime.truncatedTo(ChronoUnit.HOURS);
-        int currentHourIndex = 0;
-        long bestDiff = Long.MAX_VALUE;
-        for (int i = 0; i < hourlyData.size(); i++) {
-            PriceFetcher.PriceEntry e = hourlyData.get(i);
-            long diff = Math.abs(Duration.between(currentHourStart, e.startTime).toMinutes());
-            if (diff < bestDiff) {
-                bestDiff = diff;
-                currentHourIndex = i;
-            }
-        }
-
-        int desiredCount = Math.min(24, hourlyData.size());
-        int firstHourIndex = Math.max(0, currentHourIndex - 3);
-        int lastHourIndex = Math.min(hourlyData.size() - 1, firstHourIndex + desiredCount - 1);
-        int actualCount = lastHourIndex - firstHourIndex + 1;
-        if (actualCount < desiredCount) {
-            firstHourIndex = Math.max(0, Math.min(firstHourIndex, hourlyData.size() - desiredCount));
-            lastHourIndex = Math.min(hourlyData.size() - 1, firstHourIndex + desiredCount - 1);
-            actualCount = lastHourIndex - firstHourIndex + 1;
-        }
-
-        List<PriceFetcher.PriceEntry> barDisplayList = hourlyData.subList(firstHourIndex, lastHourIndex + 1);
-
-        OffsetDateTime windowStart = barDisplayList.get(0).startTime;
-        OffsetDateTime windowEnd = barDisplayList.get(barDisplayList.size() - 1).endTime;
-
-        List<PriceFetcher.PriceEntry> graphDisplayList = new ArrayList<>();
-        for (PriceFetcher.PriceEntry entry : allData) {
-            if (!entry.endTime.isBefore(windowStart) && entry.startTime.isBefore(windowEnd)) {
-                graphDisplayList.add(entry);
-            } else if (entry.startTime.isAfter(windowEnd)) {
-                break;
-            }
-        }
-        if (graphDisplayList.isEmpty()) {
-            graphDisplayList.add(currentEntry);
-        }
+        views.setTextViewText(R.id.current_price_unit, renderData.unitText);
 
         views.setViewVisibility(R.id.widget_time_container, View.VISIBLE);
-        int displayedCount = barDisplayList.size();
-
-        double barMaxPrice = -Double.MAX_VALUE;
-        for (PriceFetcher.PriceEntry e : barDisplayList) {
-            if (e.pricePerKwh > barMaxPrice) {
-                barMaxPrice = e.pricePerKwh;
-            }
-        }
-        if (barMaxPrice <= 0) {
-            barMaxPrice = 1.0;
-        }
-
-        double graphMaxPrice = -Double.MAX_VALUE;
-        PriceFetcher.PriceEntry maxEntry = null;
-        PriceFetcher.PriceEntry minEntry = null;
-        for (PriceFetcher.PriceEntry e : graphDisplayList) {
-            if (e.pricePerKwh > graphMaxPrice) {
-                graphMaxPrice = e.pricePerKwh;
-                maxEntry = e;
-            }
-            if (e.pricePerKwh < (minEntry != null ? minEntry.pricePerKwh : Double.MAX_VALUE)) {
-                minEntry = e;
-            }
-        }
-
-        String maxText = "\u2191";
-        if (maxEntry != null) {
-            ZonedDateTime s = maxEntry.startTime.atZoneSameInstant(ZoneId.systemDefault());
-            ZonedDateTime eTime = maxEntry.endTime.atZoneSameInstant(ZoneId.systemDefault());
-            String maxPriceText = PriceDisplayUtils.formatPrice(maxEntry.pricePerKwh, country, prefs);
-            maxText = String.format("\u2191 %s %s", maxPriceText, formatTimeRange(s, eTime));
-        }
-
-        String minText = "\u2193";
-        if (minEntry != null) {
-            ZonedDateTime s = minEntry.startTime.atZoneSameInstant(ZoneId.systemDefault());
-            ZonedDateTime eTime = minEntry.endTime.atZoneSameInstant(ZoneId.systemDefault());
-            String minPriceText = PriceDisplayUtils.formatPrice(minEntry.pricePerKwh, country, prefs);
-            minText = String.format("\u2193 %s %s", minPriceText, formatTimeRange(s, eTime));
-        }
-
-        views.setTextViewText(R.id.max_price_text, maxText);
-        views.setTextViewText(R.id.min_price_text, minText);
+        int displayedCount = renderData.barDisplayEntries.size();
+        views.setTextViewText(R.id.max_price_text, renderData.maxText);
+        views.setTextViewText(R.id.min_price_text, renderData.minText);
 
         if (chartMode == WidgetPreferences.CHART_MODE_BARS) {
             views.setViewVisibility(R.id.bar_graph_container, View.VISIBLE);
@@ -278,8 +180,8 @@ public class MainWidget extends AppWidgetProvider {
             for (int i = 0; i < barIds.length; i++) {
                 int barId = barIds[i];
                 if (i < displayedCount) {
-                    PriceFetcher.PriceEntry e = barDisplayList.get(i);
-                    double fraction = e.pricePerKwh / barMaxPrice;
+                    PriceFetcher.PriceEntry e = renderData.barDisplayEntries.get(i);
+                    double fraction = e.pricePerKwh / renderData.barMaxPrice;
                     double barDp = fraction * barMaxHeightDp;
 
                     int barPx = (int) TypedValue.applyDimension(
@@ -321,23 +223,18 @@ public class MainWidget extends AppWidgetProvider {
             views.setInt(R.id.graph_image, "setMaxWidth", graphWidthPx);
             views.setInt(R.id.graph_image, "setMaxHeight", graphHeightPx);
 
-            double graphScaleMax = Math.max(barMaxPrice, graphMaxPrice);
-            if (graphScaleMax <= 0) {
-                graphScaleMax = 1.0;
-            }
-
             Bitmap graphBitmap = chartMode == WidgetPreferences.CHART_MODE_LINES
                     ? GraphUtils.createStepLineGraphBitmap(
                             context.getApplicationContext(),
-                            graphDisplayList,
-                            graphScaleMax,
+                            renderData.graphDisplayEntries,
+                            renderData.graphScaleMax,
                             graphWidthPx,
                             graphHeightPx
                     )
                     : GraphUtils.createLineGraphBitmapCubic(
                             context.getApplicationContext(),
-                            graphDisplayList,
-                            graphScaleMax,
+                            renderData.graphDisplayEntries,
+                            renderData.graphScaleMax,
                             graphWidthPx,
                             graphHeightPx,
                             now
@@ -345,21 +242,15 @@ public class MainWidget extends AppWidgetProvider {
             views.setImageViewBitmap(R.id.graph_image, graphBitmap);
         }
 
-        double currentPrice = currentEntry.pricePerKwh;
-        String priceText = PriceDisplayUtils.formatPrice(currentPrice, country, prefs);
-        views.setTextViewText(R.id.current_price_imageview, priceText);
-
-        ZonedDateTime currentStart = currentEntry.startTime.atZoneSameInstant(ZoneId.systemDefault());
-        ZonedDateTime currentEnd = currentEntry.endTime.atZoneSameInstant(ZoneId.systemDefault());
-        String timeText = String.format("%02d:%02d-%02d:%02d:", currentStart.getHour(), currentStart.getMinute(), currentEnd.getHour(), currentEnd.getMinute());
-        views.setTextViewText(R.id.current_price_header, timeText);
+        views.setTextViewText(R.id.current_price_imageview, renderData.currentPriceText);
+        views.setTextViewText(R.id.current_price_header, renderData.currentTimeText);
 
         int[] timeBarIndices = {0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22};
         for (int t = 0; t < timeLabelIds.length; t++) {
             int tvId = timeLabelIds[t];
             int barIndex = timeBarIndices[t];
             if (barIndex < displayedCount) {
-                PriceFetcher.PriceEntry e = barDisplayList.get(barIndex);
+                PriceFetcher.PriceEntry e = renderData.barDisplayEntries.get(barIndex);
                 ZonedDateTime start = e.startTime.atZoneSameInstant(ZoneId.systemDefault());
                 String label = String.format("%02d", start.getHour());
                 views.setTextViewText(tvId, label);
@@ -369,14 +260,6 @@ public class MainWidget extends AppWidgetProvider {
         }
 
         appWidgetManager.updateAppWidget(appWidgetId, views);
-    }
-
-    private static String formatTimeRange(ZonedDateTime start, ZonedDateTime end) {
-        long minutes = Duration.between(start, end).toMinutes();
-        if (minutes == 15) {
-            return String.format("%02d:%02d", start.getHour(), start.getMinute());
-        }
-        return String.format("%02d:%02d-%02d:%02d", start.getHour(), start.getMinute(), end.getHour(), end.getMinute());
     }
 
     private static void showApiErrorState(AppWidgetManager appWidgetManager, int appWidgetId, RemoteViews views) {
@@ -440,4 +323,3 @@ public class MainWidget extends AppWidgetProvider {
         }
     }
 }
-

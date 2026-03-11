@@ -40,8 +40,8 @@
     <string name="main_chart_mode_title">Display mode</string>
     <string name="main_bar_pool_title">Bar pooling</string>
     <string name="widget_settings_title">Widget settings</string>
-    <string name="main_widget_settings_title">Main widget settings</string>
-    <string name="list_widget_settings_title">List widget settings</string>
+    <string name="main_widget_settings_title">Chart widget</string>
+    <string name="list_widget_settings_title">List widget</string>
     <string name="widget_chart_mode_title">Display mode</string>
     <string name="widget_bar_pool_title">Pool hourly bars by</string>
     <string name="widget_list_increment_title">Increment size</string>

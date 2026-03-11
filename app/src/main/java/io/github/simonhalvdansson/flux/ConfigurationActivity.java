@@ -70,6 +70,7 @@ public class ConfigurationActivity extends AppCompatActivity {
         MaterialButtonToggleGroup listIncrementToggleGroup = findViewById(R.id.list_increment_toggle_group);
         LinearLayout listPoolContainer = findViewById(R.id.list_pool_container);
         MaterialButtonToggleGroup listPoolToggleGroup = findViewById(R.id.list_pool_toggle_group);
+        View chartWidgetPreview = findViewById(R.id.chart_widget_preview);
         View doneButton = findViewById(R.id.done_button);
 
         chartToggleGroup.setSelectionRequired(true);
@@ -82,10 +83,10 @@ public class ConfigurationActivity extends AppCompatActivity {
             mainWidgetSection.setVisibility(View.GONE);
             listWidgetSection.setVisibility(View.VISIBLE);
 
-            int incrementMinutes = WidgetPreferences.getListIncrementMinutes(prefs);
+            int incrementMinutes = WidgetPreferences.getListIncrementMinutes(prefs, appWidgetId);
             listIncrementToggleGroup.check(getIncrementButtonId(incrementMinutes));
 
-            int listPoolMode = WidgetPreferences.getListPoolMode(prefs);
+            int listPoolMode = WidgetPreferences.getListPoolMode(prefs, appWidgetId);
             listPoolToggleGroup.check(listPoolMode == WidgetPreferences.POOL_MODE_MIN
                     ? R.id.list_pool_min_button
                     : listPoolMode == WidgetPreferences.POOL_MODE_MAX
@@ -98,7 +99,7 @@ public class ConfigurationActivity extends AppCompatActivity {
                     return;
                 }
                 int minutes = getIncrementMinutesForButton(checkedId);
-                prefs.edit().putInt(WidgetPreferences.KEY_LIST_INCREMENT_MINUTES, minutes).apply();
+                WidgetPreferences.setListIncrementMinutes(prefs, appWidgetId, minutes);
                 updateListPoolVisibility(listPoolContainer, minutes, true);
             });
 
@@ -111,31 +112,35 @@ public class ConfigurationActivity extends AppCompatActivity {
                         : checkedId == R.id.list_pool_max_button
                         ? WidgetPreferences.POOL_MODE_MAX
                         : WidgetPreferences.POOL_MODE_AVERAGE;
-                prefs.edit().putInt(WidgetPreferences.KEY_LIST_POOL_MODE, poolMode).apply();
+                WidgetPreferences.setListPoolMode(prefs, appWidgetId, poolMode);
             });
         } else {
             titleView.setText(R.string.main_widget_settings_title);
             mainWidgetSection.setVisibility(View.VISIBLE);
             listWidgetSection.setVisibility(View.GONE);
+            chartWidgetPreview.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
 
-            int chartMode = WidgetPreferences.getChartMode(prefs);
+            int chartMode = WidgetPreferences.getChartMode(prefs, appWidgetId);
             chartToggleGroup.check(getChartButtonId(chartMode));
 
-            int barPoolMode = WidgetPreferences.getMainBarPoolMode(prefs);
+            int barPoolMode = WidgetPreferences.getMainBarPoolMode(prefs, appWidgetId);
             barPoolToggleGroup.check(barPoolMode == WidgetPreferences.POOL_MODE_MIN
                     ? R.id.bar_pool_min_button
                     : barPoolMode == WidgetPreferences.POOL_MODE_MAX
                     ? R.id.bar_pool_max_button
                     : R.id.bar_pool_average_button);
             updateBarPoolVisibility(barPoolContainer, chartMode, false);
+            updateChartWidgetPreview(chartWidgetPreview, prefs, chartMode, barPoolMode);
 
             chartToggleGroup.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
                 if (!isChecked) {
                     return;
                 }
                 int mode = getChartModeForButton(checkedId);
-                prefs.edit().putInt(PriceUpdateJobService.KEY_CHART_MODE, mode).apply();
+                WidgetPreferences.setChartMode(prefs, appWidgetId, mode);
                 updateBarPoolVisibility(barPoolContainer, mode, true);
+                int selectedBarPoolMode = WidgetPreferences.getMainBarPoolMode(prefs, appWidgetId);
+                updateChartWidgetPreview(chartWidgetPreview, prefs, mode, selectedBarPoolMode);
             });
 
             barPoolToggleGroup.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
@@ -147,7 +152,9 @@ public class ConfigurationActivity extends AppCompatActivity {
                         : checkedId == R.id.bar_pool_max_button
                         ? WidgetPreferences.POOL_MODE_MAX
                         : WidgetPreferences.POOL_MODE_AVERAGE;
-                prefs.edit().putInt(WidgetPreferences.KEY_MAIN_BAR_POOL_MODE, poolMode).apply();
+                WidgetPreferences.setMainBarPoolMode(prefs, appWidgetId, poolMode);
+                int selectedChartMode = WidgetPreferences.getChartMode(prefs, appWidgetId);
+                updateChartWidgetPreview(chartWidgetPreview, prefs, selectedChartMode, poolMode);
             });
         }
 
@@ -178,6 +185,13 @@ public class ConfigurationActivity extends AppCompatActivity {
 
     private void updateBarPoolVisibility(View container, int chartMode, boolean animate) {
         updateSectionVisibility(container, chartMode == WidgetPreferences.CHART_MODE_BARS, animate);
+    }
+
+    private void updateChartWidgetPreview(View previewRoot,
+                                          SharedPreferences prefs,
+                                          int chartMode,
+                                          int barPoolMode) {
+        ChartWidgetPreviewBinder.bind(previewRoot, prefs, chartMode, barPoolMode);
     }
 
     private int getChartButtonId(int chartMode) {

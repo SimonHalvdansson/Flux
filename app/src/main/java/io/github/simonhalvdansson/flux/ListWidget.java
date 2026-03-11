@@ -48,6 +48,15 @@ public class ListWidget extends AppWidgetProvider {
     }
 
     @Override
+    public void onDeleted(Context context, int[] appWidgetIds) {
+        super.onDeleted(context, appWidgetIds);
+        SharedPreferences prefs = PriceRepository.getPreferences(context);
+        for (int appWidgetId : appWidgetIds) {
+            WidgetPreferences.clearWidgetPreferences(prefs, appWidgetId);
+        }
+    }
+
+    @Override
     public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
         for (int appWidgetId : appWidgetIds) {
             updateAppWidget(context, appWidgetManager, appWidgetId);
@@ -160,4 +169,3 @@ public class ListWidget extends AppWidgetProvider {
         }
     }
 }
-

@@ -87,8 +87,8 @@ public class ListWidgetService extends RemoteViewsService {
                 futureEntries.add(allData.get(i));
             }
 
-            int incrementMinutes = WidgetPreferences.getListIncrementMinutes(prefs);
-            int poolMode = WidgetPreferences.getListPoolMode(prefs);
+            int incrementMinutes = WidgetPreferences.getListIncrementMinutes(prefs, appWidgetId);
+            int poolMode = WidgetPreferences.getListPoolMode(prefs, appWidgetId);
             List<PriceFetcher.PriceEntry> displayEntries;
             if (incrementMinutes == WidgetPreferences.INCREMENT_15_MINUTES) {
                 displayEntries = futureEntries;

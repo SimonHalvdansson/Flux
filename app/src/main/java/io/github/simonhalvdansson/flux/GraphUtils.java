@@ -21,7 +21,7 @@ public class GraphUtils {
     private static final float CIRCLE_RADIUS_DP = 6f;
     private static final float PAD_SLOP_DP      = 1f;
 
-    private static final float EDGE_FADE_MINUTES  = 50f;
+    private static final float EDGE_FADE_MINUTES  = 38f;
     private static final float VERTICAL_EASE_POWER = 1.3f;
     private static final float HORIZONTAL_EASE_POWER = 1.6f;
 
