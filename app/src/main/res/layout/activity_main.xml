@@ -43,7 +43,9 @@
                 android:clipChildren="false"
                 android:clipToPadding="false"
                 android:gravity="top"
-                android:orientation="horizontal">
+                android:orientation="horizontal"
+                android:paddingStart="@dimen/main_content_inner_padding"
+                android:paddingEnd="@dimen/main_content_inner_padding">
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -90,11 +92,17 @@
                 </LinearLayout>
 
                 <FrameLayout
+                    android:id="@+id/app_icon_button"
                     android:layout_width="56dp"
                     android:layout_height="56dp"
                     android:layout_marginStart="12dp"
+                    android:background="@drawable/info_trigger_touch_background"
+                    android:clickable="true"
                     android:clipChildren="false"
-                    android:clipToPadding="false">
+                    android:clipToPadding="false"
+                    android:focusable="true"
+                    android:foreground="@drawable/info_trigger_touch_background"
+                    android:padding="4dp">
 
                     <ImageView
                         android:id="@+id/app_icon"
@@ -114,157 +122,207 @@
                 android:clipToPadding="false"
                 android:orientation="vertical">
 
-                <FrameLayout
-                    android:id="@+id/chart_visual_container"
-                    android:layout_width="match_parent"
-                    android:layout_height="160dp"
-                    android:clipChildren="false"
-                    android:clipToPadding="false">
-
-                <LinearLayout
-                    android:id="@+id/bar_chart_container"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:clipChildren="false"
-                    android:clipToPadding="false"
-                    android:gravity="bottom"
-                    android:orientation="horizontal">
-
-                    <ImageView android:id="@+id/bar_0" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded_old" />
-                    <ImageView android:id="@+id/bar_1" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded_old" />
-                    <ImageView android:id="@+id/bar_2" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded_old" />
-                    <ImageView android:id="@+id/bar_3" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded_current" />
-                    <ImageView android:id="@+id/bar_4" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
-                    <ImageView android:id="@+id/bar_5" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
-                    <ImageView android:id="@+id/bar_6" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
-                    <ImageView android:id="@+id/bar_7" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
-                    <ImageView android:id="@+id/bar_8" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
-                    <ImageView android:id="@+id/bar_9" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
-                    <ImageView android:id="@+id/bar_10" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
-                    <ImageView android:id="@+id/bar_11" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
-                    <ImageView android:id="@+id/bar_12" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
-                    <ImageView android:id="@+id/bar_13" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
-                    <ImageView android:id="@+id/bar_14" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
-                    <ImageView android:id="@+id/bar_15" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
-                    <ImageView android:id="@+id/bar_16" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
-                    <ImageView android:id="@+id/bar_17" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
-                    <ImageView android:id="@+id/bar_18" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
-                    <ImageView android:id="@+id/bar_19" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
-                    <ImageView android:id="@+id/bar_20" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
-                    <ImageView android:id="@+id/bar_21" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
-                    <ImageView android:id="@+id/bar_22" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
-                    <ImageView android:id="@+id/bar_23" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
-                </LinearLayout>
-
-                    <ImageView
-                        android:id="@+id/graph_image"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:adjustViewBounds="true"
-                        android:scaleType="fitXY"
-                        android:visibility="gone" />
-
-                    <View
-                        android:id="@+id/chart_touch_overlay"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:background="@android:color/transparent"
-                        android:clickable="true"
-                        android:focusable="true" />
-                </FrameLayout>
-
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:orientation="horizontal">
+                    android:orientation="vertical"
+                    android:paddingStart="@dimen/main_content_inner_padding"
+                    android:paddingEnd="@dimen/main_content_inner_padding">
 
-                    <TextView android:id="@+id/time0" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:fontFamily="@font/productsans_medium" android:gravity="start" android:textSize="12sp" />
-                    <TextView android:id="@+id/time1" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:fontFamily="@font/productsans_medium" android:gravity="start" android:textSize="12sp" />
-                    <TextView android:id="@+id/time2" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:fontFamily="@font/productsans_medium" android:gravity="start" android:textSize="12sp" />
-                    <TextView android:id="@+id/time3" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:fontFamily="@font/productsans_medium" android:gravity="start" android:textSize="12sp" />
-                    <TextView android:id="@+id/time4" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:fontFamily="@font/productsans_medium" android:gravity="start" android:textSize="12sp" />
-                    <TextView android:id="@+id/time5" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:fontFamily="@font/productsans_medium" android:gravity="start" android:textSize="12sp" />
-                    <TextView android:id="@+id/time6" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:fontFamily="@font/productsans_medium" android:gravity="start" android:textSize="12sp" />
-                    <TextView android:id="@+id/time7" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:fontFamily="@font/productsans_medium" android:gravity="start" android:textSize="12sp" />
-                    <TextView android:id="@+id/time8" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:fontFamily="@font/productsans_medium" android:gravity="start" android:textSize="12sp" />
-                    <TextView android:id="@+id/time9" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:fontFamily="@font/productsans_medium" android:gravity="start" android:textSize="12sp" />
-                    <TextView android:id="@+id/time10" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:fontFamily="@font/productsans_medium" android:gravity="start" android:textSize="12sp" />
-                    <TextView android:id="@+id/time11" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:fontFamily="@font/productsans_medium" android:gravity="start" android:textSize="12sp" />
+                    <FrameLayout
+                        android:id="@+id/chart_visual_container"
+                        android:layout_width="match_parent"
+                        android:layout_height="160dp"
+                        android:clipChildren="false"
+                        android:clipToPadding="false">
+
+                    <LinearLayout
+                        android:id="@+id/bar_chart_container"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:clipChildren="false"
+                        android:clipToPadding="false"
+                        android:gravity="bottom"
+                        android:orientation="horizontal">
+
+                        <ImageView android:id="@+id/bar_0" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded_old" />
+                        <ImageView android:id="@+id/bar_1" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded_old" />
+                        <ImageView android:id="@+id/bar_2" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded_old" />
+                        <ImageView android:id="@+id/bar_3" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded_current" />
+                        <ImageView android:id="@+id/bar_4" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
+                        <ImageView android:id="@+id/bar_5" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
+                        <ImageView android:id="@+id/bar_6" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
+                        <ImageView android:id="@+id/bar_7" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
+                        <ImageView android:id="@+id/bar_8" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
+                        <ImageView android:id="@+id/bar_9" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
+                        <ImageView android:id="@+id/bar_10" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
+                        <ImageView android:id="@+id/bar_11" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
+                        <ImageView android:id="@+id/bar_12" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
+                        <ImageView android:id="@+id/bar_13" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
+                        <ImageView android:id="@+id/bar_14" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
+                        <ImageView android:id="@+id/bar_15" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
+                        <ImageView android:id="@+id/bar_16" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
+                        <ImageView android:id="@+id/bar_17" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
+                        <ImageView android:id="@+id/bar_18" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
+                        <ImageView android:id="@+id/bar_19" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
+                        <ImageView android:id="@+id/bar_20" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
+                        <ImageView android:id="@+id/bar_21" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
+                        <ImageView android:id="@+id/bar_22" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
+                        <ImageView android:id="@+id/bar_23" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
+                    </LinearLayout>
+
+                        <ImageView
+                            android:id="@+id/graph_image"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:adjustViewBounds="true"
+                            android:scaleType="fitXY"
+                            android:visibility="gone" />
+
+                        <View
+                            android:id="@+id/chart_touch_overlay"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:background="@android:color/transparent"
+                            android:clickable="true"
+                            android:focusable="true" />
+                    </FrameLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:orientation="horizontal">
+
+                        <TextView android:id="@+id/time0" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:fontFamily="@font/productsans_medium" android:gravity="start" android:textSize="12sp" />
+                        <TextView android:id="@+id/time1" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:fontFamily="@font/productsans_medium" android:gravity="start" android:textSize="12sp" />
+                        <TextView android:id="@+id/time2" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:fontFamily="@font/productsans_medium" android:gravity="start" android:textSize="12sp" />
+                        <TextView android:id="@+id/time3" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:fontFamily="@font/productsans_medium" android:gravity="start" android:textSize="12sp" />
+                        <TextView android:id="@+id/time4" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:fontFamily="@font/productsans_medium" android:gravity="start" android:textSize="12sp" />
+                        <TextView android:id="@+id/time5" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:fontFamily="@font/productsans_medium" android:gravity="start" android:textSize="12sp" />
+                        <TextView android:id="@+id/time6" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:fontFamily="@font/productsans_medium" android:gravity="start" android:textSize="12sp" />
+                        <TextView android:id="@+id/time7" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:fontFamily="@font/productsans_medium" android:gravity="start" android:textSize="12sp" />
+                        <TextView android:id="@+id/time8" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:fontFamily="@font/productsans_medium" android:gravity="start" android:textSize="12sp" />
+                        <TextView android:id="@+id/time9" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:fontFamily="@font/productsans_medium" android:gravity="start" android:textSize="12sp" />
+                        <TextView android:id="@+id/time10" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:fontFamily="@font/productsans_medium" android:gravity="start" android:textSize="12sp" />
+                        <TextView android:id="@+id/time11" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:fontFamily="@font/productsans_medium" android:gravity="start" android:textSize="12sp" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/today_average_value"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:fontFamily="@font/productsans_medium"
+                        android:text="@string/today_average_unavailable"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:id="@+id/tomorrow_average_value"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:fontFamily="@font/productsans_medium"
+                        android:text="@string/tomorrow_average_pending"
+                        android:textSize="14sp" />
                 </LinearLayout>
 
-                <TextView
-                    android:id="@+id/today_average_value"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
-                    android:fontFamily="@font/productsans_medium"
-                    android:text="@string/today_average_unavailable"
-                    android:textSize="14sp" />
-
-                <TextView
-                    android:id="@+id/tomorrow_average_value"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:fontFamily="@font/productsans_medium"
-                    android:text="@string/tomorrow_average_pending"
-                    android:textSize="14sp" />
-
-                <TextView
-                    android:layout_width="wrap_content"
+                <LinearLayout
+                    android:id="@+id/settings_section"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="24dp"
-                    android:fontFamily="@font/productsans_bold"
-                    android:text="@string/main_chart_mode_title"
-                    android:textSize="16sp" />
+                    android:animateLayoutChanges="true"
+                    android:orientation="vertical">
 
-                <com.google.android.material.button.MaterialButtonToggleGroup
-                    android:id="@+id/main_chart_toggle_group"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    app:singleSelection="true">
+                    <LinearLayout
+                        android:paddingEnd="@dimen/main_content_inner_padding"
+                        android:paddingStart="@dimen/main_content_inner_padding_minus_4"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
 
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/main_chart_bars_button"
-                        style="?attr/materialButtonOutlinedStyle"
-                        android:layout_width="0dp"
-                        android:layout_height="56dp"
-                        android:layout_weight="1"
-                        android:fontFamily="@font/productsans_bold"
-                        android:text="@string/chart_bars" />
+                        <LinearLayout
+                            android:id="@+id/settings_toggle_row"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/info_trigger_touch_background"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingStart="4dp"
+                            android:paddingTop="10dp"
+                            android:paddingEnd="6dp"
+                            android:paddingBottom="10dp">
 
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/main_chart_graph_button"
-                        style="?attr/materialButtonOutlinedStyle"
-                        android:layout_width="0dp"
-                        android:layout_height="56dp"
-                        android:layout_weight="1"
-                        android:fontFamily="@font/productsans_bold"
-                        android:text="@string/chart_graph" />
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:fontFamily="@font/productsans_bold"
+                                android:text="@string/configuration_label"
+                                android:textColor="@color/main_price_emphasis"
+                                android:textSize="16sp" />
 
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/main_chart_lines_button"
-                        style="?attr/materialButtonOutlinedStyle"
-                        android:layout_width="0dp"
-                        android:layout_height="56dp"
-                        android:layout_weight="1"
-                        android:fontFamily="@font/productsans_bold"
-                        android:text="@string/chart_lines" />
-                </com.google.android.material.button.MaterialButtonToggleGroup>
+                            <ImageView
+                                android:id="@+id/settings_toggle_caret"
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:contentDescription="@null"
+                                android:importantForAccessibility="no"
+                                android:src="@drawable/ic_chevron_down_24"
+                                app:tint="@color/main_price_emphasis" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/settings_expandable_container"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:visibility="gone">
+
+                        <com.google.android.material.button.MaterialButtonToggleGroup
+                            android:id="@+id/main_chart_toggle_group"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:paddingEnd="@dimen/main_content_inner_padding"
+                            android:paddingStart="@dimen/main_content_inner_padding"
+                            android:layout_marginTop="8dp"
+                            app:singleSelection="true">
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/main_chart_bars_button"
+                                style="?attr/materialButtonOutlinedStyle"
+                                android:layout_width="0dp"
+                                android:layout_height="56dp"
+                                android:layout_weight="1"
+                                android:fontFamily="@font/productsans_bold"
+                                android:text="@string/chart_bars" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/main_chart_graph_button"
+                                style="?attr/materialButtonOutlinedStyle"
+                                android:layout_width="0dp"
+                                android:layout_height="56dp"
+                                android:layout_weight="1"
+                                android:fontFamily="@font/productsans_bold"
+                                android:text="@string/chart_graph" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/main_chart_lines_button"
+                                style="?attr/materialButtonOutlinedStyle"
+                                android:layout_width="0dp"
+                                android:layout_height="56dp"
+                                android:layout_weight="1"
+                                android:fontFamily="@font/productsans_bold"
+                                android:text="@string/chart_lines" />
+                        </com.google.android.material.button.MaterialButtonToggleGroup>
+
+                        <include layout="@layout/view_app_settings" />
+                    </LinearLayout>
+                </LinearLayout>
             </LinearLayout>
-
-            <include layout="@layout/view_app_settings" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/about_button"
-                style="?attr/materialButtonOutlinedStyle"
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:layout_marginTop="24dp"
-                android:fontFamily="@font/productsans_bold"
-                android:text="@string/about_button_label" />
         </LinearLayout>
     </ScrollView>
 </FrameLayout>

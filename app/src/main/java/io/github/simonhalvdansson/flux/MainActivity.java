@@ -96,6 +96,9 @@ public class MainActivity extends AppCompatActivity {
     private TextView currentPriceUnit;
     private TextView todayAverageValue;
     private TextView tomorrowAverageValue;
+    private View settingsToggleRow;
+    private ImageView settingsToggleCaret;
+    private View settingsExpandableContainer;
     private View chartContainer;
     private LinearLayout barChartContainer;
     private ImageView graphImageView;
@@ -145,6 +148,9 @@ public class MainActivity extends AppCompatActivity {
         currentPriceUnit = findViewById(R.id.current_price_unit);
         todayAverageValue = findViewById(R.id.today_average_value);
         tomorrowAverageValue = findViewById(R.id.tomorrow_average_value);
+        settingsToggleRow = findViewById(R.id.settings_toggle_row);
+        settingsToggleCaret = findViewById(R.id.settings_toggle_caret);
+        settingsExpandableContainer = findViewById(R.id.settings_expandable_container);
         chartContainer = findViewById(R.id.bar_chart_section);
         barChartContainer = findViewById(R.id.bar_chart_container);
         graphImageView = findViewById(R.id.graph_image);
@@ -154,12 +160,13 @@ public class MainActivity extends AppCompatActivity {
                 && !getIntent().getBooleanExtra(EXTRA_DISABLE_CHART_ANIMATION, false);
 
         setupAppSettings();
+        setupSettingsToggle();
         setupMainChartModeToggle();
         setupChartTouchOverlay();
         configureAppIconShadow(appIconView);
         configureBarShadows();
         applyWindowInsets();
-        setupAboutButton();
+        setupAboutDialogTrigger();
 
         preferenceChangeListener = (prefs, key) -> {
             if (PriceRepository.KEY_JSON_DATA.equals(key)
@@ -401,6 +408,27 @@ public class MainActivity extends AppCompatActivity {
             dismissChartTooltip();
             renderCurrentPrice();
         });
+    }
+
+    private void setupSettingsToggle() {
+        setSettingsExpanded(false, false);
+        settingsToggleRow.setOnClickListener(v ->
+                setSettingsExpanded(settingsExpandableContainer.getVisibility() != View.VISIBLE, true));
+    }
+
+    private void setSettingsExpanded(boolean expanded, boolean animateCaret) {
+        settingsExpandableContainer.setVisibility(expanded ? View.VISIBLE : View.GONE);
+        float targetRotation = expanded ? 180f : 0f;
+        settingsToggleCaret.animate().cancel();
+        if (animateCaret) {
+            settingsToggleCaret.animate()
+                    .rotation(targetRotation)
+                    .setDuration(220L)
+                    .setInterpolator(new LinearOutSlowInInterpolator())
+                    .start();
+        } else {
+            settingsToggleCaret.setRotation(targetRotation);
+        }
     }
 
     private void updateMainBarPoolVisibility(int chartMode) {
@@ -1148,8 +1176,8 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    private void setupAboutButton() {
-        findViewById(R.id.about_button).setOnClickListener(v ->
+    private void setupAboutDialogTrigger() {
+        findViewById(R.id.app_icon_button).setOnClickListener(v ->
                 new AboutDialogFragment().show(getSupportFragmentManager(), "about_dialog"));
     }
 

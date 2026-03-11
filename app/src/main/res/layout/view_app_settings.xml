@@ -8,23 +8,16 @@
     android:clipToPadding="false"
     android:orientation="vertical">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:fontFamily="@font/productsans_bold"
-        android:text="@string/price_settings_title"
-        android:textColor="@color/main_price_emphasis"
-        android:textSize="18sp" />
-
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
         android:clipChildren="false"
         android:clipToPadding="false"
         android:orientation="vertical">
 
         <LinearLayout
+            android:paddingStart="@dimen/main_content_inner_padding"
+            android:paddingEnd="@dimen/main_content_inner_padding"
             android:layout_width="match_parent"
             android:layout_height="56dp"
             android:orientation="horizontal">
@@ -56,6 +49,8 @@
         </LinearLayout>
 
         <LinearLayout
+            android:paddingStart="@dimen/main_content_inner_padding"
+            android:paddingEnd="@dimen/main_content_inner_padding"
             android:id="@+id/region_container"
             android:layout_width="match_parent"
             android:layout_height="56dp"
@@ -132,6 +127,8 @@
 
         <LinearLayout
             android:id="@+id/stromstotte_container"
+            android:paddingStart="@dimen/main_content_inner_padding_minus_4"
+            android:paddingEnd="@dimen/main_content_inner_padding"
             android:layout_width="match_parent"
             android:layout_height="56dp"
             android:orientation="horizontal">
@@ -149,8 +146,7 @@
                 android:paddingStart="4dp"
                 android:paddingTop="10dp"
                 android:paddingEnd="6dp"
-                android:paddingBottom="10dp"
-                android:translationX="-4dp">
+                android:paddingBottom="10dp">
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -183,6 +179,8 @@
         </LinearLayout>
 
         <LinearLayout
+            android:paddingStart="@dimen/main_content_inner_padding_minus_4"
+            android:paddingEnd="@dimen/main_content_inner_padding"
             android:layout_width="match_parent"
             android:layout_height="56dp"
             android:orientation="horizontal">
@@ -200,8 +198,7 @@
                 android:paddingStart="4dp"
                 android:paddingTop="10dp"
                 android:paddingEnd="6dp"
-                android:paddingBottom="10dp"
-                android:translationX="-4dp">
+                android:paddingBottom="10dp">
 
                 <TextView
                     android:id="@+id/vat_label"
@@ -235,6 +232,8 @@
         </LinearLayout>
 
         <LinearLayout
+            android:paddingStart="@dimen/main_content_inner_padding_minus_4"
+            android:paddingEnd="@dimen/main_content_inner_padding"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal">
@@ -252,8 +251,7 @@
                 android:paddingStart="4dp"
                 android:paddingTop="10dp"
                 android:paddingEnd="6dp"
-                android:paddingBottom="10dp"
-                android:translationX="-4dp">
+                android:paddingBottom="10dp">
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -297,6 +295,8 @@
         </LinearLayout>
 
         <LinearLayout
+            android:paddingStart="@dimen/main_content_inner_padding"
+            android:paddingEnd="@dimen/main_content_inner_padding"
             android:id="@+id/main_bar_pool_container"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
