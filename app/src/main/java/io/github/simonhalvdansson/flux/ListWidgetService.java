@@ -39,12 +39,14 @@ public class ListWidgetService extends RemoteViewsService {
         private static final int ITEM_PRICE_WIDTH_DP = 36;
         private static final int ITEM_BAR_MARGIN_START_DP = 2;
         private static final int ITEM_HORIZONTAL_PADDING_DP = 32; // 16dp left + 16dp right
+        private static final int POSITIVE_BAR_BACKGROUND_RES = R.drawable.bar_rounded;
+        private static final int NEGATIVE_BAR_BACKGROUND_RES = R.drawable.bar_rounded_negative;
 
         private final Context context;
         private final List<PriceFetcher.PriceEntry> items = new ArrayList<>();
         private final List<String> priceTexts = new ArrayList<>();
         private final boolean showBar;
-        private double maxPrice = 0.0;
+        private double maxAbsolutePrice = 0.0;
         private int maxBarWidthPx;
         private int priceColumnWidthDp;
         private final int appWidgetId;
@@ -67,7 +69,7 @@ public class ListWidgetService extends RemoteViewsService {
         public void onDataSetChanged() {
             items.clear();
             priceTexts.clear();
-            maxPrice = 0.0;
+            maxAbsolutePrice = 0.0;
             priceColumnWidthDp = ITEM_PRICE_WIDTH_DP;
             SharedPreferences prefs = PriceRepository.getPreferences(context);
             String combinedJson = prefs.getString(PriceRepository.KEY_JSON_DATA, null);
@@ -108,8 +110,9 @@ public class ListWidgetService extends RemoteViewsService {
                 items.add(entry);
                 priceTexts.add(priceText);
                 maxPriceCharCount = Math.max(maxPriceCharCount, priceText.length());
-                if (entry.pricePerKwh > maxPrice) {
-                    maxPrice = entry.pricePerKwh;
+                double absolutePrice = Math.abs(entry.pricePerKwh);
+                if (absolutePrice > maxAbsolutePrice) {
+                    maxAbsolutePrice = absolutePrice;
                 }
             }
             updatePriceColumnWidth(maxPriceCharCount);
@@ -140,10 +143,15 @@ public class ListWidgetService extends RemoteViewsService {
             rv.setTextViewText(R.id.item_time, tText);
             rv.setViewLayoutWidth(R.id.item_price, priceColumnWidthDp, TypedValue.COMPLEX_UNIT_DIP);
             rv.setTextViewText(R.id.item_price, pText);
-            if (showBar && maxPrice > 0) {
-                int barWidth = (int) (e.pricePerKwh / maxPrice * maxBarWidthPx);
+            if (showBar && maxAbsolutePrice > 0) {
+                int barWidth = (int) (Math.abs(e.pricePerKwh) / maxAbsolutePrice * maxBarWidthPx);
                 barWidth = Math.max(0, Math.min(maxBarWidthPx, barWidth));
                 rv.setViewVisibility(R.id.item_bar, View.VISIBLE);
+                rv.setInt(
+                        R.id.item_bar,
+                        "setBackgroundResource",
+                        e.pricePerKwh < 0 ? NEGATIVE_BAR_BACKGROUND_RES : POSITIVE_BAR_BACKGROUND_RES
+                );
                 rv.setInt(R.id.item_bar, "setMinimumWidth", barWidth);
             } else {
                 rv.setViewVisibility(R.id.item_bar, View.GONE);

@@ -792,20 +792,14 @@ public class MainActivity extends AppCompatActivity {
         displayedBarEntries = new ArrayList<>(hourlyData.subList(firstHourIndex, lastHourIndex + 1));
         displayedBucketEntries = buildDisplayedBucketEntries(displayedBarEntries, allData);
 
-        double barMaxPrice = 0.0;
-        for (PriceFetcher.PriceEntry entry : displayedBarEntries) {
-            barMaxPrice = Math.max(barMaxPrice, entry.pricePerKwh);
-        }
-        if (barMaxPrice <= 0.0) {
-            barMaxPrice = 1.0;
-        }
+        double barScaleMax = BarChartUtils.resolveScaleMax(displayedBarEntries);
 
         List<PriceFetcher.PriceEntry> graphDisplayEntries = getEntriesInRange(
                 allData,
                 displayedBarEntries.get(0).startTime,
                 displayedBarEntries.get(displayedBarEntries.size() - 1).endTime
         );
-        double graphMaxPrice = barMaxPrice;
+        double graphMaxPrice = 0.0;
         for (PriceFetcher.PriceEntry entry : graphDisplayEntries) {
             graphMaxPrice = Math.max(graphMaxPrice, entry.pricePerKwh);
         }
@@ -815,7 +809,7 @@ public class MainActivity extends AppCompatActivity {
 
         int chartMode = getMainChartMode();
         if (chartMode == MAIN_CHART_MODE_BARS) {
-            renderBars(displayedBarEntries, barMaxPrice);
+            renderBars(displayedBarEntries, barScaleMax);
         } else {
             renderGraph(chartMode, graphDisplayEntries, graphMaxPrice);
         }
@@ -833,7 +827,7 @@ public class MainActivity extends AppCompatActivity {
         graphImageView.setImageDrawable(null);
     }
 
-    private void renderBars(List<PriceFetcher.PriceEntry> displayEntries, double maxPrice) {
+    private void renderBars(List<PriceFetcher.PriceEntry> displayEntries, double scaleMax) {
         cancelGraphAnimation();
         barChartContainer.setVisibility(View.VISIBLE);
         graphImageView.setVisibility(View.GONE);
@@ -844,26 +838,14 @@ public class MainActivity extends AppCompatActivity {
             ImageView bar = findViewById(BAR_IDS[i]);
             if (i < displayEntries.size()) {
                 PriceFetcher.PriceEntry entry = displayEntries.get(i);
-                float barHeightDp = (float) Math.max(
-                        MIN_BAR_HEIGHT_DP,
-                        (entry.pricePerKwh / maxPrice) * CHART_MAX_HEIGHT_DP
-                );
+                float barHeightDp = (float) ((Math.abs(entry.pricePerKwh) / scaleMax) * CHART_MAX_HEIGHT_DP);
                 targetHeightsPx[i] = Math.round(TypedValue.applyDimension(
                         TypedValue.COMPLEX_UNIT_DIP,
                         barHeightDp,
                         getResources().getDisplayMetrics()
                 ));
                 bar.setVisibility(View.VISIBLE);
-
-                ZonedDateTime start = entry.startTime.atZoneSameInstant(ZoneId.systemDefault());
-                ZonedDateTime end = entry.endTime.atZoneSameInstant(ZoneId.systemDefault());
-                if ((now.isEqual(start) || now.isAfter(start)) && now.isBefore(end)) {
-                    bar.setBackgroundResource(R.drawable.bar_rounded_current);
-                } else if (now.isAfter(end)) {
-                    bar.setBackgroundResource(R.drawable.bar_rounded_old);
-                } else {
-                    bar.setBackgroundResource(R.drawable.bar_rounded);
-                }
+                bar.setBackgroundResource(BarChartUtils.resolveBarBackgroundRes(entry, now));
             } else {
                 bar.setVisibility(View.INVISIBLE);
                 targetHeightsPx[i] = 0;

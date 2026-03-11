@@ -87,8 +87,7 @@ final class ChartWidgetPreviewBinder {
     private static void bindBars(View previewRoot,
                                  MainWidgetRenderDataResolver.RenderData renderData,
                                  int availableHeightPx) {
-        int minBarHeightPx = dp(previewRoot, MIN_BAR_HEIGHT_DP);
-        int drawableHeightPx = Math.max(minBarHeightPx, availableHeightPx - dp(previewRoot, 4));
+        int drawableHeightPx = Math.max(0, availableHeightPx - dp(previewRoot, 4));
         ZonedDateTime now = ZonedDateTime.now();
 
         for (int i = 0; i < BAR_IDS.length; i++) {
@@ -100,22 +99,10 @@ final class ChartWidgetPreviewBinder {
             }
 
             PriceFetcher.PriceEntry entry = renderData.barDisplayEntries.get(i);
-            int barHeightPx = Math.max(
-                    minBarHeightPx,
-                    Math.round((float) (entry.pricePerKwh / renderData.barMaxPrice) * drawableHeightPx)
-            );
+            int barHeightPx = Math.round((float) (Math.abs(entry.pricePerKwh) / renderData.barScaleMax) * drawableHeightPx);
             bar.setVisibility(View.VISIBLE);
             setBarHeight(bar, barHeightPx);
-
-            ZonedDateTime start = entry.startTime.atZoneSameInstant(now.getZone());
-            ZonedDateTime end = entry.endTime.atZoneSameInstant(now.getZone());
-            if ((now.isEqual(start) || now.isAfter(start)) && now.isBefore(end)) {
-                bar.setBackgroundResource(R.drawable.bar_rounded_current);
-            } else if (now.isAfter(end)) {
-                bar.setBackgroundResource(R.drawable.bar_rounded_old);
-            } else {
-                bar.setBackgroundResource(R.drawable.bar_rounded);
-            }
+            bar.setBackgroundResource(BarChartUtils.resolveBarBackgroundRes(entry, now));
         }
     }
 

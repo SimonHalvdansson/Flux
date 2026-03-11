@@ -181,7 +181,7 @@ public class MainWidget extends AppWidgetProvider {
                 int barId = barIds[i];
                 if (i < displayedCount) {
                     PriceFetcher.PriceEntry e = renderData.barDisplayEntries.get(i);
-                    double fraction = e.pricePerKwh / renderData.barMaxPrice;
+                    double fraction = Math.abs(e.pricePerKwh) / renderData.barScaleMax;
                     double barDp = fraction * barMaxHeightDp;
 
                     int barPx = (int) TypedValue.applyDimension(
@@ -192,16 +192,7 @@ public class MainWidget extends AppWidgetProvider {
 
                     views.setViewVisibility(barId, View.VISIBLE);
                     views.setInt(barId, "setMinimumHeight", barPx);
-
-                    ZonedDateTime start = e.startTime.atZoneSameInstant(ZoneId.systemDefault());
-                    ZonedDateTime end = e.endTime.atZoneSameInstant(ZoneId.systemDefault());
-                    if ((now.isEqual(start) || now.isAfter(start)) && now.isBefore(end)) {
-                        views.setInt(barId, "setBackgroundResource", R.drawable.bar_rounded_current);
-                    } else if (now.isAfter(end)) {
-                        views.setInt(barId, "setBackgroundResource", R.drawable.bar_rounded_old);
-                    } else {
-                        views.setInt(barId, "setBackgroundResource", R.drawable.bar_rounded);
-                    }
+                    views.setInt(barId, "setBackgroundResource", BarChartUtils.resolveBarBackgroundRes(e, now));
                 } else {
                     views.setViewVisibility(barId, View.GONE);
                 }

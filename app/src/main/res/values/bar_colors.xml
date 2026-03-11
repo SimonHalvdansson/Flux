@@ -1,0 +1,5 @@
+<resources>
+    <color name="bar_negative">#E46962</color>
+    <color name="bar_negative_old">#F4B8B5</color>
+    <color name="bar_negative_current">#B3261E</color>
+</resources>

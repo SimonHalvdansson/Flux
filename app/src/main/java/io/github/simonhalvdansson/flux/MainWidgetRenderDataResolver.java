@@ -25,7 +25,7 @@ final class MainWidgetRenderDataResolver {
         final String minText;
         final List<PriceFetcher.PriceEntry> barDisplayEntries;
         final List<PriceFetcher.PriceEntry> graphDisplayEntries;
-        final double barMaxPrice;
+        final double barScaleMax;
         final double graphScaleMax;
 
         RenderData(boolean hasData,
@@ -38,7 +38,7 @@ final class MainWidgetRenderDataResolver {
                    String minText,
                    List<PriceFetcher.PriceEntry> barDisplayEntries,
                    List<PriceFetcher.PriceEntry> graphDisplayEntries,
-                   double barMaxPrice,
+                   double barScaleMax,
                    double graphScaleMax) {
             this.hasData = hasData;
             this.apiError = apiError;
@@ -50,7 +50,7 @@ final class MainWidgetRenderDataResolver {
             this.minText = minText;
             this.barDisplayEntries = barDisplayEntries;
             this.graphDisplayEntries = graphDisplayEntries;
-            this.barMaxPrice = barMaxPrice;
+            this.barScaleMax = barScaleMax;
             this.graphScaleMax = graphScaleMax;
         }
     }
@@ -146,13 +146,7 @@ final class MainWidgetRenderDataResolver {
             graphDisplayEntries.add(currentEntry);
         }
 
-        double barMaxPrice = 0.0;
-        for (PriceFetcher.PriceEntry entry : barDisplayEntries) {
-            barMaxPrice = Math.max(barMaxPrice, entry.pricePerKwh);
-        }
-        if (barMaxPrice <= 0.0) {
-            barMaxPrice = 1.0;
-        }
+        double barScaleMax = BarChartUtils.resolveScaleMax(barDisplayEntries);
 
         double graphMaxPrice = 0.0;
         PriceFetcher.PriceEntry maxEntry = null;
@@ -213,8 +207,8 @@ final class MainWidgetRenderDataResolver {
                 minText,
                 new ArrayList<>(barDisplayEntries),
                 new ArrayList<>(graphDisplayEntries),
-                barMaxPrice,
-                Math.max(barMaxPrice, graphMaxPrice)
+                barScaleMax,
+                graphMaxPrice
         );
     }
 
