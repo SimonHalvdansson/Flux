@@ -58,7 +58,12 @@ public final class PriceDisplayUtils {
         numberFormat.setGroupingUsed(false);
         numberFormat.setMinimumFractionDigits(2);
         numberFormat.setMaximumFractionDigits(2);
-        return numberFormat.format(value);
+        String formattedValue = numberFormat.format(value);
+        String negativeZero = numberFormat.format(-0.0d);
+        if (formattedValue.equals(negativeZero)) {
+            return numberFormat.format(0.0d);
+        }
+        return formattedValue;
     }
 
     public static boolean supportsDisplayStyleSelection(String country) {

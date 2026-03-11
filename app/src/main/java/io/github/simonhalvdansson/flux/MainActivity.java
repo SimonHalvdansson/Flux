@@ -58,6 +58,7 @@ public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
     private static final String KEY_MAIN_ACTIVITY_CHART_MODE = "main_activity_chart_mode";
     private static final String KEY_MAIN_ACTIVITY_BAR_POOL_MODE = "main_activity_bar_pool_mode";
+    private static final String STATE_SETTINGS_EXPANDED = "state_settings_expanded";
     private static final int MAIN_CHART_MODE_BARS = 0;
     private static final int MAIN_CHART_MODE_GRAPH = 1;
     private static final int MAIN_CHART_MODE_LINES = 2;
@@ -167,9 +168,11 @@ public class MainActivity extends AppCompatActivity {
         mainChartToggleGroup = findViewById(R.id.main_chart_toggle_group);
         shouldAnimateInitialChart = savedInstanceState == null
                 && !getIntent().getBooleanExtra(EXTRA_DISABLE_CHART_ANIMATION, false);
+        boolean restoreSettingsExpanded = savedInstanceState != null
+                && savedInstanceState.getBoolean(STATE_SETTINGS_EXPANDED, false);
 
         setupAppSettings();
-        setupSettingsToggle();
+        setupSettingsToggle(restoreSettingsExpanded);
         setupMainChartModeToggle();
         setupChartTouchOverlay();
         configureAppIconShadow(appIconView);
@@ -216,6 +219,16 @@ public class MainActivity extends AppCompatActivity {
         cancelQuarterBoundaryRefresh();
         sharedPreferences.unregisterOnSharedPreferenceChangeListener(preferenceChangeListener);
         super.onStop();
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putBoolean(
+                STATE_SETTINGS_EXPANDED,
+                settingsExpandableContainer != null
+                        && settingsExpandableContainer.getVisibility() == View.VISIBLE
+        );
     }
 
     private void setupAppSettings() {
@@ -428,8 +441,8 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    private void setupSettingsToggle() {
-        setSettingsExpanded(false, false);
+    private void setupSettingsToggle(boolean expanded) {
+        setSettingsExpanded(expanded, false);
         settingsToggleRow.setOnClickListener(v ->
                 setSettingsExpanded(settingsExpandableContainer.getVisibility() != View.VISIBLE, true));
     }

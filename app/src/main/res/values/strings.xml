@@ -5,9 +5,9 @@
     <string name="main_widget_description">Bar chart</string>
     <string name="list_widget_description">List</string>
     <string name="welcome_text">Welcome to Flux!</string>
-    <string name="chart_bars">Bars</string>
-    <string name="chart_graph">Graph</string>
-    <string name="chart_lines">Lines</string>
+    <string name="chart_bars">Bar</string>
+    <string name="chart_graph">Smooth</string>
+    <string name="chart_lines">Exact</string>
     <string name="current_price_label">Current price</string>
     <string name="current_price_loading">Loading current price...</string>
     <string name="current_price_unavailable">Price unavailable</string>
