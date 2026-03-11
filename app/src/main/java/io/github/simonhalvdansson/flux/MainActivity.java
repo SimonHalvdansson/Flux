@@ -6,6 +6,7 @@ import android.animation.AnimatorSet;
 import android.animation.ValueAnimator;
 import android.content.SharedPreferences;
 import android.graphics.Outline;
+import android.graphics.Typeface;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
@@ -30,7 +31,6 @@ import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
-import androidx.core.content.res.ResourcesCompat;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -877,7 +877,7 @@ public class MainActivity extends AppCompatActivity {
         tooltipView.setText(text);
         tooltipView.setTextColor(MaterialColors.getColor(tooltipView, com.google.android.material.R.attr.colorOnSurface));
         tooltipView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f);
-        tooltipView.setTypeface(ResourcesCompat.getFont(this, R.font.productsans_bold));
+        tooltipView.setTypeface(Typeface.create(Typeface.MONOSPACE, Typeface.BOLD));
         int horizontalPadding = dpToPx(TOOLTIP_HORIZONTAL_PADDING_DP);
         int verticalPadding = dpToPx(TOOLTIP_VERTICAL_PADDING_DP);
         tooltipView.setPadding(horizontalPadding, verticalPadding, horizontalPadding, verticalPadding);

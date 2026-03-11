@@ -13,9 +13,11 @@ $env:PATH="$env:JAVA_HOME\bin;$env:PATH"
 Notes:
 - `java` is not reliably available on `PATH` in this environment, so set `JAVA_HOME` first.
 - `assembleDebug` is the fast sanity check used here after UI/code changes.
+- For trivial, low-risk tweaks such as small text or spacing adjustments in an existing working view, `assembleDebug` can be skipped if the change is clearly isolated.
 
 ## Editing Notes
 - After editing layout/resource files, run `assembleDebug` immediately. This catches XML/resource merger issues quickly.
+- Exception: for trivial, isolated visual tweaks like a 1-2sp text-size change or a small width/padding adjustment, you do not need to run `assembleDebug`.
 
 ## File Guide
 
