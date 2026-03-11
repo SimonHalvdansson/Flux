@@ -33,11 +33,15 @@
     <string name="grid_fee_info_message">Adds a fixed surcharge to every displayed kWh price. Enter the value in the same unit currently shown in the app, such as %1$s.</string>
     <string name="about_button_label">About Flux</string>
     <string name="about_version_format">Version %1$s</string>
-    <string name="about_description">Flux is a compact electricity price app for quickly checking the current spot price, browsing the next hours, and configuring homescreen widgets without extra clutter.</string>
+    <string name="about_description">Flux is developed by me, Simon Halvdansson, but has to a large part been an experiment in agentic coding with Codex. Work started in early 2025 but I had been thinking about this project mainly as a widget since 2022.\n\nElectricity data is fetched from ENTSO-E using a GitHub action which runs every hour and is also open source.</string>
     <string name="about_libraries_title">Libraries</string>
     <string name="about_library_material">&#8226; Material Components by Google</string>
     <string name="about_library_androidx_core">&#8226; AndroidX Core KTX by Google</string>
     <string name="about_library_okhttp">&#8226; OkHttp by Square</string>
+    <string name="about_flux_github_button">Flux on GitHub</string>
+    <string name="about_entsoe_mirror_github_button">ENTSOE-Mirror on GitHub</string>
+    <string name="about_flux_github_url">https://github.com/SimonHalvdansson/Flux</string>
+    <string name="about_entsoe_mirror_github_url">https://github.com/SimonHalvdansson/ENTSOE-Mirror</string>
     <string name="main_chart_mode_title">Display mode</string>
     <string name="main_bar_pool_title">Bar pooling</string>
     <string name="widget_settings_title">Widget settings</string>

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
 
@@ -98,5 +99,30 @@
             android:text="@string/about_library_okhttp"
             android:textColor="?attr/colorOnSurface"
             android:textSize="15sp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/about_button_flux_github"
+            style="@style/Widget.Material3Expressive.Button.IconButton.Outlined"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="16dp"
+            android:fontFamily="@font/productsans_bold"
+            android:text="@string/about_flux_github_button"
+            android:textColor="?attr/colorOnSurface"
+            android:textSize="14sp"
+            app:icon="@drawable/ic_link_preview_github"
+            app:iconTint="?attr/colorOnSurface" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/about_button_entsoe_mirror_github"
+            style="@style/Widget.Material3Expressive.Button.IconButton.Outlined"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:fontFamily="@font/productsans_bold"
+            android:text="@string/about_entsoe_mirror_github_button"
+            android:textColor="?attr/colorOnSurface"
+            android:textSize="14sp"
+            app:icon="@drawable/ic_link_preview_github"
+            app:iconTint="?attr/colorOnSurface" />
     </LinearLayout>
 </ScrollView>
