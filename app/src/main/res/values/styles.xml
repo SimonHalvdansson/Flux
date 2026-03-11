@@ -3,6 +3,7 @@
     <style name="Theme.Flux" parent="Theme.Material3Expressive.DayNight.NoActionBar">
         <item name="android:statusBarColor">?attr/colorSurface</item>
         <item name="android:windowLightStatusBar">?attr/isLightTheme</item>
+        <item name="settingsLabelTextColor">?attr/colorOnSurfaceVariant</item>
     </style>
 
     <style name="Theme.Flux.WidgetConfig" parent="Theme.Flux">
