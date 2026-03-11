@@ -85,6 +85,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int MIN_BAR_HEIGHT_DP = 8;
     private static final long BAR_ANIMATION_DURATION_MS = 468L;
     private static final long BAR_ANIMATION_STAGGER_MS = 20L;
+    private static final long GRAPH_FADE_IN_DURATION_MS = 420L;
     private static final long QUARTER_REFRESH_SLOP_MS = 250L;
 
     private final List<RegionConfig.Country> countries = RegionConfig.getCountries();
@@ -111,7 +112,7 @@ public class MainActivity extends AppCompatActivity {
             scheduleQuarterBoundaryRefresh();
         }
     };
-    private boolean shouldAnimateBars;
+    private boolean shouldAnimateInitialChart;
     private int currentCountryIndex = 0;
     private List<PriceFetcher.PriceEntry> displayedBarEntries = new ArrayList<>();
     private List<List<PriceFetcher.PriceEntry>> displayedBucketEntries = new ArrayList<>();
@@ -148,7 +149,7 @@ public class MainActivity extends AppCompatActivity {
         graphImageView = findViewById(R.id.graph_image);
         chartTouchOverlay = findViewById(R.id.chart_touch_overlay);
         mainChartToggleGroup = findViewById(R.id.main_chart_toggle_group);
-        shouldAnimateBars = savedInstanceState == null
+        shouldAnimateInitialChart = savedInstanceState == null
                 && !getIntent().getBooleanExtra(EXTRA_DISABLE_CHART_ANIMATION, false);
 
         setupAppSettings();
@@ -189,6 +190,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onStop() {
         cancelBarAnimation();
+        cancelGraphAnimation();
         dismissChartTooltip();
         cancelQuarterBoundaryRefresh();
         sharedPreferences.unregisterOnSharedPreferenceChangeListener(preferenceChangeListener);
@@ -637,10 +639,12 @@ public class MainActivity extends AppCompatActivity {
         displayedBarEntries = new ArrayList<>();
         displayedBucketEntries = new ArrayList<>();
         chartTouchOverlay.setEnabled(false);
+        cancelGraphAnimation();
         graphImageView.setImageDrawable(null);
     }
 
     private void renderBars(List<PriceFetcher.PriceEntry> displayEntries, double maxPrice) {
+        cancelGraphAnimation();
         barChartContainer.setVisibility(View.VISIBLE);
         graphImageView.setVisibility(View.GONE);
 
@@ -676,8 +680,9 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        if (shouldAnimateBars) {
-            shouldAnimateBars = false;
+        if (shouldAnimateInitialChart) {
+            applyBarHeights(new int[BAR_IDS.length]);
+            shouldAnimateInitialChart = false;
             chartContainer.post(() -> animateBars(targetHeightsPx, displayEntries.size()));
         } else {
             cancelBarAnimation();
@@ -687,7 +692,11 @@ public class MainActivity extends AppCompatActivity {
 
     private void renderGraph(int chartMode, List<PriceFetcher.PriceEntry> graphDisplayEntries, double graphMaxPrice) {
         cancelBarAnimation();
+        cancelGraphAnimation();
         barChartContainer.setVisibility(View.GONE);
+        if (shouldAnimateInitialChart) {
+            graphImageView.setAlpha(0f);
+        }
         graphImageView.setVisibility(View.VISIBLE);
 
         int width = graphImageView.getWidth();
@@ -705,6 +714,7 @@ public class MainActivity extends AppCompatActivity {
                     width,
                     height
             ));
+            animateGraphIfNeeded();
             return;
         }
 
@@ -716,6 +726,7 @@ public class MainActivity extends AppCompatActivity {
                 height,
                 ZonedDateTime.now(ZoneId.systemDefault())
         ));
+        animateGraphIfNeeded();
     }
 
     private void updateTimeLabels(List<PriceFetcher.PriceEntry> displayEntries) {
@@ -1085,6 +1096,25 @@ public class MainActivity extends AppCompatActivity {
             barAnimator.cancel();
             barAnimator = null;
         }
+    }
+
+    private void animateGraphIfNeeded() {
+        if (!shouldAnimateInitialChart) {
+            graphImageView.setAlpha(1f);
+            return;
+        }
+
+        shouldAnimateInitialChart = false;
+        graphImageView.post(() -> graphImageView.animate()
+                .alpha(1f)
+                .setDuration(GRAPH_FADE_IN_DURATION_MS)
+                .setInterpolator(new LinearOutSlowInInterpolator())
+                .start());
+    }
+
+    private void cancelGraphAnimation() {
+        graphImageView.animate().cancel();
+        graphImageView.setAlpha(1f);
     }
 
     private void setupInfoDialogs() {
