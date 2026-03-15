@@ -19,7 +19,7 @@
     <string name="today_average_format">Today\'s average: %1$s %2$s</string>
     <string name="tomorrow_average_format">Tomorrow\'s average: %1$s %2$s</string>
     <string name="tomorrow_average_pending">Tomorrow\'s price coming around 13:00</string>
-    <string name="configuration_label">Configuration</string>
+    <string name="configuration_label">Price options</string>
     <string name="price_settings_title">Price settings</string>
     <string name="country_label">Country</string>
     <string name="region_label">Region</string>

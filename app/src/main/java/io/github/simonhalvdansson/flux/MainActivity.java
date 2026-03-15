@@ -289,12 +289,7 @@ public class MainActivity extends AppCompatActivity {
         mainBarPoolToggleGroup.check(getMainBarPoolButtonId(getMainBarPoolMode()));
         setupInfoDialogs();
 
-        String savedGridFee = sharedPreferences.getString(PriceUpdateJobService.KEY_GRID_FEE, "");
-        if (savedGridFee == null || savedGridFee.trim().isEmpty()) {
-            savedGridFee = "0";
-            sharedPreferences.edit().putString(PriceUpdateJobService.KEY_GRID_FEE, savedGridFee).apply();
-        }
-        gridFeeInput.setText(savedGridFee);
+        syncGridFeeInputFromPreferences();
 
         countryDropdown.setOnItemClickListener((parent, view, position, id) -> {
             String selectedLabel = (String) parent.getItemAtPosition(position);
@@ -458,6 +453,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setSettingsExpanded(boolean expanded, boolean animateCaret) {
+        if (expanded) {
+            syncGridFeeInputFromPreferences();
+        }
         settingsExpandableContainer.setVisibility(expanded ? View.VISIBLE : View.GONE);
         float targetRotation = expanded ? 180f : 0f;
         settingsToggleCaret.animate().cancel();
@@ -1500,6 +1498,19 @@ public class MainActivity extends AppCompatActivity {
 
     private void updateVatLabel(TextView label) {
         label.setText(R.string.vat_label);
+    }
+
+    private void syncGridFeeInputFromPreferences() {
+        String savedGridFee = sharedPreferences.getString(PriceUpdateJobService.KEY_GRID_FEE, "");
+        if (savedGridFee == null || savedGridFee.trim().isEmpty()) {
+            savedGridFee = "0";
+            sharedPreferences.edit().putString(PriceUpdateJobService.KEY_GRID_FEE, savedGridFee).apply();
+        }
+
+        CharSequence currentValue = gridFeeInput.getText();
+        if (currentValue == null || !savedGridFee.contentEquals(currentValue)) {
+            gridFeeInput.setText(savedGridFee);
+        }
     }
 
     private void updateGridFeeUnit(TextInputLayout layout, String countryCode) {
