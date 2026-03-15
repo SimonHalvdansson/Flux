@@ -10,6 +10,7 @@
     <string name="chart_lines">Exact</string>
     <string name="current_price_label">Current price</string>
     <string name="current_price_loading">Loading current price...</string>
+    <string name="current_price_placeholder">--</string>
     <string name="current_price_unavailable">Price unavailable</string>
     <string name="current_price_details_exact">Price: %1$s %2$s</string>
     <string name="current_price_details_conversion_eur">Original: %1$s EUR/kWh</string>

@@ -226,7 +226,7 @@ public final class RegionConfig {
                 ZoneId.of("Europe/Sofia"),
                 Locale.forLanguageTag("bg-BG"),
                 1.0,
-                "BGN/kWh",
+                "лв./kWh",
                 List.of(area("BG", "Bulgaria", "10YCA-BULGARIA-R"))
         ));
 

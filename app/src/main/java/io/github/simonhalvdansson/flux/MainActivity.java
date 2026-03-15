@@ -274,7 +274,7 @@ public class MainActivity extends AppCompatActivity {
 
         boolean applyStromstotte = sharedPreferences.getBoolean(PriceUpdateJobService.KEY_APPLY_STROMSTOTTE, false);
         boolean isNorway = "NO".equals(currentCountry.getCode());
-        stromstotteContainer.setVisibility(isNorway ? View.VISIBLE : View.GONE);
+        updateSettingRowVisibility(stromstotteContainer, isNorway);
         stromstotteSwitch.setChecked(isNorway && applyStromstotte);
         if (!isNorway && applyStromstotte) {
             sharedPreferences.edit().putBoolean(PriceUpdateJobService.KEY_APPLY_STROMSTOTTE, false).apply();
@@ -303,12 +303,15 @@ public class MainActivity extends AppCompatActivity {
             }
             currentCountryIndex = countries.indexOf(selected);
             String countryCode = selected.getCode();
-            sharedPreferences.edit().putString(PriceUpdateJobService.KEY_SELECTED_COUNTRY, countryCode).apply();
+            PriceRepository.invalidateCachedPrices(
+                    sharedPreferences.edit()
+                            .putString(PriceUpdateJobService.KEY_SELECTED_COUNTRY, countryCode)
+            ).apply();
 
             updateAreaDropdown(areaDropdown, sharedPreferences, selected);
 
             boolean norway = "NO".equals(countryCode);
-            stromstotteContainer.setVisibility(norway ? View.VISIBLE : View.GONE);
+            updateSettingRowVisibility(stromstotteContainer, norway);
             if (!norway) {
                 stromstotteSwitch.setChecked(false);
                 sharedPreferences.edit().putBoolean(PriceUpdateJobService.KEY_APPLY_STROMSTOTTE, false).apply();
@@ -337,7 +340,10 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
             String area = selectedArea.getCode();
-            sharedPreferences.edit().putString(PriceUpdateJobService.KEY_SELECTED_AREA, area).apply();
+            PriceRepository.invalidateCachedPrices(
+                    sharedPreferences.edit()
+                            .putString(PriceUpdateJobService.KEY_SELECTED_AREA, area)
+            ).apply();
             PriceUpdateScheduler.schedulePriceUpdateJob(MainActivity.this);
             refreshPrices();
         });
@@ -721,9 +727,9 @@ public class MainActivity extends AppCompatActivity {
         );
     }
     private void renderCurrentPrice() {
-        updateCurrentPriceLabel();
         CurrentPriceResolver.Snapshot snapshot = CurrentPriceResolver.resolve(this);
         if (snapshot.hasData) {
+            updateCurrentPriceLabel();
             currentPriceValue.setText(snapshot.formattedPrice);
             if (snapshot.unitText != null && !snapshot.unitText.isEmpty()) {
                 currentPriceUnit.setText(snapshot.unitText);
@@ -732,18 +738,29 @@ public class MainActivity extends AppCompatActivity {
                 currentPriceUnit.setText("");
                 currentPriceUnit.setVisibility(View.GONE);
             }
-        } else if (snapshot.apiError) {
-            currentPriceValue.setText(R.string.current_price_unavailable);
-            currentPriceUnit.setText("");
-            currentPriceUnit.setVisibility(View.GONE);
-        } else {
-            currentPriceValue.setText(R.string.current_price_loading);
-            currentPriceUnit.setText("");
-            currentPriceUnit.setVisibility(View.GONE);
+            currentPriceInfoTrigger.setEnabled(true);
+            renderBarChart();
+            return;
         }
-        currentPriceInfoTrigger.setEnabled(snapshot.hasData);
 
-        renderBarChart();
+        currentPriceUnit.setText("");
+        currentPriceUnit.setVisibility(View.GONE);
+        currentPriceInfoTrigger.setEnabled(false);
+
+        if (snapshot.apiError) {
+            updateCurrentPriceLabel();
+            currentPriceValue.setText(R.string.current_price_unavailable);
+            renderBarChart();
+            return;
+        }
+
+        renderLoadingPlaceholders();
+    }
+
+    private void renderLoadingPlaceholders() {
+        currentPriceValue.setText(R.string.current_price_placeholder);
+        todayAverageValue.setText(R.string.current_price_placeholder);
+        tomorrowAverageValue.setText(R.string.current_price_placeholder);
     }
 
     private void renderBarChart() {
@@ -1431,7 +1448,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void updatePriceDisplayVisibility(String countryCode) {
         boolean showPriceDisplaySelector = PriceDisplayUtils.supportsDisplayStyleSelection(countryCode);
-        priceDisplayContainer.setVisibility(showPriceDisplaySelector ? View.VISIBLE : View.GONE);
+        updateSettingRowVisibility(priceDisplayContainer, showPriceDisplaySelector);
         if (showPriceDisplaySelector) {
             swissPriceUnitToggleGroup.check(getSwissPriceUnitButtonId());
         }
@@ -1478,10 +1495,18 @@ public class MainActivity extends AppCompatActivity {
                                         AutoCompleteTextView targetAreaDropdown,
                                         RegionConfig.Country country) {
         boolean showRegion = country.hasMultipleAreas();
-        targetRegionContainer.setVisibility(showRegion ? View.VISIBLE : View.GONE);
+        updateSettingRowVisibility(targetRegionContainer, showRegion);
         targetAreaDropdown.setEnabled(showRegion);
         targetAreaDropdown.setFocusable(showRegion);
         targetAreaDropdown.setFocusableInTouchMode(showRegion);
+    }
+
+    private void updateSettingRowVisibility(View container, boolean visible) {
+        int targetVisibility = visible ? View.VISIBLE : View.GONE;
+        if (container.getVisibility() != targetVisibility) {
+            container.setVisibility(targetVisibility);
+        }
+        setViewEnabled(container, visible);
     }
 
     private ArrayAdapter<String> createDropdownAdapter(List<String> items) {

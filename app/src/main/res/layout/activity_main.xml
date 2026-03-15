@@ -275,6 +275,8 @@
                         android:text="@string/chart_lines" />
                 </com.google.android.material.button.MaterialButtonToggleGroup>
 
+                <include layout="@layout/view_location_settings" />
+
                 <LinearLayout
                     android:id="@+id/settings_section"
                     android:layout_width="match_parent"

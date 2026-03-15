@@ -2,6 +2,7 @@ package io.github.simonhalvdansson.flux;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
 import android.util.Log;
 
 import org.json.JSONArray;
@@ -24,6 +25,16 @@ public final class PriceRepository {
 
     public static SharedPreferences getPreferences(Context context) {
         return context.getApplicationContext().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+    }
+
+    public static void invalidateCachedPrices(SharedPreferences prefs) {
+        invalidateCachedPrices(prefs.edit()).apply();
+    }
+
+    public static Editor invalidateCachedPrices(Editor editor) {
+        return editor
+                .remove(KEY_JSON_DATA)
+                .putBoolean(PriceUpdateJobService.KEY_API_ERROR, false);
     }
 
     public static void refreshCachedPrices(Context context) {
