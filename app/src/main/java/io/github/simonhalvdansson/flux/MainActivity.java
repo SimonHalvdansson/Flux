@@ -1053,7 +1053,7 @@ public class MainActivity extends AppCompatActivity {
         TextView tooltipView = new TextView(this);
         tooltipView.setText(text);
         tooltipView.setTextColor(MaterialColors.getColor(tooltipView, com.google.android.material.R.attr.colorOnSurface));
-        tooltipView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f);
+        tooltipView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f);
         tooltipView.setTypeface(Typeface.create(Typeface.MONOSPACE, Typeface.BOLD));
         int horizontalPadding = dpToPx(TOOLTIP_HORIZONTAL_PADDING_DP);
         int verticalPadding = dpToPx(TOOLTIP_VERTICAL_PADDING_DP);
