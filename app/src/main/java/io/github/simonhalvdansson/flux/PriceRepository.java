@@ -76,6 +76,15 @@ public final class PriceRepository {
             for (PriceFetcher.PriceEntry entry : result.entries) {
                 JSONObject obj = new JSONObject();
                 obj.put("price_per_kWh", entry.pricePerKwh);
+                if (!Double.isNaN(entry.pricePerKwhEur)) {
+                    obj.put("price_per_kwh_eur", entry.pricePerKwhEur);
+                }
+                if (!Double.isNaN(entry.exchangeRatePerEur)) {
+                    obj.put("exchange_rate_per_eur", entry.exchangeRatePerEur);
+                }
+                if (entry.currency != null && !entry.currency.isEmpty()) {
+                    obj.put("currency", entry.currency);
+                }
                 obj.put("time_start", entry.startTime.toString());
                 obj.put("time_end", entry.endTime.toString());
                 combined.put(obj);

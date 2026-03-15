@@ -99,6 +99,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView currentPriceLabel;
     private TextView currentPriceValue;
     private TextView currentPriceUnit;
+    private View currentPriceInfoTrigger;
     private TextView todayAverageValue;
     private TextView tomorrowAverageValue;
     private View settingsToggleRow;
@@ -155,6 +156,7 @@ public class MainActivity extends AppCompatActivity {
         currentPriceLabel = findViewById(R.id.current_price_label);
         currentPriceValue = findViewById(R.id.current_price_value);
         currentPriceUnit = findViewById(R.id.current_price_unit);
+        currentPriceInfoTrigger = findViewById(R.id.current_price_info_trigger);
         todayAverageValue = findViewById(R.id.today_average_value);
         tomorrowAverageValue = findViewById(R.id.tomorrow_average_value);
         settingsToggleRow = findViewById(R.id.settings_toggle_row);
@@ -175,6 +177,7 @@ public class MainActivity extends AppCompatActivity {
         setupSettingsToggle(restoreSettingsExpanded);
         setupMainChartModeToggle();
         setupChartTouchOverlay();
+        setupCurrentPriceInfoTrigger();
         configureAppIconShadow(appIconView);
         configureBarShadows();
         applyWindowInsets();
@@ -738,6 +741,7 @@ public class MainActivity extends AppCompatActivity {
             currentPriceUnit.setText("");
             currentPriceUnit.setVisibility(View.GONE);
         }
+        currentPriceInfoTrigger.setEnabled(snapshot.hasData);
 
         renderBarChart();
     }
@@ -1325,6 +1329,10 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    private void setupCurrentPriceInfoTrigger() {
+        currentPriceInfoTrigger.setOnClickListener(v -> showCurrentPriceDetailsDialog());
+    }
+
     private void setupAboutDialogTrigger() {
         findViewById(R.id.app_icon_button).setOnClickListener(v ->
                 new AboutDialogFragment().show(getSupportFragmentManager(), "about_dialog"));
@@ -1335,8 +1343,60 @@ public class MainActivity extends AppCompatActivity {
                 .show(getSupportFragmentManager(), "info_dialog");
     }
 
+    private void showCurrentPriceDetailsDialog() {
+        List<PriceFetcher.PriceEntry> allData = CurrentPriceResolver.getAdjustedEntries(sharedPreferences);
+        PriceFetcher.PriceEntry currentEntry = CurrentPriceResolver.findCurrentEntry(allData);
+        if (currentEntry == null) {
+            return;
+        }
+
+        String countryCode = getSelectedCountryCode();
+        String unitText = PriceDisplayUtils.getUnitText(countryCode, sharedPreferences);
+        double displayMultiplier = RegionConfig.getPriceDisplayMultiplier(countryCode);
+        StringBuilder message = new StringBuilder(getString(
+                R.string.current_price_details_exact,
+                formatDetailedPrice(currentEntry.pricePerKwh * displayMultiplier, countryCode, 0, 6),
+                unitText
+        ));
+
+        String conversionMessage = buildCurrentPriceConversionMessage(currentEntry, countryCode);
+        if (conversionMessage != null) {
+            message.append("\n").append(conversionMessage);
+        }
+
+        InfoDialogFragment.newInstance("", message.toString())
+                .show(getSupportFragmentManager(), "current_price_details_dialog");
+    }
+
     private String getSelectedCountryCode() {
         return sharedPreferences.getString(PriceUpdateJobService.KEY_SELECTED_COUNTRY, "NO");
+    }
+
+    private String buildCurrentPriceConversionMessage(PriceFetcher.PriceEntry currentEntry, String countryCode) {
+        if (currentEntry == null || Double.isNaN(currentEntry.pricePerKwhEur)) {
+            return null;
+        }
+
+        StringBuilder message = new StringBuilder(getString(
+                R.string.current_price_details_conversion_eur,
+                formatDetailedPrice(currentEntry.pricePerKwhEur, countryCode, 0, 6)
+        ));
+
+        String currency = currentEntry.currency;
+        if (currency == null || currency.isEmpty()) {
+            currency = RegionConfig.getCurrency(countryCode);
+        }
+        if (!"EUR".equals(currency)
+                && !Double.isNaN(currentEntry.exchangeRatePerEur)
+                && currentEntry.exchangeRatePerEur > 0.0) {
+            message.append("\n")
+                    .append(getString(
+                            R.string.current_price_details_exchange_rate,
+                            formatDetailedPrice(currentEntry.exchangeRatePerEur, countryCode, 0, 3),
+                            currency
+                    ));
+        }
+        return message.toString();
     }
 
     private String formatVatPercent(double vatPercent) {
@@ -1345,6 +1405,19 @@ public class MainActivity extends AppCompatActivity {
         numberFormat.setMinimumFractionDigits(0);
         numberFormat.setMaximumFractionDigits(1);
         return numberFormat.format(vatPercent);
+    }
+
+    private String formatDetailedPrice(double value, String countryCode, int minFractionDigits, int maxFractionDigits) {
+        NumberFormat numberFormat = NumberFormat.getNumberInstance(RegionConfig.getNumberLocale(countryCode));
+        numberFormat.setGroupingUsed(false);
+        numberFormat.setMinimumFractionDigits(minFractionDigits);
+        numberFormat.setMaximumFractionDigits(maxFractionDigits);
+        String formattedValue = numberFormat.format(value);
+        String negativeZero = numberFormat.format(-0.0d);
+        if (formattedValue.equals(negativeZero)) {
+            return numberFormat.format(0.0d);
+        }
+        return formattedValue;
     }
 
     private void updateVatLabel(TextView label) {

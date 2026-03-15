@@ -74,13 +74,22 @@ public final class CurrentPriceResolver {
 
         List<PriceFetcher.PriceEntry> entries = PriceFetcher.parseCombinedJson(combinedJson);
         for (PriceFetcher.PriceEntry entry : entries) {
-            entry.pricePerKwh = PriceDisplayUtils.applyPriceAdjustments(
-                    entry.pricePerKwh,
+            double rawLocalPrice = entry.pricePerKwh;
+            double adjustedLocalPrice = PriceDisplayUtils.applyPriceAdjustments(
+                    rawLocalPrice,
                     country,
                     applyVat,
                     applyStromstotte,
                     gridFee
             );
+            entry.pricePerKwh = adjustedLocalPrice;
+            if (!Double.isNaN(entry.pricePerKwhEur)) {
+                if (!Double.isNaN(entry.exchangeRatePerEur) && entry.exchangeRatePerEur > 0.0) {
+                    entry.pricePerKwhEur = adjustedLocalPrice / entry.exchangeRatePerEur;
+                } else if (Math.abs(rawLocalPrice) > 1e-9) {
+                    entry.pricePerKwhEur = entry.pricePerKwhEur * (adjustedLocalPrice / rawLocalPrice);
+                }
+            }
         }
         entries.sort(Comparator.comparing(o -> o.startTime));
         return entries;

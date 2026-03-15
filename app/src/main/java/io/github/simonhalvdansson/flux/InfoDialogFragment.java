@@ -4,6 +4,7 @@ import android.app.Dialog;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -35,7 +36,16 @@ public class InfoDialogFragment extends DialogFragment {
         TextView titleView = contentView.findViewById(R.id.info_dialog_title);
         TextView messageView = contentView.findViewById(R.id.info_dialog_message);
 
-        titleView.setText(args.getString(ARG_TITLE));
+        String title = args.getString(ARG_TITLE);
+        if (title == null || title.trim().isEmpty()) {
+            titleView.setVisibility(View.GONE);
+            ViewGroup.MarginLayoutParams layoutParams =
+                    (ViewGroup.MarginLayoutParams) messageView.getLayoutParams();
+            layoutParams.topMargin = 0;
+            messageView.setLayoutParams(layoutParams);
+        } else {
+            titleView.setText(title);
+        }
         messageView.setText(args.getString(ARG_MESSAGE));
 
         return new MaterialAlertDialogBuilder(requireContext())

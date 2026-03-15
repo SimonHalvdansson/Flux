@@ -11,6 +11,9 @@
     <string name="current_price_label">Current price</string>
     <string name="current_price_loading">Loading current price...</string>
     <string name="current_price_unavailable">Price unavailable</string>
+    <string name="current_price_details_exact">Price: %1$s %2$s</string>
+    <string name="current_price_details_conversion_eur">Original: %1$s EUR/kWh</string>
+    <string name="current_price_details_exchange_rate">Exchange rate: 1 EUR = %1$s %2$s</string>
     <string name="today_average_unavailable">Today\'s average unavailable</string>
     <string name="today_average_format">Today\'s average: %1$s %2$s</string>
     <string name="tomorrow_average_format">Tomorrow\'s average: %1$s %2$s</string>

@@ -74,6 +74,9 @@ public class PriceFetcher {
     // Data container
     public static class PriceEntry {
         public double pricePerKwh;
+        public double pricePerKwhEur = Double.NaN;
+        public double exchangeRatePerEur = Double.NaN;
+        public String currency;
         public OffsetDateTime startTime;
         public OffsetDateTime endTime;
     }
@@ -217,6 +220,16 @@ public class PriceFetcher {
                 return new MirrorParseResult(entries, true);
             }
 
+            String payloadCurrency = selectedArea.optString(
+                    "currency",
+                    root.optString("currency", null)
+            );
+            JSONObject exchangeRateObject = root.optJSONObject("exchange_rate");
+            double exchangeRatePerEur = resolveExchangeRatePerEur(
+                    payloadCurrency,
+                    exchangeRateObject
+            );
+
             for (int i = 0; i < prices.length(); i++) {
                 JSONObject obj = prices.optJSONObject(i);
                 if (obj == null) {
@@ -224,8 +237,9 @@ public class PriceFetcher {
                 }
 
                 double pricePerKwh = obj.optDouble("price_per_kwh", Double.NaN);
-                if (Double.isNaN(pricePerKwh)) {
-                    pricePerKwh = obj.optDouble("price_per_kwh_eur", Double.NaN);
+                double pricePerKwhEur = obj.optDouble("price_per_kwh_eur", Double.NaN);
+                if (Double.isNaN(pricePerKwh) && !Double.isNaN(pricePerKwhEur)) {
+                    pricePerKwh = pricePerKwhEur;
                 }
                 if (Double.isNaN(pricePerKwh)) {
                     continue;
@@ -241,6 +255,9 @@ public class PriceFetcher {
 
                 PriceEntry entry = new PriceEntry();
                 entry.pricePerKwh = pricePerKwh;
+                entry.pricePerKwhEur = pricePerKwhEur;
+                entry.exchangeRatePerEur = exchangeRatePerEur;
+                entry.currency = obj.optString("currency", payloadCurrency);
                 entry.startTime = start;
                 entry.endTime = end;
                 entries.add(entry);
@@ -305,6 +322,29 @@ public class PriceFetcher {
         return null;
     }
 
+    private static double resolveExchangeRatePerEur(String payloadCurrency, JSONObject exchangeRateObject) {
+        if ("EUR".equals(payloadCurrency)) {
+            return 1.0;
+        }
+        if (exchangeRateObject == null) {
+            return Double.NaN;
+        }
+
+        String base = exchangeRateObject.optString("base", "");
+        String quote = exchangeRateObject.optString("quote", "");
+        double rate = exchangeRateObject.optDouble("rate", Double.NaN);
+        if (Double.isNaN(rate) || rate <= 0.0) {
+            return Double.NaN;
+        }
+        if ("EUR".equals(base) && quote.equals(payloadCurrency)) {
+            return rate;
+        }
+        if (base.equals(payloadCurrency) && "EUR".equals(quote)) {
+            return 1.0 / rate;
+        }
+        return Double.NaN;
+    }
+
     /**
      * Parses the stored JSON array string into PriceEntry objects.
      */
@@ -320,6 +360,9 @@ public class PriceFetcher {
                 JSONObject obj = arr.getJSONObject(i);
                 PriceEntry e = new PriceEntry();
                 e.pricePerKwh = obj.optDouble("price_per_kWh", 0.0);
+                e.pricePerKwhEur = obj.optDouble("price_per_kwh_eur", Double.NaN);
+                e.exchangeRatePerEur = obj.optDouble("exchange_rate_per_eur", Double.NaN);
+                e.currency = obj.optString("currency", null);
                 String startTimeStr = obj.optString("time_start");
                 String endTimeStr = obj.optString("time_end");
                 e.startTime = OffsetDateTime.parse(startTimeStr, ISO_OFFSET_FORMATTER);
