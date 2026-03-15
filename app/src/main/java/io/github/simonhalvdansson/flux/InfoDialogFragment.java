@@ -40,7 +40,6 @@ public class InfoDialogFragment extends DialogFragment {
 
         return new MaterialAlertDialogBuilder(requireContext())
                 .setView(contentView)
-                .setPositiveButton(android.R.string.ok, null)
                 .create();
     }
 }
