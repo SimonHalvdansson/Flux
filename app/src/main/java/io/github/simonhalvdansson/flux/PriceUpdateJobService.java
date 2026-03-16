@@ -14,7 +14,6 @@ public class PriceUpdateJobService extends JobService {
     public static final String KEY_APPLY_VAT = "apply_vat";
     public static final String KEY_CHART_MODE = "chart_mode";
     public static final String KEY_API_ERROR = "api_error";
-    public static final String KEY_GRID_FEE = "grid_fee";
     public static final String KEY_PRICE_DISPLAY_STYLE = "price_display_style";
 
     private Thread workerThread; // or use an Executor
@@ -48,4 +47,3 @@ public class PriceUpdateJobService extends JobService {
         Log.d(TAG, "Data fetched and stored");
     }
 }
-

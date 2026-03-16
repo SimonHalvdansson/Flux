@@ -67,7 +67,7 @@ public final class CurrentPriceResolver {
         boolean applyVat = prefs.getBoolean(PriceUpdateJobService.KEY_APPLY_VAT, true);
         boolean applyStromstotte = prefs.getBoolean(PriceUpdateJobService.KEY_APPLY_STROMSTOTTE, false);
         double gridFee = PriceDisplayUtils.parseGridFee(
-                prefs.getString(PriceUpdateJobService.KEY_GRID_FEE, ""),
+                GridFeePreferences.getSavedGridFee(prefs, country),
                 country,
                 prefs
         );

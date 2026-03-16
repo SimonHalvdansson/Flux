@@ -200,7 +200,8 @@ public class MainActivity extends AppCompatActivity {
                     || PriceUpdateJobService.KEY_SELECTED_AREA.equals(key)
                     || PriceUpdateJobService.KEY_APPLY_VAT.equals(key)
                     || PriceUpdateJobService.KEY_APPLY_STROMSTOTTE.equals(key)
-                    || PriceUpdateJobService.KEY_GRID_FEE.equals(key)
+                    || GridFeePreferences.KEY_GRID_FEE.equals(key)
+                    || (key != null && key.startsWith(GridFeePreferences.KEY_GRID_FEE_PREFIX))
                     || PriceUpdateJobService.KEY_PRICE_DISPLAY_STYLE.equals(key)
                     || KEY_MAIN_ACTIVITY_CHART_MODE.equals(key)
                     || KEY_MAIN_ACTIVITY_BAR_POOL_MODE.equals(key)) {
@@ -294,12 +295,7 @@ public class MainActivity extends AppCompatActivity {
         mainBarPoolToggleGroup.check(getMainBarPoolButtonId(getMainBarPoolMode()));
         setupInfoDialogs();
 
-        String savedGridFee = sharedPreferences.getString(PriceUpdateJobService.KEY_GRID_FEE, "");
-        if (savedGridFee == null || savedGridFee.trim().isEmpty()) {
-            savedGridFee = "0";
-            sharedPreferences.edit().putString(PriceUpdateJobService.KEY_GRID_FEE, savedGridFee).apply();
-        }
-        gridFeeInput.setText(savedGridFee);
+        gridFeeInput.setText(GridFeePreferences.getSavedGridFee(sharedPreferences, currentCountry.getCode()));
 
         countryDropdown.setOnItemClickListener((parent, view, position, id) -> {
             String selectedLabel = (String) parent.getItemAtPosition(position);
@@ -334,6 +330,7 @@ public class MainActivity extends AppCompatActivity {
             updatePriceDisplayVisibility(countryCode);
             updateVatLabel(vatLabel);
             updateGridFeeUnit(gridFeeContainer, countryCode);
+            gridFeeInput.setText(GridFeePreferences.getSavedGridFee(sharedPreferences, countryCode));
 
             PriceUpdateScheduler.schedulePriceUpdateJob(MainActivity.this);
             refreshPrices();
@@ -420,10 +417,16 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void afterTextChanged(Editable s) {
-                sharedPreferences.edit().putString(
-                        PriceUpdateJobService.KEY_GRID_FEE,
-                        s == null ? "" : s.toString()
-                ).apply();
+                String countryCode = sharedPreferences.getString(
+                        PriceUpdateJobService.KEY_SELECTED_COUNTRY,
+                        "NO"
+                );
+                sharedPreferences.edit()
+                        .putString(
+                                GridFeePreferences.getPreferenceKey(countryCode),
+                                s == null ? "" : s.toString()
+                        )
+                        .apply();
                 updateWidgets();
             }
         });
