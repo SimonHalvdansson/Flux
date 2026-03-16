@@ -29,6 +29,7 @@
     <string name="stromstotte_label">Str&#248;mst&#248;tte</string>
     <string name="vat_label">VAT</string>
     <string name="grid_fee_label">Grid fee</string>
+    <string name="y_axis_label">Y-axis</string>
     <string name="stromstotte_info_title">Str&#248;mst&#248;tte</string>
     <string name="stromstotte_info_message">Reduces the part of the spot price above 0.77 kr/kWh by 90 percent before VAT and grid fee are added.</string>
     <string name="vat_info_title">VAT</string>

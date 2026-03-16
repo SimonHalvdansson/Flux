@@ -58,6 +58,7 @@ public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
     private static final String KEY_MAIN_ACTIVITY_CHART_MODE = "main_activity_chart_mode";
     private static final String KEY_MAIN_ACTIVITY_BAR_POOL_MODE = "main_activity_bar_pool_mode";
+    private static final String KEY_MAIN_ACTIVITY_SHOW_Y_AXIS = "main_activity_show_y_axis";
     private static final String STATE_SETTINGS_EXPANDED = "state_settings_expanded";
     private static final int MAIN_CHART_MODE_BARS = 0;
     private static final int MAIN_CHART_MODE_GRAPH = 1;
@@ -108,6 +109,12 @@ public class MainActivity extends AppCompatActivity {
     private View settingsExpandableContainer;
     private View chartContainer;
     private View chartVisualContainer;
+    private View chartYAxisContainer;
+    private View chartYAxisGuides;
+    private View chartYAxisSpacer;
+    private View chartYAxisTopGuide;
+    private View chartYAxisMidGuide;
+    private View chartYAxisBottomGuide;
     private LinearLayout barChartContainer;
     private ImageView graphImageView;
     private View chartTouchOverlay;
@@ -133,6 +140,7 @@ public class MainActivity extends AppCompatActivity {
     private List<List<PriceFetcher.PriceEntry>> displayedBucketEntries = new ArrayList<>();
     private List<PriceFetcher.PriceEntry> displayedGraphEntries = new ArrayList<>();
     private double displayedGraphMaxPrice = 1.0;
+    private double displayedChartScaleMax = 1.0;
     private int selectedChartBucketIndex = -1;
     private float selectedChartFraction = Float.NaN;
     private boolean suppressNextTooltipDismissCallback;
@@ -144,7 +152,11 @@ public class MainActivity extends AppCompatActivity {
     private LinearLayout stromstotteContainer;
     private MaterialSwitch stromstotteSwitch;
     private MaterialSwitch vatSwitch;
+    private MaterialSwitch mainChartYAxisSwitch;
     private TextView vatLabel;
+    private TextView chartYAxisTopValue;
+    private TextView chartYAxisMidValue;
+    private TextView chartYAxisBottomValue;
     private TextInputLayout gridFeeContainer;
     private TextInputEditText gridFeeInput;
     private MaterialButtonToggleGroup swissPriceUnitToggleGroup;
@@ -170,6 +182,12 @@ public class MainActivity extends AppCompatActivity {
         settingsExpandableContainer = findViewById(R.id.settings_expandable_container);
         chartContainer = findViewById(R.id.bar_chart_section);
         chartVisualContainer = findViewById(R.id.chart_visual_container);
+        chartYAxisContainer = findViewById(R.id.chart_y_axis_container);
+        chartYAxisGuides = findViewById(R.id.chart_y_axis_guides);
+        chartYAxisSpacer = findViewById(R.id.chart_y_axis_spacer);
+        chartYAxisTopGuide = findViewById(R.id.chart_y_axis_top_guide);
+        chartYAxisMidGuide = findViewById(R.id.chart_y_axis_mid_guide);
+        chartYAxisBottomGuide = findViewById(R.id.chart_y_axis_bottom_guide);
         barChartContainer = findViewById(R.id.bar_chart_container);
         graphImageView = findViewById(R.id.graph_image);
         chartTouchOverlay = findViewById(R.id.chart_touch_overlay);
@@ -249,7 +267,11 @@ public class MainActivity extends AppCompatActivity {
         stromstotteContainer = findViewById(R.id.stromstotte_container);
         stromstotteSwitch = findViewById(R.id.stromstotte_switch);
         vatSwitch = findViewById(R.id.vat_switch);
+        mainChartYAxisSwitch = findViewById(R.id.main_chart_y_axis_switch);
         vatLabel = findViewById(R.id.vat_label);
+        chartYAxisTopValue = findViewById(R.id.chart_y_axis_top_value);
+        chartYAxisMidValue = findViewById(R.id.chart_y_axis_mid_value);
+        chartYAxisBottomValue = findViewById(R.id.chart_y_axis_bottom_value);
         gridFeeContainer = findViewById(R.id.grid_fee_container);
         gridFeeInput = findViewById(R.id.grid_fee_input);
         swissPriceUnitToggleGroup = findViewById(R.id.swiss_price_unit_toggle_group);
@@ -290,8 +312,10 @@ public class MainActivity extends AppCompatActivity {
         updateRegionVisibility(regionContainer, areaDropdown, currentCountry);
         updatePriceDisplayVisibility(currentCountry.getCode());
         vatSwitch.setChecked(sharedPreferences.getBoolean(PriceUpdateJobService.KEY_APPLY_VAT, true));
+        mainChartYAxisSwitch.setChecked(isMainChartYAxisEnabled());
         updateVatLabel(vatLabel);
         updateGridFeeUnit(gridFeeContainer, currentCountry.getCode());
+        updateChartYAxisVisibility(mainChartYAxisSwitch.isChecked());
         mainBarPoolToggleGroup.check(getMainBarPoolButtonId(getMainBarPoolMode()));
         setupInfoDialogs();
 
@@ -404,6 +428,15 @@ public class MainActivity extends AppCompatActivity {
         vatSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
             sharedPreferences.edit().putBoolean(PriceUpdateJobService.KEY_APPLY_VAT, isChecked).apply();
             updateWidgets();
+        });
+
+        mainChartYAxisSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            sharedPreferences.edit()
+                    .putBoolean(KEY_MAIN_ACTIVITY_SHOW_Y_AXIS, isChecked)
+                    .apply();
+            updateChartYAxisVisibility(isChecked);
+            clearChartSelection(false);
+            chartVisualContainer.post(this::renderCurrentPrice);
         });
 
         gridFeeInput.addTextChangedListener(new TextWatcher() {
@@ -853,12 +886,17 @@ public class MainActivity extends AppCompatActivity {
             graphMaxPrice = 1.0;
         }
         displayedGraphMaxPrice = graphMaxPrice;
+        displayedChartScaleMax = Math.max(barScaleMax, displayedGraphMaxPrice);
+        if (displayedChartScaleMax <= 0.0) {
+            displayedChartScaleMax = 1.0;
+        }
 
         int chartMode = getMainChartMode();
+        updateChartYAxis(displayedChartScaleMax);
         if (chartMode == MAIN_CHART_MODE_BARS) {
-            renderBars(displayedBarEntries, barScaleMax);
+            renderBars(displayedBarEntries, displayedChartScaleMax);
         } else {
-            renderGraph(chartMode, displayedGraphEntries, displayedGraphMaxPrice);
+            renderGraph(chartMode, displayedGraphEntries, displayedChartScaleMax);
         }
 
         logChartDiagnostics(allData, hourlyData, displayedGraphEntries, chartMode);
@@ -871,6 +909,8 @@ public class MainActivity extends AppCompatActivity {
         displayedBucketEntries = new ArrayList<>();
         displayedGraphEntries = new ArrayList<>();
         displayedGraphMaxPrice = 1.0;
+        displayedChartScaleMax = 1.0;
+        updateChartYAxis(1.0);
         chartTouchOverlay.setEnabled(false);
         cancelGraphAnimation();
         graphImageView.setImageDrawable(null);
@@ -1214,7 +1254,7 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
         if (!displayedGraphEntries.isEmpty()) {
-            renderGraph(chartMode, displayedGraphEntries, displayedGraphMaxPrice);
+            renderGraph(chartMode, displayedGraphEntries, displayedChartScaleMax);
         }
     }
 
@@ -1592,6 +1632,149 @@ public class MainActivity extends AppCompatActivity {
 
     private void updateVatLabel(TextView label) {
         label.setText(R.string.vat_label);
+    }
+
+    private boolean isMainChartYAxisEnabled() {
+        return sharedPreferences.getBoolean(KEY_MAIN_ACTIVITY_SHOW_Y_AXIS, false);
+    }
+
+    private void updateChartYAxisVisibility(boolean visible) {
+        int visibility = visible ? View.VISIBLE : View.GONE;
+        chartYAxisContainer.setVisibility(visibility);
+        chartYAxisGuides.setVisibility(visibility);
+        chartYAxisSpacer.setVisibility(visibility);
+    }
+
+    private void updateChartYAxis(double maxPricePerKwh) {
+        boolean showYAxis = isMainChartYAxisEnabled();
+        updateChartYAxisVisibility(showYAxis);
+        if (!showYAxis) {
+            return;
+        }
+
+        double safeMaxPrice = maxPricePerKwh > 0.0 ? maxPricePerKwh : 1.0;
+        if (chartYAxisContainer.getHeight() <= 0 || chartYAxisGuides.getHeight() <= 0) {
+            chartYAxisContainer.post(() -> updateChartYAxis(safeMaxPrice));
+            return;
+        }
+
+        double tickStep = resolveChartAxisStep(safeMaxPrice);
+        double highestTick = Math.floor((safeMaxPrice + (tickStep * 0.0001d)) / tickStep) * tickStep;
+        double[] tickValues = {
+                normalizeTickValue(highestTick),
+                normalizeTickValue(highestTick - tickStep),
+                normalizeTickValue(highestTick - (tickStep * 2.0d))
+        };
+        TextView[] tickLabels = {chartYAxisTopValue, chartYAxisMidValue, chartYAxisBottomValue};
+        View[] tickGuides = {chartYAxisTopGuide, chartYAxisMidGuide, chartYAxisBottomGuide};
+        String countryCode = getSelectedCountryCode();
+        int fractionDigits = resolveChartAxisFractionDigits(tickStep, countryCode);
+
+        for (int i = 0; i < tickValues.length; i++) {
+            double tickValue = tickValues[i];
+            if (tickValue <= 0.0d) {
+                tickLabels[i].setVisibility(View.GONE);
+                tickGuides[i].setVisibility(View.GONE);
+                continue;
+            }
+            bindChartYAxisTick(
+                    tickLabels[i],
+                    tickGuides[i],
+                    tickValue,
+                    safeMaxPrice,
+                    countryCode,
+                    fractionDigits
+            );
+        }
+    }
+
+    private String formatChartAxisValue(double pricePerKwh, String countryCode, int fractionDigits) {
+        NumberFormat numberFormat = NumberFormat.getNumberInstance(RegionConfig.getNumberLocale(countryCode));
+        numberFormat.setGroupingUsed(false);
+        numberFormat.setMinimumFractionDigits(fractionDigits);
+        numberFormat.setMaximumFractionDigits(fractionDigits);
+        double displayValue = pricePerKwh * getChartAxisDisplayMultiplier(countryCode);
+        String formattedValue = numberFormat.format(displayValue);
+        String negativeZero = numberFormat.format(-0.0d);
+        if (formattedValue.equals(negativeZero)) {
+            return numberFormat.format(0.0d);
+        }
+        return formattedValue;
+    }
+
+    private void bindChartYAxisTick(TextView label,
+                                    View guide,
+                                    double tickValue,
+                                    double maxPricePerKwh,
+                                    String countryCode,
+                                    int fractionDigits) {
+        if (label.getHeight() <= 0) {
+            label.measure(
+                    View.MeasureSpec.makeMeasureSpec(chartYAxisContainer.getWidth(), View.MeasureSpec.AT_MOST),
+                    View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+            );
+        }
+
+        float fraction = (float) Math.max(0.0d, Math.min(1.0d, tickValue / maxPricePerKwh));
+        int axisHeight = chartYAxisContainer.getHeight();
+        int guideHeight = chartYAxisGuides.getHeight();
+        float axisTop = chartYAxisContainer.getPaddingTop();
+        float axisBottom = axisHeight - chartYAxisContainer.getPaddingBottom();
+        float usableAxisHeight = Math.max(1f, axisBottom - axisTop);
+        float guideTop = chartYAxisGuides.getPaddingTop();
+        float guideBottom = guideHeight - chartYAxisGuides.getPaddingBottom();
+        float usableGuideHeight = Math.max(1f, guideBottom - guideTop);
+        float centerAxisY = axisBottom - (usableAxisHeight * fraction);
+        float centerGuideY = guideBottom - (usableGuideHeight * fraction);
+
+        label.setText(formatChartAxisValue(tickValue, countryCode, fractionDigits));
+        label.setVisibility(View.VISIBLE);
+        label.setY(clamp(centerAxisY - (label.getMeasuredHeight() / 2f), 0f, axisHeight - label.getMeasuredHeight()));
+
+        guide.setVisibility(View.VISIBLE);
+        guide.setY(clamp(centerGuideY - (guide.getHeight() / 2f), 0f, guideHeight - guide.getHeight()));
+    }
+
+    private double resolveChartAxisStep(double maxPricePerKwh) {
+        if (maxPricePerKwh <= 0.0d) {
+            return 1.0d;
+        }
+
+        int exponent = (int) Math.floor(Math.log10(maxPricePerKwh));
+        double[] multipliers = {5.0d, 2.0d, 1.0d};
+        for (int currentExponent = exponent; currentExponent >= exponent - 8; currentExponent--) {
+            double scale = Math.pow(10.0d, currentExponent);
+            for (double multiplier : multipliers) {
+                double step = multiplier * scale;
+                if (Math.floor(maxPricePerKwh / step) >= 3.0d) {
+                    return step;
+                }
+            }
+        }
+        return maxPricePerKwh / 3.0d;
+    }
+
+    private int resolveChartAxisFractionDigits(double tickStep, String countryCode) {
+        double displayStep = tickStep * getChartAxisDisplayMultiplier(countryCode);
+        int digits = 0;
+        double roundedStep = displayStep;
+        while (digits < 4 && Math.abs(roundedStep - Math.rint(roundedStep)) > 0.000001d) {
+            roundedStep *= 10.0d;
+            digits++;
+        }
+        return Math.max(1, digits);
+    }
+
+    private double getChartAxisDisplayMultiplier(String countryCode) {
+        return "CH".equals(countryCode) ? 100.0d : RegionConfig.getPriceDisplayMultiplier(countryCode);
+    }
+
+    private double normalizeTickValue(double value) {
+        return Math.abs(value) < 0.0000001d ? 0.0d : value;
+    }
+
+    private float clamp(float value, float min, float max) {
+        return Math.max(min, Math.min(max, value));
     }
 
     private void updateGridFeeUnit(TextInputLayout layout, String countryCode) {

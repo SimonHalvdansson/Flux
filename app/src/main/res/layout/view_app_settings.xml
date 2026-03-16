@@ -230,6 +230,38 @@
         </LinearLayout>
 
         <LinearLayout
+            android:paddingStart="@dimen/main_content_inner_padding_minus_4"
+            android:paddingEnd="@dimen/main_content_inner_padding"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:paddingStart="4dp"
+                android:paddingTop="10dp"
+                android:paddingEnd="6dp"
+                android:paddingBottom="10dp"
+                android:fontFamily="@font/productsans_bold"
+                android:text="@string/y_axis_label"
+                android:textColor="?attr/settingsLabelTextColor"
+                android:textSize="16sp" />
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
+
+            <com.google.android.material.materialswitch.MaterialSwitch
+                android:id="@+id/main_chart_y_axis_switch"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical" />
+        </LinearLayout>
+
+        <LinearLayout
             android:paddingStart="@dimen/main_content_inner_padding"
             android:paddingEnd="@dimen/main_content_inner_padding"
             android:id="@+id/main_bar_pool_container"

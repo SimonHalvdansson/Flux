@@ -138,66 +138,152 @@
                     android:paddingStart="@dimen/main_content_inner_padding"
                     android:paddingEnd="@dimen/main_content_inner_padding">
 
-                    <FrameLayout
-                        android:id="@+id/chart_visual_container"
-                        android:layout_width="match_parent"
-                        android:layout_height="160dp"
-                        android:clipChildren="false"
-                        android:clipToPadding="false">
-
                     <LinearLayout
-                        android:id="@+id/bar_chart_container"
                         android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:clipChildren="false"
-                        android:clipToPadding="false"
+                        android:layout_height="wrap_content"
                         android:gravity="bottom"
-                        android:paddingTop="4dp"
-                        android:paddingBottom="4dp"
                         android:orientation="horizontal">
 
-                        <ImageView android:id="@+id/bar_0" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded_old" />
-                        <ImageView android:id="@+id/bar_1" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded_old" />
-                        <ImageView android:id="@+id/bar_2" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded_old" />
-                        <ImageView android:id="@+id/bar_3" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded_current" />
-                        <ImageView android:id="@+id/bar_4" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
-                        <ImageView android:id="@+id/bar_5" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
-                        <ImageView android:id="@+id/bar_6" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
-                        <ImageView android:id="@+id/bar_7" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
-                        <ImageView android:id="@+id/bar_8" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
-                        <ImageView android:id="@+id/bar_9" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
-                        <ImageView android:id="@+id/bar_10" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
-                        <ImageView android:id="@+id/bar_11" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
-                        <ImageView android:id="@+id/bar_12" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
-                        <ImageView android:id="@+id/bar_13" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
-                        <ImageView android:id="@+id/bar_14" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
-                        <ImageView android:id="@+id/bar_15" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
-                        <ImageView android:id="@+id/bar_16" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
-                        <ImageView android:id="@+id/bar_17" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
-                        <ImageView android:id="@+id/bar_18" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
-                        <ImageView android:id="@+id/bar_19" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
-                        <ImageView android:id="@+id/bar_20" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
-                        <ImageView android:id="@+id/bar_21" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
-                        <ImageView android:id="@+id/bar_22" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
-                        <ImageView android:id="@+id/bar_23" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
+                        <FrameLayout
+                            android:id="@+id/chart_y_axis_container"
+                            android:layout_width="32dp"
+                            android:layout_height="160dp"
+                            android:layout_marginEnd="0dp"
+                            android:paddingTop="4dp"
+                            android:paddingBottom="4dp"
+                            android:visibility="gone">
+
+                            <TextView
+                                android:id="@+id/chart_y_axis_top_value"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="top|start"
+                                android:ellipsize="end"
+                                android:fontFamily="@font/productsans_medium"
+                                android:gravity="start"
+                                android:maxLines="1"
+                                android:textColor="?attr/colorOnSurfaceVariant"
+                                android:textSize="11sp" />
+
+                            <TextView
+                                android:id="@+id/chart_y_axis_mid_value"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="top|start"
+                                android:ellipsize="end"
+                                android:fontFamily="@font/productsans_medium"
+                                android:gravity="start"
+                                android:maxLines="1"
+                                android:textColor="?attr/colorOnSurfaceVariant"
+                                android:textSize="11sp" />
+
+                            <TextView
+                                android:id="@+id/chart_y_axis_bottom_value"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="top|start"
+                                android:ellipsize="end"
+                                android:fontFamily="@font/productsans_medium"
+                                android:gravity="start"
+                                android:maxLines="1"
+                                android:textColor="?attr/colorOnSurfaceVariant"
+                                android:textSize="11sp" />
+                        </FrameLayout>
+
+                        <FrameLayout
+                            android:id="@+id/chart_visual_container"
+                            android:layout_width="0dp"
+                            android:layout_height="160dp"
+                            android:layout_weight="1"
+                            android:clipChildren="false"
+                            android:clipToPadding="false">
+
+                            <FrameLayout
+                                android:id="@+id/chart_y_axis_guides"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:importantForAccessibility="no"
+                                android:visibility="gone">
+
+                                <View
+                                    android:id="@+id/chart_y_axis_top_guide"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="1dp"
+                                    android:layout_gravity="top"
+                                    android:alpha="0.18"
+                                    android:background="?attr/colorOnSurfaceVariant" />
+
+                                <View
+                                    android:id="@+id/chart_y_axis_mid_guide"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="1dp"
+                                    android:layout_gravity="top"
+                                    android:alpha="0.12"
+                                    android:background="?attr/colorOnSurfaceVariant" />
+
+                                <View
+                                    android:id="@+id/chart_y_axis_bottom_guide"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="1dp"
+                                    android:layout_gravity="top"
+                                    android:alpha="0.18"
+                                    android:background="?attr/colorOnSurfaceVariant" />
+                            </FrameLayout>
+
+                            <LinearLayout
+                                android:id="@+id/bar_chart_container"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:clipChildren="false"
+                                android:clipToPadding="false"
+                                android:gravity="bottom"
+                                android:paddingTop="4dp"
+                                android:paddingBottom="4dp"
+                                android:orientation="horizontal">
+
+                                <ImageView android:id="@+id/bar_0" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded_old" />
+                                <ImageView android:id="@+id/bar_1" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded_old" />
+                                <ImageView android:id="@+id/bar_2" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded_old" />
+                                <ImageView android:id="@+id/bar_3" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded_current" />
+                                <ImageView android:id="@+id/bar_4" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
+                                <ImageView android:id="@+id/bar_5" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
+                                <ImageView android:id="@+id/bar_6" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
+                                <ImageView android:id="@+id/bar_7" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
+                                <ImageView android:id="@+id/bar_8" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
+                                <ImageView android:id="@+id/bar_9" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
+                                <ImageView android:id="@+id/bar_10" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
+                                <ImageView android:id="@+id/bar_11" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
+                                <ImageView android:id="@+id/bar_12" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
+                                <ImageView android:id="@+id/bar_13" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
+                                <ImageView android:id="@+id/bar_14" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
+                                <ImageView android:id="@+id/bar_15" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
+                                <ImageView android:id="@+id/bar_16" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
+                                <ImageView android:id="@+id/bar_17" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
+                                <ImageView android:id="@+id/bar_18" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
+                                <ImageView android:id="@+id/bar_19" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
+                                <ImageView android:id="@+id/bar_20" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
+                                <ImageView android:id="@+id/bar_21" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
+                                <ImageView android:id="@+id/bar_22" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
+                                <ImageView android:id="@+id/bar_23" android:layout_width="0dp" android:layout_height="8dp" android:layout_marginHorizontal="1dp" android:layout_weight="1" android:background="@drawable/bar_rounded" />
+                            </LinearLayout>
+
+                            <ImageView
+                                android:id="@+id/graph_image"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:adjustViewBounds="true"
+                                android:scaleType="fitXY"
+                                android:visibility="gone" />
+
+                            <View
+                                android:id="@+id/chart_touch_overlay"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:background="@android:color/transparent"
+                                android:clickable="true"
+                                android:focusable="true" />
+                        </FrameLayout>
                     </LinearLayout>
-
-                        <ImageView
-                            android:id="@+id/graph_image"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:adjustViewBounds="true"
-                            android:scaleType="fitXY"
-                            android:visibility="gone" />
-
-                        <View
-                            android:id="@+id/chart_touch_overlay"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:background="@android:color/transparent"
-                            android:clickable="true"
-                            android:focusable="true" />
-                    </FrameLayout>
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -206,18 +292,31 @@
                         android:orientation="horizontal"
                         android:translationY="-4dp">
 
-                        <TextView android:id="@+id/time0" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:fontFamily="@font/productsans_medium" android:gravity="start" android:textSize="12sp" />
-                        <TextView android:id="@+id/time1" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:fontFamily="@font/productsans_medium" android:gravity="start" android:textSize="12sp" />
-                        <TextView android:id="@+id/time2" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:fontFamily="@font/productsans_medium" android:gravity="start" android:textSize="12sp" />
-                        <TextView android:id="@+id/time3" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:fontFamily="@font/productsans_medium" android:gravity="start" android:textSize="12sp" />
-                        <TextView android:id="@+id/time4" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:fontFamily="@font/productsans_medium" android:gravity="start" android:textSize="12sp" />
-                        <TextView android:id="@+id/time5" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:fontFamily="@font/productsans_medium" android:gravity="start" android:textSize="12sp" />
-                        <TextView android:id="@+id/time6" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:fontFamily="@font/productsans_medium" android:gravity="start" android:textSize="12sp" />
-                        <TextView android:id="@+id/time7" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:fontFamily="@font/productsans_medium" android:gravity="start" android:textSize="12sp" />
-                        <TextView android:id="@+id/time8" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:fontFamily="@font/productsans_medium" android:gravity="start" android:textSize="12sp" />
-                        <TextView android:id="@+id/time9" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:fontFamily="@font/productsans_medium" android:gravity="start" android:textSize="12sp" />
-                        <TextView android:id="@+id/time10" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:fontFamily="@font/productsans_medium" android:gravity="start" android:textSize="12sp" />
-                        <TextView android:id="@+id/time11" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:fontFamily="@font/productsans_medium" android:gravity="start" android:textSize="12sp" />
+                        <View
+                            android:id="@+id/chart_y_axis_spacer"
+                            android:layout_width="32dp"
+                            android:layout_height="1dp"
+                            android:visibility="gone" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="horizontal">
+
+                            <TextView android:id="@+id/time0" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:fontFamily="@font/productsans_medium" android:gravity="start" android:textSize="12sp" />
+                            <TextView android:id="@+id/time1" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:fontFamily="@font/productsans_medium" android:gravity="start" android:textSize="12sp" />
+                            <TextView android:id="@+id/time2" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:fontFamily="@font/productsans_medium" android:gravity="start" android:textSize="12sp" />
+                            <TextView android:id="@+id/time3" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:fontFamily="@font/productsans_medium" android:gravity="start" android:textSize="12sp" />
+                            <TextView android:id="@+id/time4" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:fontFamily="@font/productsans_medium" android:gravity="start" android:textSize="12sp" />
+                            <TextView android:id="@+id/time5" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:fontFamily="@font/productsans_medium" android:gravity="start" android:textSize="12sp" />
+                            <TextView android:id="@+id/time6" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:fontFamily="@font/productsans_medium" android:gravity="start" android:textSize="12sp" />
+                            <TextView android:id="@+id/time7" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:fontFamily="@font/productsans_medium" android:gravity="start" android:textSize="12sp" />
+                            <TextView android:id="@+id/time8" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:fontFamily="@font/productsans_medium" android:gravity="start" android:textSize="12sp" />
+                            <TextView android:id="@+id/time9" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:fontFamily="@font/productsans_medium" android:gravity="start" android:textSize="12sp" />
+                            <TextView android:id="@+id/time10" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:fontFamily="@font/productsans_medium" android:gravity="start" android:textSize="12sp" />
+                            <TextView android:id="@+id/time11" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:fontFamily="@font/productsans_medium" android:gravity="start" android:textSize="12sp" />
+                        </LinearLayout>
                     </LinearLayout>
 
                     <TextView
