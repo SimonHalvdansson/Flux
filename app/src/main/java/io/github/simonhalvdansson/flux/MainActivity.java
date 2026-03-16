@@ -302,8 +302,16 @@ public class MainActivity extends AppCompatActivity {
             if (selected == null) {
                 return;
             }
-            currentCountryIndex = countries.indexOf(selected);
             String countryCode = selected.getCode();
+            String currentCountryCode = sharedPreferences.getString(
+                    PriceUpdateJobService.KEY_SELECTED_COUNTRY,
+                    "NO"
+            );
+            if (countryCode.equals(currentCountryCode)) {
+                return;
+            }
+
+            currentCountryIndex = countries.indexOf(selected);
             PriceRepository.invalidateCachedPrices(
                     sharedPreferences.edit()
                             .putString(PriceUpdateJobService.KEY_SELECTED_COUNTRY, countryCode)
@@ -341,6 +349,14 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
             String area = selectedArea.getCode();
+            String currentArea = sharedPreferences.getString(
+                    PriceUpdateJobService.KEY_SELECTED_AREA,
+                    areas.isEmpty() ? null : areas.get(0).getCode()
+            );
+            if (area.equals(currentArea)) {
+                return;
+            }
+
             PriceRepository.invalidateCachedPrices(
                     sharedPreferences.edit()
                             .putString(PriceUpdateJobService.KEY_SELECTED_AREA, area)
