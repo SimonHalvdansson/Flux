@@ -21,21 +21,35 @@ final class BarChartUtils {
     }
 
     static int resolveBarBackgroundRes(PriceFetcher.PriceEntry entry, ZonedDateTime now) {
+        return resolveBarBackgroundRes(entry, now, false);
+    }
+
+    static int resolveBarBackgroundRes(PriceFetcher.PriceEntry entry,
+                                       ZonedDateTime now,
+                                       boolean isSelected) {
         ZonedDateTime start = entry.startTime.atZoneSameInstant(ZoneId.systemDefault());
         ZonedDateTime end = entry.endTime.atZoneSameInstant(ZoneId.systemDefault());
         boolean isNegative = entry.pricePerKwh < 0;
         if ((now.isEqual(start) || now.isAfter(start)) && now.isBefore(end)) {
             return isNegative
-                    ? R.drawable.bar_rounded_negative_current
-                    : R.drawable.bar_rounded_current;
+                    ? (isSelected
+                    ? R.drawable.bar_rounded_negative_current_selected
+                    : R.drawable.bar_rounded_negative_current)
+                    : (isSelected
+                    ? R.drawable.bar_rounded_current_selected
+                    : R.drawable.bar_rounded_current);
         }
         if (now.isAfter(end)) {
             return isNegative
-                    ? R.drawable.bar_rounded_negative_old
-                    : R.drawable.bar_rounded_old;
+                    ? (isSelected
+                    ? R.drawable.bar_rounded_negative_old_selected
+                    : R.drawable.bar_rounded_negative_old)
+                    : (isSelected
+                    ? R.drawable.bar_rounded_old_selected
+                    : R.drawable.bar_rounded_old);
         }
         return isNegative
-                ? R.drawable.bar_rounded_negative
-                : R.drawable.bar_rounded;
+                ? (isSelected ? R.drawable.bar_rounded_negative_selected : R.drawable.bar_rounded_negative)
+                : (isSelected ? R.drawable.bar_rounded_selected : R.drawable.bar_rounded);
     }
 }
