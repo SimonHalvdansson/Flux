@@ -1489,13 +1489,9 @@ public class MainActivity extends AppCompatActivity {
             );
         });
         findViewById(R.id.grid_fee_info_trigger).setOnClickListener(v -> {
-            String countryCode = getSelectedCountryCode();
             showInfoDialog(
                     R.string.grid_fee_info_title,
-                    getString(
-                            R.string.grid_fee_info_message,
-                            PriceDisplayUtils.getUnitText(countryCode, sharedPreferences)
-                    )
+                    getString(R.string.grid_fee_info_message)
             );
         });
     }

@@ -34,7 +34,7 @@
     <string name="vat_info_title">VAT</string>
     <string name="vat_info_message">Adds the current VAT or energy tax rate (%1$s percent) to the spot price before the grid fee is added.</string>
     <string name="grid_fee_info_title">Grid fee</string>
-    <string name="grid_fee_info_message">Adds a fixed surcharge to every displayed kWh price. Enter the value in the same unit currently shown in the app, such as %1$s.</string>
+    <string name="grid_fee_info_message">Adds a fixed surcharge to every displayed kWh price.</string>
     <string name="about_button_label">About Flux</string>
     <string name="about_version_format">Version %1$s</string>
     <string name="about_description">Flux is developed by me, Simon Halvdansson, but has to a large part been an experiment in agentic coding with Codex. Work started in early 2025 but I had been thinking about this project mainly as a widget since 2022.\n\nElectricity data is fetched from ENTSO-E using a GitHub action which runs every hour and is also open source.</string>
