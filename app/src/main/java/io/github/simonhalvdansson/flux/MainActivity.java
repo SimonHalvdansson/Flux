@@ -95,6 +95,8 @@ public class MainActivity extends AppCompatActivity {
     private static final long BAR_UPDATE_ANIMATION_DURATION_MS = 160L;
     private static final long GRAPH_FADE_IN_DURATION_MS = 420L;
     private static final long QUARTER_REFRESH_SLOP_MS = 250L;
+    private static final float[] CHART_Y_AXIS_TICK_FRACTIONS = {0.75f, 0.5f, 0.25f};
+    private static final int CHART_Y_AXIS_EDGE_MARGIN_DP = 6;
 
     private final List<RegionConfig.Country> countries = RegionConfig.getCountries();
 
@@ -886,7 +888,7 @@ public class MainActivity extends AppCompatActivity {
             graphMaxPrice = 1.0;
         }
         displayedGraphMaxPrice = graphMaxPrice;
-        displayedChartScaleMax = Math.max(barScaleMax, displayedGraphMaxPrice);
+        displayedChartScaleMax = resolveRoundedChartScaleMax(Math.max(barScaleMax, displayedGraphMaxPrice));
         if (displayedChartScaleMax <= 0.0) {
             displayedChartScaleMax = 1.0;
         }
@@ -1658,42 +1660,29 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        double tickStep = resolveChartAxisStep(safeMaxPrice);
-        double highestTick = Math.floor((safeMaxPrice + (tickStep * 0.0001d)) / tickStep) * tickStep;
-        double[] tickValues = {
-                normalizeTickValue(highestTick),
-                normalizeTickValue(highestTick - tickStep),
-                normalizeTickValue(highestTick - (tickStep * 2.0d))
-        };
         TextView[] tickLabels = {chartYAxisTopValue, chartYAxisMidValue, chartYAxisBottomValue};
         View[] tickGuides = {chartYAxisTopGuide, chartYAxisMidGuide, chartYAxisBottomGuide};
         String countryCode = getSelectedCountryCode();
-        int fractionDigits = resolveChartAxisFractionDigits(tickStep, countryCode);
 
-        for (int i = 0; i < tickValues.length; i++) {
-            double tickValue = tickValues[i];
-            if (tickValue <= 0.0d) {
-                tickLabels[i].setVisibility(View.GONE);
-                tickGuides[i].setVisibility(View.GONE);
-                continue;
-            }
+        for (int i = 0; i < CHART_Y_AXIS_TICK_FRACTIONS.length; i++) {
+            double tickValue = normalizeTickValue(safeMaxPrice * CHART_Y_AXIS_TICK_FRACTIONS[i]);
             bindChartYAxisTick(
                     tickLabels[i],
                     tickGuides[i],
                     tickValue,
-                    safeMaxPrice,
-                    countryCode,
-                    fractionDigits
+                    CHART_Y_AXIS_TICK_FRACTIONS[i],
+                    countryCode
             );
         }
     }
 
-    private String formatChartAxisValue(double pricePerKwh, String countryCode, int fractionDigits) {
+    private String formatChartAxisValue(double pricePerKwh, String countryCode) {
+        double displayValue = pricePerKwh * getChartAxisDisplayMultiplier(countryCode);
+        int fractionDigits = resolveChartAxisFractionDigits(displayValue);
         NumberFormat numberFormat = NumberFormat.getNumberInstance(RegionConfig.getNumberLocale(countryCode));
         numberFormat.setGroupingUsed(false);
         numberFormat.setMinimumFractionDigits(fractionDigits);
         numberFormat.setMaximumFractionDigits(fractionDigits);
-        double displayValue = pricePerKwh * getChartAxisDisplayMultiplier(countryCode);
         String formattedValue = numberFormat.format(displayValue);
         String negativeZero = numberFormat.format(-0.0d);
         if (formattedValue.equals(negativeZero)) {
@@ -1705,19 +1694,26 @@ public class MainActivity extends AppCompatActivity {
     private void bindChartYAxisTick(TextView label,
                                     View guide,
                                     double tickValue,
-                                    double maxPricePerKwh,
-                                    String countryCode,
-                                    int fractionDigits) {
+                                    float tickFraction,
+                                    String countryCode) {
+        label.setText(formatChartAxisValue(tickValue, countryCode));
         if (label.getHeight() <= 0) {
+            int availableWidth = Math.max(
+                    0,
+                    chartYAxisContainer.getWidth()
+                            - chartYAxisContainer.getPaddingLeft()
+                            - chartYAxisContainer.getPaddingRight()
+            );
             label.measure(
-                    View.MeasureSpec.makeMeasureSpec(chartYAxisContainer.getWidth(), View.MeasureSpec.AT_MOST),
+                    View.MeasureSpec.makeMeasureSpec(availableWidth, View.MeasureSpec.AT_MOST),
                     View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
             );
         }
 
-        float fraction = (float) Math.max(0.0d, Math.min(1.0d, tickValue / maxPricePerKwh));
+        float fraction = Math.max(0f, Math.min(1f, tickFraction));
         int axisHeight = chartYAxisContainer.getHeight();
         int guideHeight = chartYAxisGuides.getHeight();
+        float edgeMarginPx = dpToPx(CHART_Y_AXIS_EDGE_MARGIN_DP);
         float axisTop = chartYAxisContainer.getPaddingTop();
         float axisBottom = axisHeight - chartYAxisContainer.getPaddingBottom();
         float usableAxisHeight = Math.max(1f, axisBottom - axisTop);
@@ -1727,42 +1723,63 @@ public class MainActivity extends AppCompatActivity {
         float centerAxisY = axisBottom - (usableAxisHeight * fraction);
         float centerGuideY = guideBottom - (usableGuideHeight * fraction);
 
-        label.setText(formatChartAxisValue(tickValue, countryCode, fractionDigits));
         label.setVisibility(View.VISIBLE);
-        label.setY(clamp(centerAxisY - (label.getMeasuredHeight() / 2f), 0f, axisHeight - label.getMeasuredHeight()));
+        float minLabelY = axisTop + edgeMarginPx;
+        float maxLabelY = Math.max(minLabelY, axisBottom - edgeMarginPx - label.getMeasuredHeight());
+        label.setY(clamp(
+                centerAxisY - (label.getMeasuredHeight() / 2f),
+                minLabelY,
+                maxLabelY
+        ));
 
         guide.setVisibility(View.VISIBLE);
-        guide.setY(clamp(centerGuideY - (guide.getHeight() / 2f), 0f, guideHeight - guide.getHeight()));
+        float minGuideY = guideTop + edgeMarginPx;
+        float maxGuideY = Math.max(minGuideY, guideBottom - edgeMarginPx - guide.getHeight());
+        guide.setY(clamp(
+                centerGuideY - (guide.getHeight() / 2f),
+                minGuideY,
+                maxGuideY
+        ));
     }
 
-    private double resolveChartAxisStep(double maxPricePerKwh) {
+    private double resolveRoundedChartScaleMax(double maxPricePerKwh) {
         if (maxPricePerKwh <= 0.0d) {
             return 1.0d;
         }
 
-        int exponent = (int) Math.floor(Math.log10(maxPricePerKwh));
-        double[] multipliers = {5.0d, 2.0d, 1.0d};
-        for (int currentExponent = exponent; currentExponent >= exponent - 8; currentExponent--) {
-            double scale = Math.pow(10.0d, currentExponent);
-            for (double multiplier : multipliers) {
-                double step = multiplier * scale;
-                if (Math.floor(maxPricePerKwh / step) >= 3.0d) {
-                    return step;
-                }
-            }
-        }
-        return maxPricePerKwh / 3.0d;
+        double minimumTickStep = maxPricePerKwh / (CHART_Y_AXIS_TICK_FRACTIONS.length + 1.0d);
+        double roundedTickStep = resolveNiceChartTickStep(minimumTickStep);
+        return roundedTickStep * (CHART_Y_AXIS_TICK_FRACTIONS.length + 1.0d);
     }
 
-    private int resolveChartAxisFractionDigits(double tickStep, String countryCode) {
-        double displayStep = tickStep * getChartAxisDisplayMultiplier(countryCode);
-        int digits = 0;
-        double roundedStep = displayStep;
-        while (digits < 4 && Math.abs(roundedStep - Math.rint(roundedStep)) > 0.000001d) {
-            roundedStep *= 10.0d;
-            digits++;
+    private double resolveNiceChartTickStep(double minimumStep) {
+        if (minimumStep <= 0.0d) {
+            return 1.0d;
         }
-        return Math.max(1, digits);
+
+        double exponent = Math.floor(Math.log10(minimumStep));
+        double scale = Math.pow(10.0d, exponent);
+        double[] multipliers = {1.0d, 2.0d, 2.5d, 5.0d, 10.0d};
+        for (double multiplier : multipliers) {
+            double candidate = multiplier * scale;
+            if (candidate + 0.0000001d >= minimumStep) {
+                return candidate;
+            }
+        }
+        return scale * 10.0d;
+    }
+
+    private int resolveChartAxisFractionDigits(double displayValue) {
+        double absoluteValue = Math.abs(displayValue);
+        int integerDigits;
+        if (absoluteValue >= 100.0d) {
+            integerDigits = 3;
+        } else if (absoluteValue >= 10.0d) {
+            integerDigits = 2;
+        } else {
+            integerDigits = 1;
+        }
+        return Math.max(0, 3 - integerDigits);
     }
 
     private double getChartAxisDisplayMultiplier(String countryCode) {
