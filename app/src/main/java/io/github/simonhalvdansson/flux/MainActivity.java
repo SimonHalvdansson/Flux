@@ -63,7 +63,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int MAIN_CHART_MODE_BARS = 0;
     private static final int MAIN_CHART_MODE_GRAPH = 1;
     private static final int MAIN_CHART_MODE_LINES = 2;
-    private static final int TOOLTIP_VERTICAL_OFFSET_DP = 16;
+    private static final int TOOLTIP_VERTICAL_OFFSET_DP = 6;
     private static final int TOOLTIP_HORIZONTAL_PADDING_DP = 12;
     private static final int TOOLTIP_VERTICAL_PADDING_DP = 10;
     private static final long CHART_MODE_TRANSITION_DURATION_MS = 100L;
