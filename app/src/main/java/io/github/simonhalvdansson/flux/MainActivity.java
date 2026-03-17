@@ -1637,7 +1637,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private boolean isMainChartYAxisEnabled() {
-        return sharedPreferences.getBoolean(KEY_MAIN_ACTIVITY_SHOW_Y_AXIS, false);
+        return sharedPreferences.getBoolean(KEY_MAIN_ACTIVITY_SHOW_Y_AXIS, true);
     }
 
     private void updateChartYAxisVisibility(boolean visible) {
