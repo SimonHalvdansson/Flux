@@ -128,7 +128,6 @@ public class ListWidget extends AppWidgetProvider {
         svcIntent.setData(Uri.parse(svcIntent.toUri(Intent.URI_INTENT_SCHEME)));
         views.setRemoteAdapter(R.id.list_view, svcIntent);
 
-        appWidgetManager.notifyAppWidgetViewDataChanged(appWidgetId, R.id.list_view);
         appWidgetManager.updateAppWidget(appWidgetId, views);
     }
 
@@ -154,14 +153,11 @@ public class ListWidget extends AppWidgetProvider {
             return;
         }
         if (ids != null && ids.length > 0) {
-            try {
-                manager.notifyAppWidgetViewDataChanged(ids, R.id.list_view);
-            } catch (RuntimeException e) {
-                Log.w(TAG, "Failed to notify list widget data changes", e);
-            }
             for (int id : ids) {
                 try {
                     updateAppWidget(context, manager, id);
+                    // Notify the collection only after the host has received the updated adapter state.
+                    manager.notifyAppWidgetViewDataChanged(id, R.id.list_view);
                 } catch (RuntimeException e) {
                     Log.w(TAG, "Failed to refresh list widget " + id, e);
                 }
