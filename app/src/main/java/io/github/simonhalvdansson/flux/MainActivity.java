@@ -124,7 +124,6 @@ public class MainActivity extends AppCompatActivity {
     private SharedPreferences sharedPreferences;
     private SharedPreferences.OnSharedPreferenceChangeListener preferenceChangeListener;
     private AnimatorSet barAnimator;
-    private ValueAnimator sectionVisibilityAnimator;
     private PopupWindow chartTooltipPopup;
     private final Handler quarterRefreshHandler = new Handler(Looper.getMainLooper());
     private final Runnable quarterRefreshRunnable = new Runnable() {
@@ -537,75 +536,11 @@ public class MainActivity extends AppCompatActivity {
 
     private void updateSectionVisibility(View container, boolean visible, boolean animate) {
         container.animate().cancel();
-        if (sectionVisibilityAnimator != null) {
-            sectionVisibilityAnimator.cancel();
-            sectionVisibilityAnimator = null;
-        }
+        container.clearAnimation();
 
-        if (!animate) {
-            container.setAlpha(visible ? 1f : 0f);
-            container.setVisibility(visible ? View.VISIBLE : View.GONE);
-            setViewEnabled(container, visible);
-            return;
-        }
-
-        if (visible) {
-            fadeSectionIn(container);
-        } else {
-            fadeSectionOut(container);
-        }
-    }
-
-    private void fadeSectionIn(View container) {
-        container.setVisibility(View.VISIBLE);
-        setViewEnabled(container, true);
-        container.setAlpha(0f);
-
-        ValueAnimator animator = ValueAnimator.ofFloat(0f, 1f);
-        animator.setDuration(SECTION_VISIBILITY_ANIMATION_MS);
-        animator.setInterpolator(new LinearOutSlowInInterpolator());
-        animator.addUpdateListener(valueAnimator -> {
-            container.setAlpha((float) valueAnimator.getAnimatedValue());
-        });
-        animator.addListener(new AnimatorListenerAdapter() {
-            @Override
-            public void onAnimationEnd(Animator animation) {
-                container.setAlpha(1f);
-                sectionVisibilityAnimator = null;
-            }
-
-            @Override
-            public void onAnimationCancel(Animator animation) {
-                sectionVisibilityAnimator = null;
-            }
-        });
-        sectionVisibilityAnimator = animator;
-        animator.start();
-    }
-
-    private void fadeSectionOut(View container) {
-        ValueAnimator animator = ValueAnimator.ofFloat(container.getAlpha(), 0f);
-        animator.setDuration(SECTION_VISIBILITY_ANIMATION_MS);
-        animator.setInterpolator(new LinearOutSlowInInterpolator());
-        animator.addUpdateListener(valueAnimator -> {
-            container.setAlpha((float) valueAnimator.getAnimatedValue());
-        });
-        animator.addListener(new AnimatorListenerAdapter() {
-            @Override
-            public void onAnimationEnd(Animator animation) {
-                container.setAlpha(0f);
-                container.setVisibility(View.GONE);
-                setViewEnabled(container, false);
-                sectionVisibilityAnimator = null;
-            }
-
-            @Override
-            public void onAnimationCancel(Animator animation) {
-                sectionVisibilityAnimator = null;
-            }
-        });
-        sectionVisibilityAnimator = animator;
-        animator.start();
+        container.setAlpha(1f);
+        container.setVisibility(visible ? View.VISIBLE : View.GONE);
+        setViewEnabled(container, visible);
     }
 
     private void setViewEnabled(View view, boolean enabled) {
