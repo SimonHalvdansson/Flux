@@ -92,7 +92,6 @@ public class MainActivity extends AppCompatActivity {
     private static final int MIN_BAR_HEIGHT_DP = 8;
     private static final long BAR_ANIMATION_DURATION_MS = 468L;
     private static final long BAR_ANIMATION_STAGGER_MS = 20L;
-    private static final long BAR_UPDATE_ANIMATION_DURATION_MS = 160L;
     private static final long GRAPH_FADE_IN_DURATION_MS = 420L;
     private static final long QUARTER_REFRESH_SLOP_MS = 250L;
     private static final float[] CHART_Y_AXIS_TICK_FRACTIONS = {0.75f, 0.5f, 0.25f};
@@ -894,7 +893,8 @@ public class MainActivity extends AppCompatActivity {
                     BAR_ANIMATION_STAGGER_MS
             ));
         } else {
-            chartContainer.post(() -> animateBarUpdates(targetHeightsPx, targetVisibilities));
+            cancelBarAnimation();
+            chartContainer.post(() -> applyBarState(targetHeightsPx, targetVisibilities));
         }
     }
 
@@ -1366,45 +1366,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         barAnimator.start();
-    }
-
-    private void animateBarUpdates(int[] targetHeightsPx, boolean[] targetVisibilities) {
-        int[] currentHeightsPx = getCurrentBarHeights();
-        if (!hasBarStateChanges(currentHeightsPx, targetHeightsPx, targetVisibilities)) {
-            applyBarState(targetHeightsPx, targetVisibilities);
-            return;
-        }
-        animateBars(
-                currentHeightsPx,
-                targetHeightsPx,
-                targetVisibilities,
-                BAR_UPDATE_ANIMATION_DURATION_MS,
-                0L
-        );
-    }
-
-    private int[] getCurrentBarHeights() {
-        int[] heightsPx = new int[BAR_IDS.length];
-        for (int i = 0; i < BAR_IDS.length; i++) {
-            ImageView bar = findViewById(BAR_IDS[i]);
-            ViewGroup.LayoutParams params = bar.getLayoutParams();
-            heightsPx[i] = params != null ? params.height : 0;
-        }
-        return heightsPx;
-    }
-
-    private boolean hasBarStateChanges(int[] currentHeightsPx,
-                                       int[] targetHeightsPx,
-                                       boolean[] targetVisibilities) {
-        for (int i = 0; i < BAR_IDS.length; i++) {
-            ImageView bar = findViewById(BAR_IDS[i]);
-            int currentVisibility = bar.getVisibility();
-            int targetVisibility = targetVisibilities[i] ? View.VISIBLE : View.INVISIBLE;
-            if (currentHeightsPx[i] != targetHeightsPx[i] || currentVisibility != targetVisibility) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private void applyBarHeights(int[] targetHeightsPx) {
