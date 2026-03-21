@@ -841,13 +841,7 @@ public class MainActivity extends AppCompatActivity {
 
         double barScaleMax = BarChartUtils.resolveScaleMax(displayedBarEntries);
 
-        double graphMaxPrice = 0.0;
-        for (PriceFetcher.PriceEntry entry : displayedGraphEntries) {
-            graphMaxPrice = Math.max(graphMaxPrice, entry.pricePerKwh);
-        }
-        if (graphMaxPrice <= 0.0) {
-            graphMaxPrice = 1.0;
-        }
+        double graphMaxPrice = BarChartUtils.resolveScaleMax(displayedGraphEntries);
         displayedGraphMaxPrice = graphMaxPrice;
         double chartDataScaleMax = Math.max(barScaleMax, displayedGraphMaxPrice);
         double yAxisScaleMax = resolveRoundedChartScaleMax(chartDataScaleMax);

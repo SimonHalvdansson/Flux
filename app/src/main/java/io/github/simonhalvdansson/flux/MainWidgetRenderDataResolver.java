@@ -148,20 +148,16 @@ final class MainWidgetRenderDataResolver {
 
         double barScaleMax = BarChartUtils.resolveScaleMax(barDisplayEntries);
 
-        double graphMaxPrice = 0.0;
+        double graphMaxPrice = BarChartUtils.resolveScaleMax(graphDisplayEntries);
         PriceFetcher.PriceEntry maxEntry = null;
         PriceFetcher.PriceEntry minEntry = null;
         for (PriceFetcher.PriceEntry entry : graphDisplayEntries) {
-            if (entry.pricePerKwh > graphMaxPrice) {
-                graphMaxPrice = entry.pricePerKwh;
+            if (maxEntry == null || entry.pricePerKwh > maxEntry.pricePerKwh) {
                 maxEntry = entry;
             }
             if (minEntry == null || entry.pricePerKwh < minEntry.pricePerKwh) {
                 minEntry = entry;
             }
-        }
-        if (graphMaxPrice <= 0.0) {
-            graphMaxPrice = 1.0;
         }
 
         String maxText = "\u2191";

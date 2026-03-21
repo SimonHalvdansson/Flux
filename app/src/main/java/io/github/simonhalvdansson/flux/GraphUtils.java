@@ -22,13 +22,25 @@ public class GraphUtils {
     private static final float CIRCLE_RADIUS_DP = 6f;
     private static final float PAD_SLOP_DP = 1f;
     private static final float EDGE_FADE_MINUTES = 38f;
-    private static final float VERTICAL_EASE_POWER = 1.3f;
     private static final float HORIZONTAL_EASE_POWER = 1.6f;
     private static final float GRID_LINE_WIDTH_DP = 1.5f;
     private static final float GRID_FADE_POWER = 1.6f;
     private static final float GRID_ALPHA = 0.25f;
     private static final float SELECTION_DOT_RADIUS_DP = 5f;
     private static final float SELECTION_DOT_HALO_RADIUS_DP = 9f;
+    private static final int FILL_TOP_ALPHA = 140;
+
+    private static final class GraphPalette {
+        final int past;
+        final int current;
+        final int future;
+
+        GraphPalette(int past, int current, int future) {
+            this.past = past;
+            this.current = current;
+            this.future = future;
+        }
+    }
 
     private static float catmullRom(float p0, float p1, float p2, float p3, float t) {
         float t2 = t * t;
@@ -64,10 +76,8 @@ public class GraphUtils {
             return bitmap;
         }
 
-        int colorPast = ContextCompat.getColor(context, android.R.color.system_accent3_200);
-        int colorCurrent = ContextCompat.getColor(context, android.R.color.system_accent3_700);
-        int colorFuture = ContextCompat.getColor(context, android.R.color.system_accent3_500);
-        int fadeBase = ContextCompat.getColor(context, android.R.color.system_accent3_400);
+        GraphPalette positivePalette = resolvePositivePalette(context);
+        GraphPalette negativePalette = resolveNegativePalette(context);
 
         android.util.DisplayMetrics dm = context.getResources().getDisplayMetrics();
         float lineWidthPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, LINE_WIDTH_DP, dm);
@@ -85,9 +95,9 @@ public class GraphUtils {
         );
 
         final int n = data.size();
-        float[] y = new float[n];
+        float[] magnitudes = new float[n];
         for (int i = 0; i < n; i++) {
-            y[i] = (float) data.get(i).pricePerKwh;
+            magnitudes[i] = Math.abs((float) data.get(i).pricePerKwh);
         }
 
         long stepMinutes = 60;
@@ -120,7 +130,6 @@ public class GraphUtils {
         float usableH = Math.max(1f, heightPx - padTop - padBottom);
         float stepX = usableW / (float) (totalPts - 1);
         float leftX = padX;
-        float rightX = padX + ((totalPts - 1) * stepX);
         float bottomY = heightPx - padBottom;
 
         ZonedDateTime firstStart = data.get(0).startTime.atZoneSameInstant(ZoneId.systemDefault());
@@ -134,14 +143,15 @@ public class GraphUtils {
         int i2c = Math.min(n - 1, base + 1);
         int i3c = Math.min(n - 1, base + 2);
         float tNow = stepsFromStart - base;
-        float nowYVal = catmullRom(y[i0c], y[i1c], y[i2c], y[i3c], tNow);
+        float nowYVal = catmullRom(magnitudes[i0c], magnitudes[i1c], magnitudes[i2c], magnitudes[i3c], tNow);
         float nowYClamped = Math.max(0f, Math.min((float) maxPrice, nowYVal));
         float currentX = leftX + (nowPt * stepX);
         float currentY = heightPx - padBottom - ((nowYClamped / (float) maxPrice) * usableH);
+        boolean currentIsNegative = isEntryNegative(data, base);
 
         int layerId = canvas.saveLayer(0, 0, widthPx, heightPx, null);
 
-        float y0c = Math.max(0f, Math.min((float) maxPrice, y[0]));
+        float y0c = Math.max(0f, Math.min((float) maxPrice, magnitudes[0]));
         float prevX = leftX;
         float prevY = heightPx - padBottom - ((y0c / (float) maxPrice) * usableH);
         int ptIndex = 1;
@@ -154,10 +164,15 @@ public class GraphUtils {
             int i1 = i;
             int i2 = i + 1;
             int i3 = Math.min(n - 1, i + 2);
+            boolean segmentIsNegative = data.get(i).pricePerKwh < 0;
+            int segmentPastColor = resolveLineColor(segmentIsNegative, true, positivePalette, negativePalette);
+            int segmentFutureColor = resolveLineColor(segmentIsNegative, false, positivePalette, negativePalette);
+            int segmentPastFillColor = resolveEffectColor(segmentIsNegative, true, positivePalette, negativePalette);
+            int segmentFutureFillColor = resolveEffectColor(segmentIsNegative, false, positivePalette, negativePalette);
 
             for (int s = 1; s <= subdiv; s++) {
                 float t = s / (float) subdiv;
-                float yInterp = catmullRom(y[i0], y[i1], y[i2], y[i3], t);
+                float yInterp = catmullRom(magnitudes[i0], magnitudes[i1], magnitudes[i2], magnitudes[i3], t);
                 float yVal = Math.max(0f, Math.min((float) maxPrice, yInterp));
                 float x = leftX + (ptIndex * stepX);
                 float yPix = heightPx - padBottom - ((yVal / (float) maxPrice) * usableH);
@@ -165,12 +180,17 @@ public class GraphUtils {
                 if (prevX < currentX && x > currentX) {
                     float ratio = (currentX - prevX) / (x - prevX);
                     float splitY = prevY + (ratio * (yPix - prevY));
-                    line.setColor(colorPast);
+                    drawFillSegment(canvas, prevX, prevY, currentX, splitY, bottomY, heightPx, segmentPastFillColor);
+                    line.setColor(segmentPastColor);
                     canvas.drawLine(prevX, prevY, currentX, splitY, line);
-                    line.setColor(colorFuture);
+                    drawFillSegment(canvas, currentX, splitY, x, yPix, bottomY, heightPx, segmentFutureFillColor);
+                    line.setColor(segmentFutureColor);
                     canvas.drawLine(currentX, splitY, x, yPix, line);
                 } else {
-                    line.setColor(x <= currentX ? colorPast : colorFuture);
+                    int segmentColor = x <= currentX ? segmentPastColor : segmentFutureColor;
+                    int effectColor = x <= currentX ? segmentPastFillColor : segmentFutureFillColor;
+                    drawFillSegment(canvas, prevX, prevY, x, yPix, bottomY, heightPx, effectColor);
+                    line.setColor(segmentColor);
                     canvas.drawLine(prevX, prevY, x, yPix, line);
                 }
 
@@ -181,74 +201,35 @@ public class GraphUtils {
             }
         }
 
-        android.graphics.Path maskPath = new android.graphics.Path();
-        maskPath.moveTo(leftX, bottomY);
-        maskPath.lineTo(leftX, ySamp[0]);
-        for (int i = 1; i < totalPts; i++) {
-            maskPath.lineTo(leftX + (i * stepX), ySamp[i]);
-        }
-        maskPath.lineTo(rightX, bottomY);
-        maskPath.close();
-
-        final int vStops = 32;
-        int[] vColors = new int[vStops];
-        float[] vPos = new float[vStops];
-        int topAlpha = 140;
-        float vPow = Math.max(1f, VERTICAL_EASE_POWER);
-        for (int i = 0; i < vStops; i++) {
-            float tt = i / (float) (vStops - 1);
-            float a = (float) Math.pow(1f - tt, vPow);
-            int alpha = Math.round(topAlpha * Math.max(0f, Math.min(1f, a)));
-            vColors[i] = ColorUtils.setAlphaComponent(fadeBase, alpha);
-            vPos[i] = tt;
-        }
-        android.graphics.Shader fadeV = new android.graphics.LinearGradient(
-                0,
-                0,
-                0,
-                heightPx,
-                vColors,
-                vPos,
-                android.graphics.Shader.TileMode.CLAMP
-        );
-
-        Paint fadePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        fadePaint.setStyle(Paint.Style.FILL);
-        fadePaint.setShader(fadeV);
-
-        int clipId = canvas.save();
-        canvas.clipPath(maskPath);
-        canvas.drawRect(0, 0, widthPx, heightPx, fadePaint);
-        canvas.restoreToCount(clipId);
-
         float gridWidth = GRID_LINE_WIDTH_DP * dm.density;
         Paint grid = new Paint(Paint.ANTI_ALIAS_FLAG);
         grid.setStyle(Paint.Style.STROKE);
         grid.setStrokeWidth(gridWidth);
 
         final int gStops = 16;
-        int[] gColors = new int[gStops];
         float[] gPos = new float[gStops];
         for (int s = 0; s < gStops; s++) {
-            float tt = s / (float) (gStops - 1);
-            float a = (float) Math.pow(1f - tt, GRID_FADE_POWER);
-            int alpha = Math.round(255f * GRID_ALPHA * a);
-            gColors[s] = ColorUtils.setAlphaComponent(colorFuture, alpha);
-            gPos[s] = tt;
+            gPos[s] = s / (float) (gStops - 1);
         }
 
         int stepsPerHour = Math.max(1, Math.round(60f / (float) stepMinutes));
         int gridStep = Math.max(1, stepsPerHour * 2);
         for (int i = 0; i < n; i += gridStep) {
             float x = leftX + ((i * subdiv) * stepX);
-            float yi = Math.max(0f, Math.min((float) maxPrice, y[i]));
+            float yi = Math.max(0f, Math.min((float) maxPrice, magnitudes[i]));
             float yTop = bottomY - ((yi / (float) maxPrice) * usableH);
+            int guideColor = resolveGuideColor(
+                    data.get(i).pricePerKwh < 0,
+                    isEntryPast(data.get(i), now),
+                    positivePalette,
+                    negativePalette
+            );
             android.graphics.Shader grad = new android.graphics.LinearGradient(
                     x,
                     bottomY,
                     x,
                     yTop,
-                    gColors,
+                    withAlphaStops(guideColor, gStops),
                     gPos,
                     android.graphics.Shader.TileMode.CLAMP
             );
@@ -258,7 +239,7 @@ public class GraphUtils {
 
         Paint circle = new Paint(Paint.ANTI_ALIAS_FLAG);
         circle.setStyle(Paint.Style.FILL);
-        circle.setColor(colorCurrent);
+        circle.setColor(resolveCurrentColor(currentIsNegative, positivePalette, negativePalette));
         canvas.drawCircle(currentX, currentY, circleRadius, circle);
 
         float edgePts = subdiv * (EDGE_FADE_MINUTES / (float) stepMinutes);
@@ -311,14 +292,21 @@ public class GraphUtils {
             int upperIndex = Math.max(0, Math.min(totalPts - 1, lowerIndex + 1));
             float segmentFraction = Math.max(0f, Math.min(1f, selectedPosition - lowerIndex));
             float selectedY = ySamp[lowerIndex] + ((ySamp[upperIndex] - ySamp[lowerIndex]) * segmentFraction);
+            boolean selectedIsNegative = isEntryNegative(
+                    data,
+                    Math.max(0, Math.min(n - 1, (int) Math.floor(selectedPosition / subdiv)))
+            );
             drawSelectionDot(
                     canvas,
                     selectedX,
                     selectedY,
                     selectionDotRadius,
                     selectionHaloRadius,
-                    colorFuture,
-                    ColorUtils.setAlphaComponent(colorCurrent, 96)
+                    resolveFutureColor(selectedIsNegative, positivePalette, negativePalette),
+                    ColorUtils.setAlphaComponent(
+                            resolveCurrentColor(selectedIsNegative, positivePalette, negativePalette),
+                            96
+                    )
             );
         }
 
@@ -377,6 +365,8 @@ public class GraphUtils {
         int colorPast = ContextCompat.getColor(context, android.R.color.system_accent3_200);
         int colorCurrent = ContextCompat.getColor(context, android.R.color.system_accent3_700);
         int colorFuture = ContextCompat.getColor(context, android.R.color.system_accent3_500);
+        GraphPalette positivePalette = new GraphPalette(colorPast, colorCurrent, colorFuture);
+        GraphPalette negativePalette = resolveNegativePalette(context);
 
         Paint line = new Paint(Paint.ANTI_ALIAS_FLAG);
         line.setStyle(Paint.Style.STROKE);
@@ -399,16 +389,17 @@ public class GraphUtils {
             float endFraction = Duration.between(windowStart, entry.endTime).toMinutes() / (float) totalMinutes;
             float startX = leftX + (usableW * startFraction);
             float endX = leftX + (usableW * endFraction);
-            float y = bottomY - (((float) entry.pricePerKwh / (float) maxPrice) * usableH);
+            boolean isNegative = entry.pricePerKwh < 0;
+            float y = bottomY - (((float) Math.abs(entry.pricePerKwh) / (float) maxPrice) * usableH);
             y = Math.max(topY, Math.min(bottomY, y));
             ZonedDateTime start = entry.startTime.atZoneSameInstant(ZoneId.systemDefault());
             ZonedDateTime end = entry.endTime.atZoneSameInstant(ZoneId.systemDefault());
             boolean isCurrent = (now.isEqual(start) || now.isAfter(start)) && now.isBefore(end);
             boolean isPast = now.isAfter(end);
-            int segmentColor = isCurrent ? colorCurrent : (isPast ? colorPast : colorFuture);
+            int segmentColor = resolveTimelineColor(isNegative, isPast, isCurrent, positivePalette, negativePalette);
 
             if (start.getMinute() == 0) {
-                guide.setColor(isPast ? colorPast : colorFuture);
+                guide.setColor(resolveStepGuideColor(isNegative, isPast, positivePalette, negativePalette));
                 canvas.drawLine(startX, bottomY, startX, y, guide);
             }
             line.setColor(segmentColor);
@@ -422,30 +413,178 @@ public class GraphUtils {
 
             if (i < data.size() - 1) {
                 PriceFetcher.PriceEntry next = data.get(i + 1);
-                float nextY = bottomY - (((float) next.pricePerKwh / (float) maxPrice) * usableH);
+                boolean nextIsNegative = next.pricePerKwh < 0;
+                float nextY = bottomY - (((float) Math.abs(next.pricePerKwh) / (float) maxPrice) * usableH);
                 nextY = Math.max(topY, Math.min(bottomY, nextY));
                 ZonedDateTime nextStart = next.startTime.atZoneSameInstant(ZoneId.systemDefault());
                 ZonedDateTime nextEnd = next.endTime.atZoneSameInstant(ZoneId.systemDefault());
                 boolean nextIsCurrent = (now.isEqual(nextStart) || now.isAfter(nextStart)) && now.isBefore(nextEnd);
                 boolean nextIsPast = now.isAfter(nextEnd);
-                line.setColor(nextIsCurrent ? colorCurrent : (nextIsPast ? colorPast : colorFuture));
+                line.setColor(resolveTimelineColor(
+                        nextIsNegative,
+                        nextIsPast,
+                        nextIsCurrent,
+                        positivePalette,
+                        negativePalette
+                ));
                 canvas.drawLine(endX, y, endX, nextY, line);
             }
         }
 
         if (!Float.isNaN(selectedY)) {
+            PriceFetcher.PriceEntry selectedEntry = data.get(data.size() - 1);
+            for (PriceFetcher.PriceEntry entry : data) {
+                float startFraction = Duration.between(windowStart, entry.startTime).toMinutes() / (float) totalMinutes;
+                float endFraction = Duration.between(windowStart, entry.endTime).toMinutes() / (float) totalMinutes;
+                if (selectedFraction >= startFraction
+                        && (selectedFraction <= endFraction || entry == data.get(data.size() - 1))) {
+                    selectedEntry = entry;
+                    break;
+                }
+            }
+            boolean selectedIsNegative = selectedEntry.pricePerKwh < 0;
             drawSelectionDot(
                     canvas,
                     selectedX,
                     selectedY,
                     selectionDotRadius,
                     selectionHaloRadius,
-                    colorFuture,
-                    ColorUtils.setAlphaComponent(colorCurrent, 96)
+                    resolveFutureColor(selectedIsNegative, positivePalette, negativePalette),
+                    ColorUtils.setAlphaComponent(
+                            resolveCurrentColor(selectedIsNegative, positivePalette, negativePalette),
+                            96
+                    )
             );
         }
 
         return bitmap;
+    }
+
+    private static GraphPalette resolvePositivePalette(Context context) {
+        return new GraphPalette(
+                ContextCompat.getColor(context, android.R.color.system_accent3_200),
+                ContextCompat.getColor(context, android.R.color.system_accent3_700),
+                ContextCompat.getColor(context, android.R.color.system_accent3_500)
+        );
+    }
+
+    private static GraphPalette resolveNegativePalette(Context context) {
+        return new GraphPalette(
+                ContextCompat.getColor(context, R.color.bar_negative_old),
+                ContextCompat.getColor(context, R.color.bar_negative_current),
+                ContextCompat.getColor(context, R.color.bar_negative)
+        );
+    }
+
+    private static int resolveTimelineColor(boolean isNegative,
+                                            boolean isPast,
+                                            boolean isCurrent,
+                                            GraphPalette positivePalette,
+                                            GraphPalette negativePalette) {
+        GraphPalette palette = isNegative ? negativePalette : positivePalette;
+        if (isCurrent) {
+            return palette.current;
+        }
+        return isPast ? palette.past : palette.future;
+    }
+
+    private static int resolveGuideColor(boolean isNegative,
+                                         boolean isPast,
+                                         GraphPalette positivePalette,
+                                         GraphPalette negativePalette) {
+        return resolveEffectColor(isNegative, isPast, positivePalette, negativePalette);
+    }
+
+    private static int resolveLineColor(boolean isNegative,
+                                        boolean isPast,
+                                        GraphPalette positivePalette,
+                                        GraphPalette negativePalette) {
+        GraphPalette palette = isNegative ? negativePalette : positivePalette;
+        return isPast ? palette.past : palette.future;
+    }
+
+    private static int resolveCurrentColor(boolean isNegative,
+                                           GraphPalette positivePalette,
+                                           GraphPalette negativePalette) {
+        return (isNegative ? negativePalette : positivePalette).current;
+    }
+
+    private static int resolveFutureColor(boolean isNegative,
+                                          GraphPalette positivePalette,
+                                          GraphPalette negativePalette) {
+        return (isNegative ? negativePalette : positivePalette).future;
+    }
+
+    private static int resolveStepGuideColor(boolean isNegative,
+                                             boolean isPast,
+                                             GraphPalette positivePalette,
+                                             GraphPalette negativePalette) {
+        GraphPalette palette = isNegative ? negativePalette : positivePalette;
+        return isPast ? palette.past : palette.future;
+    }
+
+    private static int resolveEffectColor(boolean isNegative,
+                                          boolean isPast,
+                                          GraphPalette positivePalette,
+                                          GraphPalette negativePalette) {
+        if (!isNegative) {
+            return positivePalette.future;
+        }
+        return isPast ? negativePalette.past : negativePalette.future;
+    }
+
+    private static boolean isEntryNegative(List<PriceFetcher.PriceEntry> data, int index) {
+        if (data.isEmpty()) {
+            return false;
+        }
+        int safeIndex = Math.max(0, Math.min(data.size() - 1, index));
+        return data.get(safeIndex).pricePerKwh < 0;
+    }
+
+    private static boolean isEntryPast(PriceFetcher.PriceEntry entry, ZonedDateTime now) {
+        ZonedDateTime end = entry.endTime.atZoneSameInstant(ZoneId.systemDefault());
+        return now.isAfter(end);
+    }
+
+    private static int[] withAlphaStops(int color, int stops) {
+        int[] colors = new int[stops];
+        float alphaPower = Math.max(1f, GRID_FADE_POWER);
+        for (int i = 0; i < stops; i++) {
+            float tt = i / (float) (stops - 1);
+            float a = (float) Math.pow(1f - tt, alphaPower);
+            int alpha = Math.round(255f * GRID_ALPHA * a);
+            colors[i] = ColorUtils.setAlphaComponent(color, alpha);
+        }
+        return colors;
+    }
+
+    private static void drawFillSegment(Canvas canvas,
+                                        float startX,
+                                        float startY,
+                                        float endX,
+                                        float endY,
+                                        float bottomY,
+                                        int heightPx,
+                                        int segmentColor) {
+        android.graphics.Path fillPath = new android.graphics.Path();
+        fillPath.moveTo(startX, bottomY);
+        fillPath.lineTo(startX, startY);
+        fillPath.lineTo(endX, endY);
+        fillPath.lineTo(endX, bottomY);
+        fillPath.close();
+
+        Paint fillPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        fillPaint.setStyle(Paint.Style.FILL);
+        fillPaint.setShader(new android.graphics.LinearGradient(
+                0,
+                0,
+                0,
+                heightPx,
+                ColorUtils.setAlphaComponent(segmentColor, FILL_TOP_ALPHA),
+                ColorUtils.setAlphaComponent(segmentColor, 0),
+                android.graphics.Shader.TileMode.CLAMP
+        ));
+        canvas.drawPath(fillPath, fillPaint);
     }
 
     private static void drawSelectionDot(Canvas canvas,
