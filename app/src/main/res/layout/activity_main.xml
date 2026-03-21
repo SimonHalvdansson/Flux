@@ -166,7 +166,19 @@
                                 android:textSize="11sp" />
 
                             <TextView
-                                android:id="@+id/chart_y_axis_mid_value"
+                                android:id="@+id/chart_y_axis_upper_mid_value"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="top|start"
+                                android:ellipsize="end"
+                                android:fontFamily="@font/productsans_medium"
+                                android:gravity="start"
+                                android:maxLines="1"
+                                android:textColor="?attr/colorOnSurfaceVariant"
+                                android:textSize="11sp" />
+
+                            <TextView
+                                android:id="@+id/chart_y_axis_lower_mid_value"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:layout_gravity="top|start"
@@ -214,7 +226,15 @@
                                     android:background="?attr/colorOnSurfaceVariant" />
 
                                 <View
-                                    android:id="@+id/chart_y_axis_mid_guide"
+                                    android:id="@+id/chart_y_axis_upper_mid_guide"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="1dp"
+                                    android:layout_gravity="top"
+                                    android:alpha="0.12"
+                                    android:background="?attr/colorOnSurfaceVariant" />
+
+                                <View
+                                    android:id="@+id/chart_y_axis_lower_mid_guide"
                                     android:layout_width="match_parent"
                                     android:layout_height="1dp"
                                     android:layout_gravity="top"

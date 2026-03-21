@@ -95,7 +95,7 @@ public class MainActivity extends AppCompatActivity {
     private static final long BAR_UPDATE_ANIMATION_DURATION_MS = 160L;
     private static final long GRAPH_FADE_IN_DURATION_MS = 420L;
     private static final long QUARTER_REFRESH_SLOP_MS = 250L;
-    private static final float[] CHART_Y_AXIS_TICK_FRACTIONS = {0.75f, 0.5f, 0.25f};
+    private static final float[] CHART_Y_AXIS_TICK_FRACTIONS = {0.8f, 0.6f, 0.4f, 0.2f};
     private static final int CHART_Y_AXIS_EDGE_MARGIN_DP = 6;
 
     private final List<RegionConfig.Country> countries = RegionConfig.getCountries();
@@ -115,7 +115,8 @@ public class MainActivity extends AppCompatActivity {
     private View chartYAxisGuides;
     private View chartYAxisSpacer;
     private View chartYAxisTopGuide;
-    private View chartYAxisMidGuide;
+    private View chartYAxisUpperMidGuide;
+    private View chartYAxisLowerMidGuide;
     private View chartYAxisBottomGuide;
     private LinearLayout barChartContainer;
     private ImageView graphImageView;
@@ -157,7 +158,8 @@ public class MainActivity extends AppCompatActivity {
     private MaterialSwitch mainChartYAxisSwitch;
     private TextView vatLabel;
     private TextView chartYAxisTopValue;
-    private TextView chartYAxisMidValue;
+    private TextView chartYAxisUpperMidValue;
+    private TextView chartYAxisLowerMidValue;
     private TextView chartYAxisBottomValue;
     private TextInputLayout gridFeeContainer;
     private TextInputEditText gridFeeInput;
@@ -188,7 +190,8 @@ public class MainActivity extends AppCompatActivity {
         chartYAxisGuides = findViewById(R.id.chart_y_axis_guides);
         chartYAxisSpacer = findViewById(R.id.chart_y_axis_spacer);
         chartYAxisTopGuide = findViewById(R.id.chart_y_axis_top_guide);
-        chartYAxisMidGuide = findViewById(R.id.chart_y_axis_mid_guide);
+        chartYAxisUpperMidGuide = findViewById(R.id.chart_y_axis_upper_mid_guide);
+        chartYAxisLowerMidGuide = findViewById(R.id.chart_y_axis_lower_mid_guide);
         chartYAxisBottomGuide = findViewById(R.id.chart_y_axis_bottom_guide);
         barChartContainer = findViewById(R.id.bar_chart_container);
         graphImageView = findViewById(R.id.graph_image);
@@ -276,7 +279,8 @@ public class MainActivity extends AppCompatActivity {
         mainChartYAxisSwitch = findViewById(R.id.main_chart_y_axis_switch);
         vatLabel = findViewById(R.id.vat_label);
         chartYAxisTopValue = findViewById(R.id.chart_y_axis_top_value);
-        chartYAxisMidValue = findViewById(R.id.chart_y_axis_mid_value);
+        chartYAxisUpperMidValue = findViewById(R.id.chart_y_axis_upper_mid_value);
+        chartYAxisLowerMidValue = findViewById(R.id.chart_y_axis_lower_mid_value);
         chartYAxisBottomValue = findViewById(R.id.chart_y_axis_bottom_value);
         gridFeeContainer = findViewById(R.id.grid_fee_container);
         gridFeeInput = findViewById(R.id.grid_fee_input);
@@ -1607,8 +1611,18 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        TextView[] tickLabels = {chartYAxisTopValue, chartYAxisMidValue, chartYAxisBottomValue};
-        View[] tickGuides = {chartYAxisTopGuide, chartYAxisMidGuide, chartYAxisBottomGuide};
+        TextView[] tickLabels = {
+                chartYAxisTopValue,
+                chartYAxisUpperMidValue,
+                chartYAxisLowerMidValue,
+                chartYAxisBottomValue
+        };
+        View[] tickGuides = {
+                chartYAxisTopGuide,
+                chartYAxisUpperMidGuide,
+                chartYAxisLowerMidGuide,
+                chartYAxisBottomGuide
+        };
         String countryCode = getSelectedCountryCode();
 
         for (int i = 0; i < CHART_Y_AXIS_TICK_FRACTIONS.length; i++) {
@@ -1706,7 +1720,7 @@ public class MainActivity extends AppCompatActivity {
 
         double exponent = Math.floor(Math.log10(minimumStep));
         double scale = Math.pow(10.0d, exponent);
-        double[] multipliers = {1.0d, 2.0d, 2.5d, 5.0d, 10.0d};
+        double[] multipliers = {1.0d, 2.0d, 2.5d, 4.0d, 5.0d, 8.0d, 10.0d};
         for (double multiplier : multipliers) {
             double candidate = multiplier * scale;
             if (candidate + 0.0000001d >= minimumStep) {

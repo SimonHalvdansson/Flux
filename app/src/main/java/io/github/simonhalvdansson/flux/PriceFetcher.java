@@ -101,6 +101,16 @@ public class PriceFetcher {
         }
     }
 
+    private static class NormalizedPriceValues {
+        final double pricePerKwh;
+        final double pricePerKwhEur;
+
+        NormalizedPriceValues(double pricePerKwh, double pricePerKwhEur) {
+            this.pricePerKwh = pricePerKwh;
+            this.pricePerKwhEur = pricePerKwhEur;
+        }
+    }
+
     public static double getVatRate(String country) {
         return RegionConfig.getVatMultiplier(country);
     }
@@ -238,6 +248,7 @@ public class PriceFetcher {
 
                 double pricePerKwh = obj.optDouble("price_per_kwh", Double.NaN);
                 double pricePerKwhEur = obj.optDouble("price_per_kwh_eur", Double.NaN);
+                double pricePerMwhEur = obj.optDouble("price_per_mwh_eur", Double.NaN);
                 if (Double.isNaN(pricePerKwh) && !Double.isNaN(pricePerKwhEur)) {
                     pricePerKwh = pricePerKwhEur;
                 }
@@ -253,11 +264,19 @@ public class PriceFetcher {
                     continue;
                 }
 
+                String entryCurrency = obj.optString("currency", payloadCurrency);
+                NormalizedPriceValues normalizedPriceValues = normalizePriceValues(
+                        pricePerKwh,
+                        pricePerKwhEur,
+                        pricePerMwhEur,
+                        entryCurrency
+                );
+
                 PriceEntry entry = new PriceEntry();
-                entry.pricePerKwh = pricePerKwh;
-                entry.pricePerKwhEur = pricePerKwhEur;
+                entry.pricePerKwh = normalizedPriceValues.pricePerKwh;
+                entry.pricePerKwhEur = normalizedPriceValues.pricePerKwhEur;
                 entry.exchangeRatePerEur = exchangeRatePerEur;
-                entry.currency = obj.optString("currency", payloadCurrency);
+                entry.currency = entryCurrency;
                 entry.startTime = start;
                 entry.endTime = end;
                 entries.add(entry);
@@ -358,11 +377,28 @@ public class PriceFetcher {
             JSONArray arr = new JSONArray(combinedJson);
             for (int i = 0; i < arr.length(); i++) {
                 JSONObject obj = arr.getJSONObject(i);
+                double pricePerKwh = obj.optDouble("price_per_kWh", Double.NaN);
+                if (Double.isNaN(pricePerKwh)) {
+                    pricePerKwh = obj.optDouble("price_per_kwh", Double.NaN);
+                }
+                if (Double.isNaN(pricePerKwh)) {
+                    continue;
+                }
+
+                double pricePerKwhEur = obj.optDouble("price_per_kwh_eur", Double.NaN);
+                String currency = obj.optString("currency", null);
+                NormalizedPriceValues normalizedPriceValues = normalizePriceValues(
+                        pricePerKwh,
+                        pricePerKwhEur,
+                        Double.NaN,
+                        currency
+                );
+
                 PriceEntry e = new PriceEntry();
-                e.pricePerKwh = obj.optDouble("price_per_kWh", 0.0);
-                e.pricePerKwhEur = obj.optDouble("price_per_kwh_eur", Double.NaN);
+                e.pricePerKwh = normalizedPriceValues.pricePerKwh;
+                e.pricePerKwhEur = normalizedPriceValues.pricePerKwhEur;
                 e.exchangeRatePerEur = obj.optDouble("exchange_rate_per_eur", Double.NaN);
-                e.currency = obj.optString("currency", null);
+                e.currency = currency;
                 String startTimeStr = obj.optString("time_start");
                 String endTimeStr = obj.optString("time_end");
                 e.startTime = OffsetDateTime.parse(startTimeStr, ISO_OFFSET_FORMATTER);
@@ -449,6 +485,42 @@ public class PriceFetcher {
             return "null";
         }
         return time.atZoneSameInstant(ZoneId.systemDefault()).format(LOG_TIME_FORMATTER);
+    }
+
+    private static NormalizedPriceValues normalizePriceValues(double pricePerKwh,
+                                                              double pricePerKwhEur,
+                                                              double pricePerMwhEur,
+                                                              String currency) {
+        double normalizedPricePerKwh = pricePerKwh;
+        double normalizedPricePerKwhEur = pricePerKwhEur;
+
+        boolean explicitMwhMatch = !Double.isNaN(pricePerMwhEur)
+                && !Double.isNaN(normalizedPricePerKwh)
+                && nearlyEqual(normalizedPricePerKwh, pricePerMwhEur);
+        boolean suspiciousEuroPrice = !Double.isNaN(normalizedPricePerKwh)
+                && normalizedPricePerKwh >= 1.0d
+                && ("EUR".equals(currency)
+                || (!Double.isNaN(normalizedPricePerKwhEur)
+                && nearlyEqual(normalizedPricePerKwh, normalizedPricePerKwhEur)));
+
+        if (explicitMwhMatch || suspiciousEuroPrice) {
+            Log.w(TAG, "Normalizing suspicious EUR/MWh price to EUR/kWh"
+                    + " currency=" + currency
+                    + " pricePerKwh=" + normalizedPricePerKwh
+                    + " pricePerKwhEur=" + normalizedPricePerKwhEur
+                    + " pricePerMwhEur=" + pricePerMwhEur);
+            normalizedPricePerKwh /= 1000.0d;
+            if (!Double.isNaN(normalizedPricePerKwhEur)) {
+                normalizedPricePerKwhEur /= 1000.0d;
+            }
+        }
+
+        return new NormalizedPriceValues(normalizedPricePerKwh, normalizedPricePerKwhEur);
+    }
+
+    private static boolean nearlyEqual(double left, double right) {
+        double tolerance = Math.max(0.000001d, Math.max(Math.abs(left), Math.abs(right)) * 0.000001d);
+        return Math.abs(left - right) <= tolerance;
     }
 
     public static List<PriceEntry> aggregateToHourly(List<PriceEntry> entries) {
