@@ -1725,7 +1725,7 @@ public class MainActivity extends AppCompatActivity {
 
         double exponent = Math.floor(Math.log10(minimumStep));
         double scale = Math.pow(10.0d, exponent);
-        double[] multipliers = {1.0d, 2.0d, 2.5d, 4.0d, 5.0d, 8.0d, 10.0d};
+        double[] multipliers = {1.0d, 2.0d, 2.5d, 4.0d, 5.0d, 6.0d, 8.0d, 10.0d};
         for (double multiplier : multipliers) {
             double candidate = multiplier * scale;
             if (candidate + 0.0000001d >= minimumStep) {
