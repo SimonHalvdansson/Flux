@@ -374,7 +374,10 @@
                         android:layout_height="56dp"
                         android:layout_weight="1"
                         android:fontFamily="@font/productsans_bold"
-                        android:text="@string/chart_bars" />
+                        android:text="@string/chart_bars"
+                        app:icon="@drawable/ic_chart_mode_bars"
+                        app:iconGravity="textStart"
+                        app:iconPadding="8dp" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/main_chart_graph_button"
@@ -383,7 +386,10 @@
                         android:layout_height="56dp"
                         android:layout_weight="1"
                         android:fontFamily="@font/productsans_bold"
-                        android:text="@string/chart_graph" />
+                        android:text="@string/chart_graph"
+                        app:icon="@drawable/ic_chart_mode_smooth"
+                        app:iconGravity="textStart"
+                        app:iconPadding="8dp" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/main_chart_lines_button"
@@ -392,7 +398,10 @@
                         android:layout_height="56dp"
                         android:layout_weight="1"
                         android:fontFamily="@font/productsans_bold"
-                        android:text="@string/chart_lines" />
+                        android:text="@string/chart_lines"
+                        app:icon="@drawable/ic_chart_mode_exact"
+                        app:iconGravity="textStart"
+                        app:iconPadding="8dp" />
                 </com.google.android.material.button.MaterialButtonToggleGroup>
 
                 <include layout="@layout/view_location_settings" />

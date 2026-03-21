@@ -20,6 +20,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.google.android.material.button.MaterialButton;
 import com.google.android.material.button.MaterialButtonToggleGroup;
 
 public class ConfigurationActivity extends AppCompatActivity {
@@ -69,6 +70,7 @@ public class ConfigurationActivity extends AppCompatActivity {
         View chartWidgetPreview = findViewById(R.id.chart_widget_preview);
         View doneButton = findViewById(R.id.done_button);
 
+        syncChartModeButtonIconTints();
         chartToggleGroup.setSelectionRequired(true);
         barPoolToggleGroup.setSelectionRequired(true);
         listIncrementToggleGroup.setSelectionRequired(true);
@@ -155,6 +157,20 @@ public class ConfigurationActivity extends AppCompatActivity {
         }
 
         doneButton.setOnClickListener(v -> finishWithSuccess());
+    }
+
+    private void syncChartModeButtonIconTints() {
+        syncButtonIconTint(R.id.chart_bars_button);
+        syncButtonIconTint(R.id.chart_graph_button);
+        syncButtonIconTint(R.id.chart_lines_button);
+    }
+
+    private void syncButtonIconTint(int buttonId) {
+        MaterialButton button = findViewById(buttonId);
+        if (button == null) {
+            return;
+        }
+        button.setIconTint(button.getTextColors());
     }
 
     private void applyWindowInsets() {

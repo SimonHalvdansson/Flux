@@ -38,6 +38,7 @@ import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.interpolator.view.animation.LinearOutSlowInInterpolator;
 
+import com.google.android.material.button.MaterialButton;
 import com.google.android.material.button.MaterialButtonToggleGroup;
 import com.google.android.material.color.MaterialColors;
 import com.google.android.material.materialswitch.MaterialSwitch;
@@ -497,6 +498,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupMainChartModeToggle() {
+        syncChartModeButtonIconTints();
         mainChartToggleGroup.setSelectionRequired(true);
         mainChartToggleGroup.check(getMainChartModeButtonId(getMainChartMode()));
         updateMainBarPoolVisibility(getMainChartMode(), false);
@@ -517,6 +519,20 @@ public class MainActivity extends AppCompatActivity {
             clearChartSelection(false);
             animateChartModeChange();
         });
+    }
+
+    private void syncChartModeButtonIconTints() {
+        syncButtonIconTint(R.id.main_chart_bars_button);
+        syncButtonIconTint(R.id.main_chart_graph_button);
+        syncButtonIconTint(R.id.main_chart_lines_button);
+    }
+
+    private void syncButtonIconTint(int buttonId) {
+        MaterialButton button = findViewById(buttonId);
+        if (button == null) {
+            return;
+        }
+        button.setIconTint(button.getTextColors());
     }
 
     private void setupSettingsToggle(boolean expanded) {
