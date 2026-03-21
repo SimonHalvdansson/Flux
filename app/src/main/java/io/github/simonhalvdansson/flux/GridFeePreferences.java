@@ -20,19 +20,31 @@ public final class GridFeePreferences {
         String key = getPreferenceKey(countryCode);
         String savedValue = prefs.getString(key, null);
         if (savedValue != null) {
-            return savedValue;
+            String normalizedValue = normalizeSavedValue(savedValue);
+            if (!normalizedValue.equals(savedValue)) {
+                prefs.edit().putString(key, normalizedValue).apply();
+            }
+            return normalizedValue;
         }
 
         String legacyValue = prefs.getString(KEY_GRID_FEE, null);
         if (legacyValue != null) {
+            String normalizedValue = normalizeSavedValue(legacyValue);
             prefs.edit()
-                    .putString(key, legacyValue)
+                    .putString(key, normalizedValue)
                     .remove(KEY_GRID_FEE)
                     .apply();
-            return legacyValue;
+            return normalizedValue;
         }
 
         return "0";
+    }
+
+    private static String normalizeSavedValue(String value) {
+        if (value == null || value.trim().isEmpty()) {
+            return "0";
+        }
+        return value;
     }
 
     private static String sanitizeCountryCode(String countryCode) {
