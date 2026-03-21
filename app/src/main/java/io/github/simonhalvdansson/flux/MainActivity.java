@@ -833,13 +833,18 @@ public class MainActivity extends AppCompatActivity {
             graphMaxPrice = 1.0;
         }
         displayedGraphMaxPrice = graphMaxPrice;
-        displayedChartScaleMax = resolveRoundedChartScaleMax(Math.max(barScaleMax, displayedGraphMaxPrice));
+        double chartDataScaleMax = Math.max(barScaleMax, displayedGraphMaxPrice);
+        double yAxisScaleMax = resolveRoundedChartScaleMax(chartDataScaleMax);
+        displayedChartScaleMax = isMainChartYAxisEnabled() ? yAxisScaleMax : chartDataScaleMax;
         if (displayedChartScaleMax <= 0.0) {
             displayedChartScaleMax = 1.0;
         }
+        if (yAxisScaleMax <= 0.0) {
+            yAxisScaleMax = 1.0;
+        }
 
         int chartMode = getMainChartMode();
-        updateChartYAxis(displayedChartScaleMax);
+        updateChartYAxis(yAxisScaleMax);
         if (chartMode == MAIN_CHART_MODE_BARS) {
             renderBars(displayedBarEntries, displayedChartScaleMax);
         } else {
