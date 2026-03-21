@@ -134,6 +134,7 @@ public class MainActivity extends AppCompatActivity {
         }
     };
     private boolean shouldAnimateInitialChart;
+    private boolean suppressNextBarHeightAnimation;
     private boolean suppressNextChartModePreferenceRender;
     private int chartModeTransitionId = 0;
     private int currentCountryIndex = 0;
@@ -212,6 +213,10 @@ public class MainActivity extends AppCompatActivity {
             if (KEY_MAIN_ACTIVITY_CHART_MODE.equals(key) && suppressNextChartModePreferenceRender) {
                 suppressNextChartModePreferenceRender = false;
                 return;
+            }
+            if (KEY_MAIN_ACTIVITY_CHART_MODE.equals(key)
+                    && getMainChartMode() == MAIN_CHART_MODE_BARS) {
+                suppressNextBarHeightAnimation = true;
             }
             if (PriceRepository.KEY_JSON_DATA.equals(key)
                     || PriceUpdateJobService.KEY_API_ERROR.equals(key)
@@ -500,6 +505,7 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
             suppressNextChartModePreferenceRender = true;
+            suppressNextBarHeightAnimation = chartMode == MAIN_CHART_MODE_BARS;
             sharedPreferences.edit()
                     .putInt(KEY_MAIN_ACTIVITY_CHART_MODE, chartMode)
                     .apply();
@@ -858,6 +864,8 @@ public class MainActivity extends AppCompatActivity {
         cancelGraphAnimation();
         barChartContainer.setVisibility(View.VISIBLE);
         graphImageView.setVisibility(View.GONE);
+        boolean suppressBarHeightAnimation = suppressNextBarHeightAnimation;
+        suppressNextBarHeightAnimation = false;
 
         ZonedDateTime now = ZonedDateTime.now(ZoneId.systemDefault());
         int maxBarHeightPx = resolveMaxBarHeightPx();
@@ -883,7 +891,11 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        if (shouldAnimateInitialChart) {
+        if (suppressBarHeightAnimation) {
+            shouldAnimateInitialChart = false;
+            cancelBarAnimation();
+            applyBarState(targetHeightsPx, targetVisibilities);
+        } else if (shouldAnimateInitialChart) {
             shouldAnimateInitialChart = false;
             applyBarState(new int[BAR_IDS.length], targetVisibilities);
             chartContainer.post(() -> animateBars(
