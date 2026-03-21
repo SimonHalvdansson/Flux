@@ -1511,6 +1511,12 @@ public class MainActivity extends AppCompatActivity {
                     getString(R.string.grid_fee_info_message)
             );
         });
+        findViewById(R.id.main_bar_pool_info_trigger).setOnClickListener(v -> {
+            showInfoDialog(
+                    R.string.main_bar_pool_info_title,
+                    getString(R.string.main_bar_pool_info_message)
+            );
+        });
     }
 
     private void setupCurrentPriceInfoTrigger() {

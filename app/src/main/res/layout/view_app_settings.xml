@@ -262,27 +262,58 @@
         </LinearLayout>
 
         <LinearLayout
-            android:paddingStart="@dimen/main_content_inner_padding"
-            android:paddingEnd="@dimen/main_content_inner_padding"
             android:id="@+id/main_bar_pool_container"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
+            android:layout_marginTop="10dp"
             android:orientation="vertical">
 
-            <TextView
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:fontFamily="@font/productsans_bold"
-                android:text="@string/main_bar_pool_title"
-                android:textColor="?attr/settingsLabelTextColor"
-                android:textSize="16sp" />
+                android:paddingStart="@dimen/main_content_inner_padding_minus_4"
+                android:paddingEnd="@dimen/main_content_inner_padding">
+
+                <LinearLayout
+                    android:id="@+id/main_bar_pool_info_trigger"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/info_trigger_touch_background"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingStart="4dp"
+                    android:paddingTop="10dp"
+                    android:paddingEnd="6dp"
+                    android:paddingBottom="10dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/productsans_bold"
+                        android:text="@string/main_bar_pool_title"
+                        android:textColor="?attr/settingsLabelTextColor"
+                        android:textSize="16sp" />
+
+                    <ImageView
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:layout_marginStart="6dp"
+                        android:contentDescription="@null"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/ic_info_18"
+                        app:tint="?attr/settingsLabelTextColor" />
+                </LinearLayout>
+            </LinearLayout>
 
             <com.google.android.material.button.MaterialButtonToggleGroup
                 android:id="@+id/main_bar_pool_toggle_group"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
+                android:paddingStart="@dimen/main_content_inner_padding"
+                android:paddingEnd="@dimen/main_content_inner_padding"
                 app:singleSelection="true">
 
                 <com.google.android.material.button.MaterialButton
