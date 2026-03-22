@@ -73,14 +73,14 @@ public class ListWidgetService extends RemoteViewsService {
             priceColumnWidthDp = ITEM_PRICE_WIDTH_DP;
             SharedPreferences prefs = PriceRepository.getPreferences(context);
             String combinedJson = prefs.getString(PriceRepository.KEY_JSON_DATA, null);
-            country = prefs.getString(PriceUpdateJobService.KEY_SELECTED_COUNTRY, "NO");
+            country = PriceRepository.getSelectedCountryCode(context, prefs);
 
             if (combinedJson == null || combinedJson.trim().isEmpty()) {
                 updateMaxBarWidthPx();
                 return;
             }
 
-            List<PriceFetcher.PriceEntry> allData = CurrentPriceResolver.getAdjustedEntries(prefs);
+            List<PriceFetcher.PriceEntry> allData = CurrentPriceResolver.getAdjustedEntries(context, prefs);
             if (allData.isEmpty()) {
                 updateMaxBarWidthPx();
                 return;

@@ -3,6 +3,8 @@ package io.github.simonhalvdansson.flux;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
+import android.content.pm.PackageManager;
+import android.telephony.TelephonyManager;
 import android.util.Log;
 
 import org.json.JSONArray;
@@ -12,10 +14,12 @@ import org.json.JSONObject;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Locale;
 
 public final class PriceRepository {
 
     private static final String TAG = "PriceRepository";
+    private static final String FALLBACK_COUNTRY_CODE = "NO";
 
     public static final String PREFS_NAME = "spot_price_prefs";
     public static final String KEY_JSON_DATA = "combined_json_data";
@@ -25,6 +29,23 @@ public final class PriceRepository {
 
     public static SharedPreferences getPreferences(Context context) {
         return context.getApplicationContext().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+    }
+
+    public static String getSelectedCountryCode(Context context) {
+        return getSelectedCountryCode(context, getPreferences(context));
+    }
+
+    public static String getSelectedCountryCode(Context context, SharedPreferences prefs) {
+        String storedCountry = normalizeCountryCode(
+                prefs.getString(PriceUpdateJobService.KEY_SELECTED_COUNTRY, null)
+        );
+        if (RegionConfig.getCountry(storedCountry) != null) {
+            return storedCountry;
+        }
+
+        String inferredCountry = inferDefaultCountryCode(context);
+        prefs.edit().putString(PriceUpdateJobService.KEY_SELECTED_COUNTRY, inferredCountry).apply();
+        return inferredCountry;
     }
 
     public static void invalidateCachedPrices(SharedPreferences prefs) {
@@ -41,7 +62,7 @@ public final class PriceRepository {
         Context appContext = context.getApplicationContext();
         SharedPreferences prefs = getPreferences(appContext);
 
-        String country = prefs.getString(PriceUpdateJobService.KEY_SELECTED_COUNTRY, "NO");
+        String country = getSelectedCountryCode(appContext, prefs);
         List<RegionConfig.Area> availableAreas = RegionConfig.getAreas(country);
         String defaultArea = !availableAreas.isEmpty() ? availableAreas.get(0).getCode() : "NO1";
         String area = prefs.getString(PriceUpdateJobService.KEY_SELECTED_AREA, defaultArea);
@@ -118,5 +139,56 @@ public final class PriceRepository {
 
         MainWidget.updateAllWidgets(appContext);
         ListWidget.updateAllWidgets(appContext);
+    }
+
+    private static String inferDefaultCountryCode(Context context) {
+        Context appContext = context.getApplicationContext();
+        TelephonyManager telephonyManager = appContext.getSystemService(TelephonyManager.class);
+        PackageManager packageManager = appContext.getPackageManager();
+
+        String networkCountry = null;
+        if (telephonyManager != null
+                && packageManager.hasSystemFeature(PackageManager.FEATURE_TELEPHONY_RADIO_ACCESS)) {
+            try {
+                networkCountry = telephonyManager.getNetworkCountryIso();
+            } catch (UnsupportedOperationException e) {
+                Log.w(TAG, "Network country unavailable on this device", e);
+            }
+        }
+
+        String simCountry = null;
+        if (telephonyManager != null
+                && packageManager.hasSystemFeature(PackageManager.FEATURE_TELEPHONY_SUBSCRIPTION)) {
+            try {
+                simCountry = telephonyManager.getSimCountryIso();
+            } catch (UnsupportedOperationException e) {
+                Log.w(TAG, "SIM country unavailable on this device", e);
+            }
+        }
+
+        return firstSupportedCountry(
+                networkCountry,
+                simCountry,
+                Locale.getDefault().getCountry(),
+                FALLBACK_COUNTRY_CODE
+        );
+    }
+
+    private static String firstSupportedCountry(String... countryCodes) {
+        for (String countryCode : countryCodes) {
+            String normalizedCountry = normalizeCountryCode(countryCode);
+            if (RegionConfig.getCountry(normalizedCountry) != null) {
+                return normalizedCountry;
+            }
+        }
+        return FALLBACK_COUNTRY_CODE;
+    }
+
+    private static String normalizeCountryCode(String countryCode) {
+        if (countryCode == null) {
+            return null;
+        }
+        String normalized = countryCode.trim().toUpperCase(Locale.US);
+        return normalized.isEmpty() ? null : normalized;
     }
 }

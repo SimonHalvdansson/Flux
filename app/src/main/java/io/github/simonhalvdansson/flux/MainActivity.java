@@ -175,6 +175,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         sharedPreferences = PriceRepository.getPreferences(this);
+        PriceRepository.getSelectedCountryCode(this, sharedPreferences);
         ImageView appIconView = findViewById(R.id.app_icon);
         currentPriceLabel = findViewById(R.id.current_price_label);
         currentPriceValue = findViewById(R.id.current_price_value);
@@ -299,7 +300,7 @@ public class MainActivity extends AppCompatActivity {
         countryDropdown.setAdapter(countryAdapter);
         stabilizeDropdownWidth(countryDropdown, countryNames);
 
-        String selectedCountry = sharedPreferences.getString(PriceUpdateJobService.KEY_SELECTED_COUNTRY, "NO");
+        String selectedCountry = getSelectedCountryCode();
         currentCountryIndex = RegionConfig.indexOfCountryCode(selectedCountry);
         if (currentCountryIndex < 0) {
             currentCountryIndex = RegionConfig.indexOfCountryCode("NO");
@@ -339,10 +340,7 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
             String countryCode = selected.getCode();
-            String currentCountryCode = sharedPreferences.getString(
-                    PriceUpdateJobService.KEY_SELECTED_COUNTRY,
-                    "NO"
-            );
+            String currentCountryCode = getSelectedCountryCode();
             if (countryCode.equals(currentCountryCode)) {
                 return;
             }
@@ -424,10 +422,7 @@ public class MainActivity extends AppCompatActivity {
             sharedPreferences.edit()
                     .putString(PriceUpdateJobService.KEY_PRICE_DISPLAY_STYLE, style)
                     .apply();
-            updateGridFeeUnit(
-                    gridFeeContainer,
-                    sharedPreferences.getString(PriceUpdateJobService.KEY_SELECTED_COUNTRY, "NO")
-            );
+            updateGridFeeUnit(gridFeeContainer, getSelectedCountryCode());
             updateWidgets();
         });
 
@@ -725,7 +720,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void updateCurrentPriceLabel() {
-        List<PriceFetcher.PriceEntry> allData = CurrentPriceResolver.getAdjustedEntries(sharedPreferences);
+        List<PriceFetcher.PriceEntry> allData = CurrentPriceResolver.getAdjustedEntries(this, sharedPreferences);
         if (allData.isEmpty()) {
             currentPriceLabel.setText(R.string.current_price_label);
             return;
@@ -787,7 +782,7 @@ public class MainActivity extends AppCompatActivity {
     private void renderBarChart() {
         clearChartSelection(false);
 
-        List<PriceFetcher.PriceEntry> allData = CurrentPriceResolver.getAdjustedEntries(sharedPreferences);
+        List<PriceFetcher.PriceEntry> allData = CurrentPriceResolver.getAdjustedEntries(this, sharedPreferences);
         if (allData.isEmpty()) {
             clearChartData();
             cancelBarAnimation();
@@ -1309,7 +1304,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void renderAverageSummaries(List<PriceFetcher.PriceEntry> hourlyData) {
-        String country = sharedPreferences.getString(PriceUpdateJobService.KEY_SELECTED_COUNTRY, "NO");
+        String country = getSelectedCountryCode();
         ZoneId zoneId = ZoneId.systemDefault();
         LocalDate today = LocalDate.now(zoneId);
         LocalDate tomorrow = today.plusDays(1);
@@ -1531,7 +1526,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void showCurrentPriceDetailsDialog() {
-        List<PriceFetcher.PriceEntry> allData = CurrentPriceResolver.getAdjustedEntries(sharedPreferences);
+        List<PriceFetcher.PriceEntry> allData = CurrentPriceResolver.getAdjustedEntries(this, sharedPreferences);
         PriceFetcher.PriceEntry currentEntry = CurrentPriceResolver.findCurrentEntry(allData);
         if (currentEntry == null) {
             return;
@@ -1556,7 +1551,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private String getSelectedCountryCode() {
-        return sharedPreferences.getString(PriceUpdateJobService.KEY_SELECTED_COUNTRY, "NO");
+        return PriceRepository.getSelectedCountryCode(this, sharedPreferences);
     }
 
     private String buildCurrentPriceConversionMessage(PriceFetcher.PriceEntry currentEntry, String countryCode) {

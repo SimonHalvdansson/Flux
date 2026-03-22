@@ -38,11 +38,11 @@ public final class CurrentPriceResolver {
 
     public static Snapshot resolve(Context context) {
         SharedPreferences prefs = PriceRepository.getPreferences(context);
-        String country = prefs.getString(PriceUpdateJobService.KEY_SELECTED_COUNTRY, "NO");
+        String country = PriceRepository.getSelectedCountryCode(context, prefs);
         String unitText = PriceDisplayUtils.getUnitText(country, prefs);
         boolean apiError = prefs.getBoolean(PriceUpdateJobService.KEY_API_ERROR, false);
 
-        List<PriceFetcher.PriceEntry> entries = getAdjustedEntries(prefs);
+        List<PriceFetcher.PriceEntry> entries = getAdjustedEntries(context, prefs);
         PriceFetcher.PriceEntry currentEntry = findCurrentEntry(entries);
         if (currentEntry == null) {
             return new Snapshot(false, apiError, country, null, unitText);
@@ -57,13 +57,13 @@ public final class CurrentPriceResolver {
         );
     }
 
-    public static List<PriceFetcher.PriceEntry> getAdjustedEntries(SharedPreferences prefs) {
+    public static List<PriceFetcher.PriceEntry> getAdjustedEntries(Context context, SharedPreferences prefs) {
         String combinedJson = prefs.getString(PriceRepository.KEY_JSON_DATA, null);
         if (combinedJson == null || combinedJson.trim().isEmpty()) {
             return PriceFetcher.parseCombinedJson(null);
         }
 
-        String country = prefs.getString(PriceUpdateJobService.KEY_SELECTED_COUNTRY, "NO");
+        String country = PriceRepository.getSelectedCountryCode(context, prefs);
         boolean applyVat = prefs.getBoolean(PriceUpdateJobService.KEY_APPLY_VAT, true);
         boolean applyStromstotte = prefs.getBoolean(PriceUpdateJobService.KEY_APPLY_STROMSTOTTE, false);
         double gridFee = PriceDisplayUtils.parseGridFee(

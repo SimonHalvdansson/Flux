@@ -72,7 +72,7 @@ public class ListWidget extends AppWidgetProvider {
     static void updateAppWidget(Context context, AppWidgetManager appWidgetManager, int appWidgetId) {
         SharedPreferences prefs = PriceRepository.getPreferences(context);
         String combinedJson = prefs.getString(PriceRepository.KEY_JSON_DATA, null);
-        String country = prefs.getString(PriceUpdateJobService.KEY_SELECTED_COUNTRY, "NO");
+        String country = PriceRepository.getSelectedCountryCode(context, prefs);
         boolean apiError = prefs.getBoolean(PriceUpdateJobService.KEY_API_ERROR, false);
 
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.list_widget);
@@ -98,7 +98,7 @@ public class ListWidget extends AppWidgetProvider {
             return;
         }
 
-        List<PriceFetcher.PriceEntry> allData = CurrentPriceResolver.getAdjustedEntries(prefs);
+        List<PriceFetcher.PriceEntry> allData = CurrentPriceResolver.getAdjustedEntries(context, prefs);
 
         if (allData.isEmpty()) {
             Log.w(TAG, "No price data available; showing API error state.");

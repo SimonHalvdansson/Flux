@@ -62,7 +62,7 @@ final class MainWidgetRenderDataResolver {
                               SharedPreferences prefs,
                               int barPoolMode,
                               boolean fallbackToSampleData) {
-        String country = prefs.getString(PriceUpdateJobService.KEY_SELECTED_COUNTRY, "NO");
+        String country = PriceRepository.getSelectedCountryCode(context, prefs);
         String unitText = PriceDisplayUtils.getUnitText(country, prefs);
         boolean apiError = prefs.getBoolean(PriceUpdateJobService.KEY_API_ERROR, false);
         String combinedJson = prefs.getString(PriceRepository.KEY_JSON_DATA, null);
@@ -73,7 +73,7 @@ final class MainWidgetRenderDataResolver {
                     country,
                     unitText,
                     false,
-                    CurrentPriceResolver.getAdjustedEntries(prefs),
+                    CurrentPriceResolver.getAdjustedEntries(context, prefs),
                     barPoolMode
             );
             if (renderData != null) {
