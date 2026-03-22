@@ -2,6 +2,7 @@ package io.github.simonhalvdansson.flux;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 final class BarChartUtils {
@@ -18,6 +19,48 @@ final class BarChartUtils {
             scaleMax = Math.max(scaleMax, Math.abs(entry.pricePerKwh));
         }
         return scaleMax > 0.0 ? scaleMax : 1.0;
+    }
+
+    static List<PriceFetcher.PriceEntry> applyCurrentPriceToDisplayedBars(List<PriceFetcher.PriceEntry> entries,
+                                                                          PriceFetcher.PriceEntry currentEntry) {
+        if (entries == null || entries.isEmpty() || currentEntry == null) {
+            return entries;
+        }
+
+        List<PriceFetcher.PriceEntry> adjustedEntries = new ArrayList<>(entries.size());
+        boolean replaced = false;
+        for (PriceFetcher.PriceEntry entry : entries) {
+            if (!replaced && overlaps(entry, currentEntry)) {
+                adjustedEntries.add(copyEntryWithPrice(entry, currentEntry));
+                replaced = true;
+            } else {
+                adjustedEntries.add(entry);
+            }
+        }
+        return adjustedEntries;
+    }
+
+    private static boolean overlaps(PriceFetcher.PriceEntry left, PriceFetcher.PriceEntry right) {
+        return left != null
+                && right != null
+                && left.startTime != null
+                && left.endTime != null
+                && right.startTime != null
+                && right.endTime != null
+                && left.endTime.isAfter(right.startTime)
+                && left.startTime.isBefore(right.endTime);
+    }
+
+    private static PriceFetcher.PriceEntry copyEntryWithPrice(PriceFetcher.PriceEntry timeSource,
+                                                              PriceFetcher.PriceEntry priceSource) {
+        PriceFetcher.PriceEntry copiedEntry = new PriceFetcher.PriceEntry();
+        copiedEntry.startTime = timeSource.startTime;
+        copiedEntry.endTime = timeSource.endTime;
+        copiedEntry.pricePerKwh = priceSource.pricePerKwh;
+        copiedEntry.pricePerKwhEur = priceSource.pricePerKwhEur;
+        copiedEntry.exchangeRatePerEur = priceSource.exchangeRatePerEur;
+        copiedEntry.currency = priceSource.currency;
+        return copiedEntry;
     }
 
     static int resolveBarBackgroundRes(PriceFetcher.PriceEntry entry, ZonedDateTime now) {

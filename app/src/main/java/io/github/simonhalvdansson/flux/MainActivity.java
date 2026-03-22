@@ -831,7 +831,10 @@ public class MainActivity extends AppCompatActivity {
             lastHourIndex = Math.min(hourlyData.size() - 1, firstHourIndex + desiredCount - 1);
         }
 
-        displayedBarEntries = new ArrayList<>(hourlyData.subList(firstHourIndex, lastHourIndex + 1));
+        displayedBarEntries = BarChartUtils.applyCurrentPriceToDisplayedBars(
+                new ArrayList<>(hourlyData.subList(firstHourIndex, lastHourIndex + 1)),
+                currentEntry
+        );
         displayedBucketEntries = buildDisplayedBucketEntries(displayedBarEntries, allData);
         displayedGraphEntries = getEntriesInRange(
                 allData,

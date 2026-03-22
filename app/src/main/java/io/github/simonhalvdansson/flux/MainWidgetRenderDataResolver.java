@@ -135,6 +135,7 @@ final class MainWidgetRenderDataResolver {
         if (barDisplayEntries.isEmpty()) {
             return null;
         }
+        barDisplayEntries = BarChartUtils.applyCurrentPriceToDisplayedBars(barDisplayEntries, currentEntry);
 
         List<PriceFetcher.PriceEntry> graphDisplayEntries = getEntriesInRange(
                 allData,
