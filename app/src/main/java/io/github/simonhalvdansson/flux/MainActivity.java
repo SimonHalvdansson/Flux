@@ -1620,6 +1620,21 @@ public class MainActivity extends AppCompatActivity {
         chartYAxisContainer.setVisibility(visibility);
         chartYAxisGuides.setVisibility(visibility);
         chartYAxisSpacer.setVisibility(visibility);
+        if (!visible) {
+            setChartYAxisTicksVisible(false);
+        }
+    }
+
+    private void setChartYAxisTicksVisible(boolean visible) {
+        int visibility = visible ? View.VISIBLE : View.INVISIBLE;
+        chartYAxisTopValue.setVisibility(visibility);
+        chartYAxisUpperMidValue.setVisibility(visibility);
+        chartYAxisLowerMidValue.setVisibility(visibility);
+        chartYAxisBottomValue.setVisibility(visibility);
+        chartYAxisTopGuide.setVisibility(visibility);
+        chartYAxisUpperMidGuide.setVisibility(visibility);
+        chartYAxisLowerMidGuide.setVisibility(visibility);
+        chartYAxisBottomGuide.setVisibility(visibility);
     }
 
     private void updateChartYAxis(double maxPricePerKwh) {
@@ -1631,6 +1646,7 @@ public class MainActivity extends AppCompatActivity {
 
         double safeMaxPrice = maxPricePerKwh > 0.0 ? maxPricePerKwh : 1.0;
         if (chartYAxisContainer.getHeight() <= 0 || chartYAxisGuides.getHeight() <= 0) {
+            setChartYAxisTicksVisible(false);
             chartYAxisContainer.post(() -> updateChartYAxis(safeMaxPrice));
             return;
         }
@@ -1659,6 +1675,7 @@ public class MainActivity extends AppCompatActivity {
                     countryCode
             );
         }
+        setChartYAxisTicksVisible(true);
     }
 
     private String formatChartAxisValue(double pricePerKwh, String countryCode) {
