@@ -5,6 +5,7 @@ import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
 import android.animation.ValueAnimator;
 import android.content.SharedPreferences;
+import android.graphics.Rect;
 import android.graphics.Outline;
 import android.graphics.Typeface;
 import android.graphics.drawable.ColorDrawable;
@@ -29,6 +30,7 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
+import android.widget.ScrollView;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -123,6 +125,7 @@ public class MainActivity extends AppCompatActivity {
     private LinearLayout barChartContainer;
     private ImageView graphImageView;
     private View chartTouchOverlay;
+    private ScrollView mainScrollView;
     private MaterialButtonToggleGroup mainChartToggleGroup;
     private SharedPreferences sharedPreferences;
     private SharedPreferences.OnSharedPreferenceChangeListener preferenceChangeListener;
@@ -141,6 +144,7 @@ public class MainActivity extends AppCompatActivity {
     private boolean suppressNextChartModePreferenceRender;
     private int chartModeTransitionId = 0;
     private int currentCountryIndex = 0;
+    private int currentImeInsetBottom = 0;
     private List<PriceFetcher.PriceEntry> displayedBarEntries = new ArrayList<>();
     private List<List<PriceFetcher.PriceEntry>> displayedBucketEntries = new ArrayList<>();
     private List<PriceFetcher.PriceEntry> displayedGraphEntries = new ArrayList<>();
@@ -184,6 +188,7 @@ public class MainActivity extends AppCompatActivity {
         currentPriceInfoTrigger = findViewById(R.id.current_price_info_trigger);
         todayAverageValue = findViewById(R.id.today_average_value);
         tomorrowAverageValue = findViewById(R.id.tomorrow_average_value);
+        mainScrollView = findViewById(R.id.main_container);
         settingsToggleRow = findViewById(R.id.settings_toggle_row);
         settingsToggleCaret = findViewById(R.id.settings_toggle_caret);
         settingsExpandableContainer = findViewById(R.id.settings_expandable_container);
@@ -473,6 +478,7 @@ public class MainActivity extends AppCompatActivity {
 
         gridFeeInput.setOnFocusChangeListener((v, hasFocus) -> {
             if (hasFocus) {
+                requestFocusedFieldVisibility();
                 return;
             }
             CharSequence value = gridFeeInput.getText();
@@ -633,7 +639,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void applyWindowInsets() {
-        View root = findViewById(R.id.main_container);
+        ScrollView root = mainScrollView;
         View content = findViewById(R.id.main_content);
         int padStart = content.getPaddingStart();
         int padTop = content.getPaddingTop();
@@ -644,15 +650,73 @@ public class MainActivity extends AppCompatActivity {
             Insets safeArea = insets.getInsets(
                     WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout()
             );
+            Insets imeInsets = insets.getInsets(WindowInsetsCompat.Type.ime());
+            currentImeInsetBottom = imeInsets.bottom;
+            int bottomInset = Math.max(safeArea.bottom, imeInsets.bottom);
             content.setPaddingRelative(
                     padStart + safeArea.left,
                     padTop + safeArea.top,
                     padEnd + safeArea.right,
-                    padBottom + safeArea.bottom
+                    padBottom + bottomInset
             );
+            if (imeInsets.bottom > 0) {
+                requestFocusedFieldVisibility();
+            }
             return insets;
         });
         ViewCompat.requestApplyInsets(root);
+    }
+
+    private void requestFocusedFieldVisibility() {
+        if (mainScrollView == null) {
+            return;
+        }
+        mainScrollView.post(() -> scrollFocusedViewIntoViewport(mainScrollView));
+        mainScrollView.postDelayed(() -> scrollFocusedViewIntoViewport(mainScrollView), 100L);
+        mainScrollView.postDelayed(() -> scrollFocusedViewIntoViewport(mainScrollView), 220L);
+    }
+
+    private void scrollFocusedViewIntoViewport(ScrollView root) {
+        View focusedView = getCurrentFocus();
+        if (focusedView == null || !isViewDescendantOf(focusedView, root)) {
+            return;
+        }
+        int[] rootLocation = new int[2];
+        int[] focusedLocation = new int[2];
+        root.getLocationOnScreen(rootLocation);
+        focusedView.getLocationOnScreen(focusedLocation);
+
+        int topMargin = dpToPx(12);
+        int bottomMargin = dpToPx(24);
+        int visibleTop = rootLocation[1] + topMargin;
+        int visibleBottom = rootLocation[1] + root.getHeight() - currentImeInsetBottom - bottomMargin;
+        if (visibleBottom <= visibleTop) {
+            return;
+        }
+
+        Rect focusedBounds = new Rect(
+                focusedLocation[0],
+                focusedLocation[1],
+                focusedLocation[0] + focusedView.getWidth(),
+                focusedLocation[1] + focusedView.getHeight()
+        );
+        if (focusedBounds.bottom > visibleBottom) {
+            root.smoothScrollBy(0, focusedBounds.bottom - visibleBottom);
+        } else if (focusedBounds.top < visibleTop) {
+            root.smoothScrollBy(0, focusedBounds.top - visibleTop);
+        }
+    }
+
+    private boolean isViewDescendantOf(View child, View ancestor) {
+        View current = child;
+        while (current != null) {
+            if (current == ancestor) {
+                return true;
+            }
+            ViewParent parent = current.getParent();
+            current = parent instanceof View ? (View) parent : null;
+        }
+        return false;
     }
 
     private void configureAppIconShadow(ImageView appIconView) {
