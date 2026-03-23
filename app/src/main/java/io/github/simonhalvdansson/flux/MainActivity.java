@@ -41,6 +41,7 @@ import androidx.interpolator.view.animation.LinearOutSlowInInterpolator;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.button.MaterialButtonToggleGroup;
 import com.google.android.material.color.MaterialColors;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.materialswitch.MaterialSwitch;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
@@ -1535,50 +1536,99 @@ public class MainActivity extends AppCompatActivity {
         String countryCode = getSelectedCountryCode();
         String unitText = PriceDisplayUtils.getUnitText(countryCode, sharedPreferences);
         double displayMultiplier = RegionConfig.getPriceDisplayMultiplier(countryCode);
-        StringBuilder message = new StringBuilder(getString(
-                R.string.current_price_details_exact,
-                formatDetailedPrice(currentEntry.pricePerKwh * displayMultiplier, countryCode, 0, 6),
-                unitText
-        ));
+        View contentView = getLayoutInflater().inflate(R.layout.dialog_current_price_details, null);
+        bindCurrentPriceDetailsRow(
+                contentView.findViewById(R.id.current_price_details_time_row),
+                contentView.findViewById(R.id.current_price_details_time_value),
+                buildCurrentPriceTimeValue(currentEntry)
+        );
+        bindCurrentPriceDetailsRow(
+                contentView.findViewById(R.id.current_price_details_price_row),
+                contentView.findViewById(R.id.current_price_details_price_value),
+                getString(
+                        R.string.current_price_details_value_exact,
+                        formatDetailedPrice(currentEntry.pricePerKwh * displayMultiplier, countryCode, 0, 6),
+                        unitText
+                )
+        );
+        bindCurrentPriceDetailsRow(
+                contentView.findViewById(R.id.current_price_details_original_row),
+                contentView.findViewById(R.id.current_price_details_original_value),
+                buildCurrentPriceOriginalValue(currentEntry, countryCode)
+        );
+        bindCurrentPriceDetailsRow(
+                contentView.findViewById(R.id.current_price_details_exchange_rate_row),
+                contentView.findViewById(R.id.current_price_details_exchange_rate_value),
+                buildCurrentPriceExchangeRateValue(currentEntry, countryCode)
+        );
 
-        String conversionMessage = buildCurrentPriceConversionMessage(currentEntry, countryCode);
-        if (conversionMessage != null) {
-            message.append("\n").append(conversionMessage);
-        }
-
-        InfoDialogFragment.newInstance("", message.toString())
-                .show(getSupportFragmentManager(), "current_price_details_dialog");
+        new MaterialAlertDialogBuilder(this)
+                .setView(contentView)
+                .show();
     }
 
     private String getSelectedCountryCode() {
         return PriceRepository.getSelectedCountryCode(this, sharedPreferences);
     }
 
-    private String buildCurrentPriceConversionMessage(PriceFetcher.PriceEntry currentEntry, String countryCode) {
+    private void bindCurrentPriceDetailsRow(View rowView, TextView valueView, String value) {
+        if (value == null || value.trim().isEmpty()) {
+            rowView.setVisibility(View.GONE);
+            return;
+        }
+
+        rowView.setVisibility(View.VISIBLE);
+        valueView.setText(value);
+    }
+
+    private String buildCurrentPriceTimeValue(PriceFetcher.PriceEntry currentEntry) {
+        if (currentEntry == null || currentEntry.startTime == null || currentEntry.endTime == null) {
+            return null;
+        }
+
+        ZonedDateTime start = currentEntry.startTime.atZoneSameInstant(ZoneId.systemDefault());
+        ZonedDateTime end = currentEntry.endTime.atZoneSameInstant(ZoneId.systemDefault());
+        return String.format(
+                "%02d:%02d-%02d:%02d",
+                start.getHour(),
+                start.getMinute(),
+                end.getHour(),
+                end.getMinute()
+        );
+    }
+
+    private String buildCurrentPriceOriginalValue(PriceFetcher.PriceEntry currentEntry, String countryCode) {
         if (currentEntry == null || Double.isNaN(currentEntry.pricePerKwhEur)) {
             return null;
         }
 
-        StringBuilder message = new StringBuilder(getString(
-                R.string.current_price_details_conversion_eur,
+        return getString(
+                R.string.current_price_details_value_original,
                 formatDetailedPrice(currentEntry.pricePerKwhEur, countryCode, 0, 6)
-        ));
+        );
+    }
+
+    private String buildCurrentPriceExchangeRateValue(PriceFetcher.PriceEntry currentEntry, String countryCode) {
+        if (currentEntry == null) {
+            return null;
+        }
 
         String currency = currentEntry.currency;
         if (currency == null || currency.isEmpty()) {
             currency = RegionConfig.getCurrency(countryCode);
         }
-        if (!"EUR".equals(currency)
-                && !Double.isNaN(currentEntry.exchangeRatePerEur)
-                && currentEntry.exchangeRatePerEur > 0.0) {
-            message.append("\n")
-                    .append(getString(
-                            R.string.current_price_details_exchange_rate,
-                            formatDetailedPrice(currentEntry.exchangeRatePerEur, countryCode, 0, 3),
-                            currency
-                    ));
+
+        if ("EUR".equals(currency)
+                || Double.isNaN(currentEntry.exchangeRatePerEur)
+                || currentEntry.exchangeRatePerEur <= 0.0) {
+            return null;
         }
-        return message.toString();
+
+        return getString(
+                R.string.current_price_details_value_exchange_rate,
+                formatDetailedPrice(currentEntry.exchangeRatePerEur, countryCode, 0, 3),
+                currency
+        );
     }
 
     private String formatVatPercent(double vatPercent) {
