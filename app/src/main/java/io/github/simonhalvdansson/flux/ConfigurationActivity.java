@@ -22,6 +22,7 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.button.MaterialButtonToggleGroup;
+import com.google.android.material.materialswitch.MaterialSwitch;
 
 public class ConfigurationActivity extends AppCompatActivity {
     private static final long SECTION_VISIBILITY_ANIMATION_MS = 180L;
@@ -62,6 +63,7 @@ public class ConfigurationActivity extends AppCompatActivity {
         LinearLayout mainWidgetSection = findViewById(R.id.main_widget_settings_section);
         LinearLayout listWidgetSection = findViewById(R.id.list_widget_settings_section);
         MaterialButtonToggleGroup chartToggleGroup = findViewById(R.id.chart_toggle_group);
+        MaterialSwitch chartYAxisSwitch = findViewById(R.id.chart_y_axis_switch);
         LinearLayout barPoolContainer = findViewById(R.id.bar_pool_container);
         MaterialButtonToggleGroup barPoolToggleGroup = findViewById(R.id.bar_pool_toggle_group);
         MaterialButtonToggleGroup listIncrementToggleGroup = findViewById(R.id.list_increment_toggle_group);
@@ -121,6 +123,9 @@ public class ConfigurationActivity extends AppCompatActivity {
             int chartMode = WidgetPreferences.getChartMode(prefs, appWidgetId);
             chartToggleGroup.check(getChartButtonId(chartMode));
 
+            boolean showYAxis = WidgetPreferences.getMainChartShowYAxis(prefs, appWidgetId);
+            chartYAxisSwitch.setChecked(showYAxis);
+
             int barPoolMode = WidgetPreferences.getMainBarPoolMode(prefs, appWidgetId);
             barPoolToggleGroup.check(barPoolMode == WidgetPreferences.POOL_MODE_MIN
                     ? R.id.bar_pool_min_button
@@ -128,7 +133,7 @@ public class ConfigurationActivity extends AppCompatActivity {
                     ? R.id.bar_pool_max_button
                     : R.id.bar_pool_average_button);
             updateBarPoolVisibility(barPoolContainer, chartMode, false);
-            updateChartWidgetPreview(chartWidgetPreview, prefs, chartMode, barPoolMode);
+            updateChartWidgetPreview(chartWidgetPreview, prefs, chartMode, barPoolMode, showYAxis);
 
             chartToggleGroup.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
                 if (!isChecked) {
@@ -138,7 +143,15 @@ public class ConfigurationActivity extends AppCompatActivity {
                 WidgetPreferences.setChartMode(prefs, appWidgetId, mode);
                 updateBarPoolVisibility(barPoolContainer, mode, true);
                 int selectedBarPoolMode = WidgetPreferences.getMainBarPoolMode(prefs, appWidgetId);
-                updateChartWidgetPreview(chartWidgetPreview, prefs, mode, selectedBarPoolMode);
+                boolean selectedShowYAxis = WidgetPreferences.getMainChartShowYAxis(prefs, appWidgetId);
+                updateChartWidgetPreview(chartWidgetPreview, prefs, mode, selectedBarPoolMode, selectedShowYAxis);
+            });
+
+            chartYAxisSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                WidgetPreferences.setMainChartShowYAxis(prefs, appWidgetId, isChecked);
+                int selectedChartMode = WidgetPreferences.getChartMode(prefs, appWidgetId);
+                int selectedBarPoolMode = WidgetPreferences.getMainBarPoolMode(prefs, appWidgetId);
+                updateChartWidgetPreview(chartWidgetPreview, prefs, selectedChartMode, selectedBarPoolMode, isChecked);
             });
 
             barPoolToggleGroup.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
@@ -152,7 +165,8 @@ public class ConfigurationActivity extends AppCompatActivity {
                         : WidgetPreferences.POOL_MODE_AVERAGE;
                 WidgetPreferences.setMainBarPoolMode(prefs, appWidgetId, poolMode);
                 int selectedChartMode = WidgetPreferences.getChartMode(prefs, appWidgetId);
-                updateChartWidgetPreview(chartWidgetPreview, prefs, selectedChartMode, poolMode);
+                boolean selectedShowYAxis = WidgetPreferences.getMainChartShowYAxis(prefs, appWidgetId);
+                updateChartWidgetPreview(chartWidgetPreview, prefs, selectedChartMode, poolMode, selectedShowYAxis);
             });
         }
 
@@ -214,8 +228,9 @@ public class ConfigurationActivity extends AppCompatActivity {
     private void updateChartWidgetPreview(View previewRoot,
                                           SharedPreferences prefs,
                                           int chartMode,
-                                          int barPoolMode) {
-        ChartWidgetPreviewBinder.bind(previewRoot, prefs, chartMode, barPoolMode);
+                                          int barPoolMode,
+                                          boolean showYAxis) {
+        ChartWidgetPreviewBinder.bind(previewRoot, prefs, chartMode, barPoolMode, showYAxis);
     }
 
     private int getChartButtonId(int chartMode) {

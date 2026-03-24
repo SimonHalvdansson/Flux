@@ -9,6 +9,7 @@ public final class WidgetPreferences {
     public static final String KEY_LIST_INCREMENT_MINUTES = "list_increment_minutes";
     public static final String KEY_LIST_POOL_MODE = "list_pool_mode";
     private static final String KEY_WIDGET_CHART_MODE = "widget_chart_mode";
+    private static final String KEY_WIDGET_MAIN_CHART_SHOW_Y_AXIS = "widget_main_chart_show_y_axis";
     private static final String KEY_WIDGET_MAIN_BAR_POOL_MODE = "widget_main_bar_pool_mode";
     private static final String KEY_WIDGET_LIST_INCREMENT_MINUTES = "widget_list_increment_minutes";
     private static final String KEY_WIDGET_LIST_POOL_MODE = "widget_list_pool_mode";
@@ -48,6 +49,22 @@ public final class WidgetPreferences {
         }
         prefs.edit()
                 .putInt(widgetKey(KEY_WIDGET_CHART_MODE, appWidgetId), sanitizeChartMode(chartMode))
+                .apply();
+    }
+
+    public static boolean getMainChartShowYAxis(SharedPreferences prefs, int appWidgetId) {
+        if (appWidgetId == AppWidgetManager.INVALID_APPWIDGET_ID) {
+            return true;
+        }
+        return prefs.getBoolean(widgetKey(KEY_WIDGET_MAIN_CHART_SHOW_Y_AXIS, appWidgetId), true);
+    }
+
+    public static void setMainChartShowYAxis(SharedPreferences prefs, int appWidgetId, boolean showYAxis) {
+        if (appWidgetId == AppWidgetManager.INVALID_APPWIDGET_ID) {
+            return;
+        }
+        prefs.edit()
+                .putBoolean(widgetKey(KEY_WIDGET_MAIN_CHART_SHOW_Y_AXIS, appWidgetId), showYAxis)
                 .apply();
     }
 
@@ -135,6 +152,7 @@ public final class WidgetPreferences {
         }
         prefs.edit()
                 .remove(widgetKey(KEY_WIDGET_CHART_MODE, appWidgetId))
+                .remove(widgetKey(KEY_WIDGET_MAIN_CHART_SHOW_Y_AXIS, appWidgetId))
                 .remove(widgetKey(KEY_WIDGET_MAIN_BAR_POOL_MODE, appWidgetId))
                 .remove(widgetKey(KEY_WIDGET_LIST_INCREMENT_MINUTES, appWidgetId))
                 .remove(widgetKey(KEY_WIDGET_LIST_POOL_MODE, appWidgetId))

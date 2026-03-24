@@ -27,6 +27,18 @@ final class ChartWidgetPreviewBinder {
             R.id.time4, R.id.time5, R.id.time6, R.id.time7,
             R.id.time8, R.id.time9, R.id.time10, R.id.time11
     };
+    private static final int[] Y_AXIS_LABEL_IDS = {
+            R.id.widget_chart_y_axis_top_value,
+            R.id.widget_chart_y_axis_upper_mid_value,
+            R.id.widget_chart_y_axis_lower_mid_value,
+            R.id.widget_chart_y_axis_bottom_value
+    };
+    private static final int[] Y_AXIS_GUIDE_IDS = {
+            R.id.widget_chart_y_axis_top_guide,
+            R.id.widget_chart_y_axis_upper_mid_guide,
+            R.id.widget_chart_y_axis_lower_mid_guide,
+            R.id.widget_chart_y_axis_bottom_guide
+    };
 
     private static final int[] TIME_BAR_INDICES = {0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22};
     private static final int MIN_BAR_HEIGHT_DP = 10;
@@ -37,19 +49,29 @@ final class ChartWidgetPreviewBinder {
     static void bind(View previewRoot,
                      SharedPreferences prefs,
                      int chartMode,
-                     int barPoolMode) {
+                     int barPoolMode,
+                     boolean showYAxis) {
         if (previewRoot == null) {
             return;
         }
 
         View chartArea = previewRoot.findViewById(R.id.chart_area_container);
         if (chartArea == null || chartArea.getWidth() <= 0 || chartArea.getHeight() <= 0) {
-            previewRoot.post(() -> bind(previewRoot, prefs, chartMode, barPoolMode));
+            previewRoot.post(() -> bind(previewRoot, prefs, chartMode, barPoolMode, showYAxis));
             return;
         }
 
         MainWidgetRenderDataResolver.RenderData renderData =
                 MainWidgetRenderDataResolver.resolve(previewRoot.getContext(), prefs, barPoolMode, true);
+        double chartDataScaleMax = Math.max(renderData.barScaleMax, renderData.graphScaleMax);
+        double yAxisScaleMax = ChartYAxisUtils.resolveRoundedScaleMax(chartDataScaleMax);
+        double displayedChartScaleMax = showYAxis ? yAxisScaleMax : chartDataScaleMax;
+        if (displayedChartScaleMax <= 0.0d) {
+            displayedChartScaleMax = 1.0d;
+        }
+        if (yAxisScaleMax <= 0.0d) {
+            yAxisScaleMax = 1.0d;
+        }
 
         TextView currentPriceHeader = previewRoot.findViewById(R.id.current_price_header);
         TextView currentPriceValue = previewRoot.findViewById(R.id.current_price_imageview);
@@ -60,6 +82,9 @@ final class ChartWidgetPreviewBinder {
         ImageView graphImage = previewRoot.findViewById(R.id.graph_image);
         View timeContainer = previewRoot.findViewById(R.id.widget_time_container);
         View apiErrorContainer = previewRoot.findViewById(R.id.api_error_container);
+        View yAxisContainer = previewRoot.findViewById(R.id.widget_chart_y_axis_container);
+        View yAxisGuides = previewRoot.findViewById(R.id.widget_chart_y_axis_guides);
+        View yAxisSpacer = previewRoot.findViewById(R.id.widget_chart_y_axis_spacer);
 
         currentPriceHeader.setText(renderData.currentTimeText);
         currentPriceValue.setText(renderData.currentPriceText);
@@ -68,11 +93,12 @@ final class ChartWidgetPreviewBinder {
         minPriceText.setText(renderData.minText);
         apiErrorContainer.setVisibility(View.GONE);
         timeContainer.setVisibility(View.VISIBLE);
+        updateYAxis(previewRoot, showYAxis, yAxisScaleMax, renderData.country, yAxisContainer, yAxisGuides, yAxisSpacer);
 
         updateTimeLabels(previewRoot, renderData);
 
         if (chartMode == WidgetPreferences.CHART_MODE_BARS) {
-            bindBars(previewRoot, renderData, chartArea.getHeight());
+            bindBars(previewRoot, renderData, chartArea.getHeight(), displayedChartScaleMax);
             barGraphContainer.setVisibility(View.VISIBLE);
             graphImage.setVisibility(View.GONE);
             graphImage.setImageDrawable(null);
@@ -81,14 +107,16 @@ final class ChartWidgetPreviewBinder {
 
         barGraphContainer.setVisibility(View.GONE);
         graphImage.setVisibility(View.VISIBLE);
-        bindGraph(graphImage, renderData, chartMode, chartArea.getWidth(), chartArea.getHeight());
+        bindGraph(graphImage, renderData, chartMode, chartArea.getWidth(), chartArea.getHeight(), displayedChartScaleMax);
     }
 
     private static void bindBars(View previewRoot,
                                  MainWidgetRenderDataResolver.RenderData renderData,
-                                 int availableHeightPx) {
+                                 int availableHeightPx,
+                                 double scaleMax) {
         int drawableHeightPx = Math.max(0, availableHeightPx - dp(previewRoot, 4));
         ZonedDateTime now = ZonedDateTime.now();
+        double safeScaleMax = scaleMax > 0.0d ? scaleMax : 1.0d;
 
         for (int i = 0; i < BAR_IDS.length; i++) {
             ImageView bar = previewRoot.findViewById(BAR_IDS[i]);
@@ -99,7 +127,7 @@ final class ChartWidgetPreviewBinder {
             }
 
             PriceFetcher.PriceEntry entry = renderData.barDisplayEntries.get(i);
-            int barHeightPx = Math.round((float) (Math.abs(entry.pricePerKwh) / renderData.barScaleMax) * drawableHeightPx);
+            int barHeightPx = Math.round((float) (Math.abs(entry.pricePerKwh) / safeScaleMax) * drawableHeightPx);
             bar.setVisibility(View.VISIBLE);
             setBarHeight(bar, barHeightPx);
             bar.setBackgroundResource(BarChartUtils.resolveBarBackgroundRes(entry, now));
@@ -110,26 +138,56 @@ final class ChartWidgetPreviewBinder {
                                   MainWidgetRenderDataResolver.RenderData renderData,
                                   int chartMode,
                                   int widthPx,
-                                  int heightPx) {
+                                  int heightPx,
+                                  double scaleMax) {
         int safeWidthPx = Math.max(1, widthPx);
         int safeHeightPx = Math.max(1, heightPx);
+        double safeScaleMax = scaleMax > 0.0d ? scaleMax : 1.0d;
         Bitmap graphBitmap = chartMode == WidgetPreferences.CHART_MODE_LINES
                 ? GraphUtils.createStepLineGraphBitmap(
                         graphImage.getContext(),
                         renderData.graphDisplayEntries,
-                        renderData.graphScaleMax,
+                        safeScaleMax,
                         safeWidthPx,
                         safeHeightPx
                 )
                 : GraphUtils.createLineGraphBitmapCubic(
                         graphImage.getContext(),
                         renderData.graphDisplayEntries,
-                        renderData.graphScaleMax,
+                        safeScaleMax,
                         safeWidthPx,
                         safeHeightPx,
                         ZonedDateTime.now()
                 );
         graphImage.setImageBitmap(graphBitmap);
+    }
+
+    private static void updateYAxis(View previewRoot,
+                                    boolean showYAxis,
+                                    double scaleMax,
+                                    String countryCode,
+                                    View yAxisContainer,
+                                    View yAxisGuides,
+                                    View yAxisSpacer) {
+        int visibility = showYAxis ? View.VISIBLE : View.GONE;
+        yAxisContainer.setVisibility(visibility);
+        yAxisGuides.setVisibility(visibility);
+        yAxisSpacer.setVisibility(visibility);
+        if (!showYAxis) {
+            return;
+        }
+
+        double safeScaleMax = scaleMax > 0.0d ? scaleMax : 1.0d;
+        for (int i = 0; i < Y_AXIS_LABEL_IDS.length; i++) {
+            TextView label = previewRoot.findViewById(Y_AXIS_LABEL_IDS[i]);
+            View guide = previewRoot.findViewById(Y_AXIS_GUIDE_IDS[i]);
+            double tickValue = ChartYAxisUtils.normalizeTickValue(
+                    safeScaleMax * ChartYAxisUtils.TICK_FRACTIONS[i]
+            );
+            label.setText(ChartYAxisUtils.formatAxisValue(tickValue, countryCode));
+            label.setVisibility(View.VISIBLE);
+            guide.setVisibility(View.VISIBLE);
+        }
     }
 
     private static void updateTimeLabels(View previewRoot,

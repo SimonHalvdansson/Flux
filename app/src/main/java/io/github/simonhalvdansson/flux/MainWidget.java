@@ -41,6 +41,18 @@ public class MainWidget extends AppWidgetProvider {
             R.id.time4,  R.id.time5,  R.id.time6,  R.id.time7,
             R.id.time8,  R.id.time9,  R.id.time10, R.id.time11
     };
+    private static final int[] yAxisLabelIds = {
+            R.id.widget_chart_y_axis_top_value,
+            R.id.widget_chart_y_axis_upper_mid_value,
+            R.id.widget_chart_y_axis_lower_mid_value,
+            R.id.widget_chart_y_axis_bottom_value
+    };
+    private static final int[] yAxisGuideIds = {
+            R.id.widget_chart_y_axis_top_guide,
+            R.id.widget_chart_y_axis_upper_mid_guide,
+            R.id.widget_chart_y_axis_lower_mid_guide,
+            R.id.widget_chart_y_axis_bottom_guide
+    };
 
     @Override
     public void onEnabled(Context context) {
@@ -95,9 +107,19 @@ public class MainWidget extends AppWidgetProvider {
 
         SharedPreferences prefs = PriceRepository.getPreferences(context);
         int chartMode = WidgetPreferences.getChartMode(prefs, appWidgetId);
+        boolean showYAxis = WidgetPreferences.getMainChartShowYAxis(prefs, appWidgetId);
         int barPoolMode = WidgetPreferences.getMainBarPoolMode(prefs, appWidgetId);
         MainWidgetRenderDataResolver.RenderData renderData =
                 MainWidgetRenderDataResolver.resolve(context, prefs, barPoolMode, false);
+        double chartDataScaleMax = Math.max(renderData.barScaleMax, renderData.graphScaleMax);
+        double yAxisScaleMax = ChartYAxisUtils.resolveRoundedScaleMax(chartDataScaleMax);
+        double displayedChartScaleMax = showYAxis ? yAxisScaleMax : chartDataScaleMax;
+        if (displayedChartScaleMax <= 0.0d) {
+            displayedChartScaleMax = 1.0d;
+        }
+        if (yAxisScaleMax <= 0.0d) {
+            yAxisScaleMax = 1.0d;
+        }
 
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.main_widget);
         // Reset visibility in case previous update showed API error state.
@@ -107,6 +129,7 @@ public class MainWidget extends AppWidgetProvider {
         views.setViewVisibility(R.id.current_price_unit, View.VISIBLE);
         views.setViewVisibility(R.id.max_price_text, View.VISIBLE);
         views.setViewVisibility(R.id.min_price_text, View.VISIBLE);
+        updateYAxisViews(views, showYAxis, yAxisScaleMax, renderData.country);
 
         Intent intent = new Intent(context, MainActivity.class);
         intent.putExtra(MainActivity.EXTRA_DISABLE_CHART_ANIMATION, true);
@@ -181,7 +204,7 @@ public class MainWidget extends AppWidgetProvider {
                 int barId = barIds[i];
                 if (i < displayedCount) {
                     PriceFetcher.PriceEntry e = renderData.barDisplayEntries.get(i);
-                    double fraction = Math.abs(e.pricePerKwh) / renderData.barScaleMax;
+                    double fraction = Math.abs(e.pricePerKwh) / displayedChartScaleMax;
                     double barDp = fraction * barMaxHeightDp;
 
                     int barPx = (int) TypedValue.applyDimension(
@@ -218,14 +241,14 @@ public class MainWidget extends AppWidgetProvider {
                     ? GraphUtils.createStepLineGraphBitmap(
                             context.getApplicationContext(),
                             renderData.graphDisplayEntries,
-                            renderData.graphScaleMax,
+                            displayedChartScaleMax,
                             graphWidthPx,
                             graphHeightPx
                     )
                     : GraphUtils.createLineGraphBitmapCubic(
                             context.getApplicationContext(),
                             renderData.graphDisplayEntries,
-                            renderData.graphScaleMax,
+                            displayedChartScaleMax,
                             graphWidthPx,
                             graphHeightPx,
                             now
@@ -253,6 +276,32 @@ public class MainWidget extends AppWidgetProvider {
         appWidgetManager.updateAppWidget(appWidgetId, views);
     }
 
+    private static void updateYAxisViews(RemoteViews views,
+                                         boolean showYAxis,
+                                         double scaleMax,
+                                         String countryCode) {
+        int visibility = showYAxis ? View.VISIBLE : View.GONE;
+        views.setViewVisibility(R.id.widget_chart_y_axis_container, visibility);
+        views.setViewVisibility(R.id.widget_chart_y_axis_guides, visibility);
+        views.setViewVisibility(R.id.widget_chart_y_axis_spacer, visibility);
+        if (!showYAxis) {
+            return;
+        }
+
+        double safeScaleMax = scaleMax > 0.0d ? scaleMax : 1.0d;
+        for (int i = 0; i < yAxisLabelIds.length; i++) {
+            double tickValue = ChartYAxisUtils.normalizeTickValue(
+                    safeScaleMax * ChartYAxisUtils.TICK_FRACTIONS[i]
+            );
+            views.setTextViewText(
+                    yAxisLabelIds[i],
+                    ChartYAxisUtils.formatAxisValue(tickValue, countryCode)
+            );
+            views.setViewVisibility(yAxisLabelIds[i], View.VISIBLE);
+            views.setViewVisibility(yAxisGuideIds[i], View.VISIBLE);
+        }
+    }
+
     private static void showApiErrorState(AppWidgetManager appWidgetManager, int appWidgetId, RemoteViews views) {
         views.setTextViewText(R.id.api_error_text, "ENTSO-E API error");
 
@@ -264,6 +313,9 @@ public class MainWidget extends AppWidgetProvider {
         views.setViewVisibility(R.id.widget_time_container, View.GONE);
         views.setViewVisibility(R.id.bar_graph_container, View.GONE);
         views.setViewVisibility(R.id.graph_image, View.GONE);
+        views.setViewVisibility(R.id.widget_chart_y_axis_container, View.GONE);
+        views.setViewVisibility(R.id.widget_chart_y_axis_guides, View.GONE);
+        views.setViewVisibility(R.id.widget_chart_y_axis_spacer, View.GONE);
         views.setViewVisibility(R.id.api_error_container, View.VISIBLE);
 
         appWidgetManager.updateAppWidget(appWidgetId, views);
@@ -288,6 +340,9 @@ public class MainWidget extends AppWidgetProvider {
         }
 
         views.setViewVisibility(R.id.widget_time_container, View.GONE);
+        views.setViewVisibility(R.id.widget_chart_y_axis_container, View.GONE);
+        views.setViewVisibility(R.id.widget_chart_y_axis_guides, View.GONE);
+        views.setViewVisibility(R.id.widget_chart_y_axis_spacer, View.GONE);
         views.setViewVisibility(R.id.api_error_container, View.GONE);
         appWidgetManager.updateAppWidget(appWidgetId, views);
     }

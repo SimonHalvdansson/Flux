@@ -71,186 +71,354 @@
 </LinearLayout>
 
 
-    <FrameLayout
-        android:id="@+id/chart_area_container"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1">
+        android:layout_weight="1"
+        android:orientation="horizontal">
 
         <LinearLayout
-            android:orientation="vertical"
-            android:id="@+id/bar_graph_container"
-            android:layout_width="match_parent"
+            android:id="@+id/widget_chart_y_axis_container"
+            android:layout_width="28dp"
             android:layout_height="match_parent"
-            android:visibility="gone">
-
-            <LinearLayout
-                android:orientation="horizontal"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:gravity="bottom">
-
-                <ImageView
-                    android:id="@+id/bar_0"
-                    android:background="@drawable/bar_rounded_old"
-                    android:minHeight="50dp"
-                    style="@style/Widget.Flux.AppWidget.Bar" />
-                <ImageView
-                    android:id="@+id/bar_1"
-                    android:background="@drawable/bar_rounded_old"
-                    android:minHeight="10dp"
-                    style="@style/Widget.Flux.AppWidget.Bar" />
-                <ImageView
-                    android:id="@+id/bar_2"
-                    android:background="@drawable/bar_rounded_old"
-                    android:minHeight="30dp"
-                    style="@style/Widget.Flux.AppWidget.Bar" />
-                <ImageView
-                    android:id="@+id/bar_3"
-                    android:background="@drawable/bar_rounded_current"
-                    android:minHeight="70dp"
-                    style="@style/Widget.Flux.AppWidget.Bar" />
-                <ImageView
-                    android:id="@+id/bar_4"
-                    android:background="@drawable/bar_rounded"
-                    android:minHeight="70dp"
-                    style="@style/Widget.Flux.AppWidget.Bar" />
-                <ImageView
-                    android:id="@+id/bar_5"
-                    android:background="@drawable/bar_rounded"
-                    android:minHeight="70dp"
-                    style="@style/Widget.Flux.AppWidget.Bar" />
-                <ImageView
-                    android:id="@+id/bar_6"
-                    android:background="@drawable/bar_rounded"
-                    android:minHeight="70dp"
-                    style="@style/Widget.Flux.AppWidget.Bar" />
-                <ImageView
-                    android:id="@+id/bar_7"
-                    android:background="@drawable/bar_rounded"
-                    android:minHeight="70dp"
-                    style="@style/Widget.Flux.AppWidget.Bar" />
-                <ImageView
-                    android:id="@+id/bar_8"
-                    android:background="@drawable/bar_rounded"
-                    android:minHeight="70dp"
-                    style="@style/Widget.Flux.AppWidget.Bar" />
-                <ImageView
-                    android:id="@+id/bar_9"
-                    android:background="@drawable/bar_rounded"
-                    android:minHeight="70dp"
-                    style="@style/Widget.Flux.AppWidget.Bar" />
-                <ImageView
-                    android:id="@+id/bar_10"
-                    android:background="@drawable/bar_rounded"
-                    android:minHeight="70dp"
-                    style="@style/Widget.Flux.AppWidget.Bar" />
-                <ImageView
-                    android:id="@+id/bar_11"
-                    android:background="@drawable/bar_rounded"
-                    android:minHeight="70dp"
-                    style="@style/Widget.Flux.AppWidget.Bar" />
-                <ImageView
-                    android:id="@+id/bar_12"
-                    android:background="@drawable/bar_rounded"
-                    android:minHeight="70dp"
-                    style="@style/Widget.Flux.AppWidget.Bar" />
-                <ImageView
-                    android:id="@+id/bar_13"
-                    android:background="@drawable/bar_rounded"
-                    android:minHeight="70dp"
-                    style="@style/Widget.Flux.AppWidget.Bar" />
-                <ImageView
-                    android:id="@+id/bar_14"
-                    android:background="@drawable/bar_rounded"
-                    android:minHeight="70dp"
-                    style="@style/Widget.Flux.AppWidget.Bar" />
-                <ImageView
-                    android:id="@+id/bar_15"
-                    android:background="@drawable/bar_rounded"
-                    android:minHeight="70dp"
-                    style="@style/Widget.Flux.AppWidget.Bar" />
-                <ImageView
-                    android:id="@+id/bar_16"
-                    android:background="@drawable/bar_rounded"
-                    android:minHeight="70dp"
-                    style="@style/Widget.Flux.AppWidget.Bar" />
-                <ImageView
-                    android:id="@+id/bar_17"
-                    android:background="@drawable/bar_rounded"
-                    android:minHeight="70dp"
-                    style="@style/Widget.Flux.AppWidget.Bar" />
-                <ImageView
-                    android:id="@+id/bar_18"
-                    android:background="@drawable/bar_rounded"
-                    android:minHeight="70dp"
-                    style="@style/Widget.Flux.AppWidget.Bar" />
-                <ImageView
-                    android:id="@+id/bar_19"
-                    android:background="@drawable/bar_rounded"
-                    android:minHeight="70dp"
-                    style="@style/Widget.Flux.AppWidget.Bar" />
-                <ImageView
-                    android:id="@+id/bar_20"
-                    android:background="@drawable/bar_rounded"
-                    android:minHeight="70dp"
-                    style="@style/Widget.Flux.AppWidget.Bar" />
-                <ImageView
-                    android:id="@+id/bar_21"
-                    android:background="@drawable/bar_rounded"
-                    android:minHeight="70dp"
-                    style="@style/Widget.Flux.AppWidget.Bar" />
-                <ImageView
-                    android:id="@+id/bar_22"
-                    android:background="@drawable/bar_rounded"
-                    android:minHeight="70dp"
-                    style="@style/Widget.Flux.AppWidget.Bar" />
-                <ImageView
-                    android:id="@+id/bar_23"
-                    android:background="@drawable/bar_rounded"
-                    android:minHeight="70dp"
-                    style="@style/Widget.Flux.AppWidget.Bar" />
-
-            </LinearLayout>
-
-        </LinearLayout>
-
-        <ImageView
-            android:id="@+id/graph_image"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:scaleType="fitCenter"
-            android:visibility="gone" />
-
-        <LinearLayout
-            android:id="@+id/api_error_container"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:gravity="center"
             android:orientation="vertical"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
             android:visibility="gone">
 
             <ImageView
-                android:layout_marginBottom="2dp"
-                android:src="@drawable/icon_api_error"
-                android:layout_width="38dp"
-                android:layout_height="38dp"/>
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:contentDescription="@null" />
 
             <TextView
-                tools:text="ENTSO-E API error"
-                android:id="@+id/api_error_text"
-                android:layout_width="wrap_content"
+                android:id="@+id/widget_chart_y_axis_top_value"
+                style="@style/Widget.Flux.AppWidget.Text"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                style="@style/Widget.Flux.AppWidget.Text.ApiError" />
+                android:ellipsize="end"
+                android:gravity="start"
+                android:maxLines="1"
+                android:textSize="9sp"
+                tools:text="1.60" />
+
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:contentDescription="@null" />
+
+            <TextView
+                android:id="@+id/widget_chart_y_axis_upper_mid_value"
+                style="@style/Widget.Flux.AppWidget.Text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:gravity="start"
+                android:maxLines="1"
+                android:textSize="9sp"
+                tools:text="1.20" />
+
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:contentDescription="@null" />
+
+            <TextView
+                android:id="@+id/widget_chart_y_axis_lower_mid_value"
+                style="@style/Widget.Flux.AppWidget.Text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:gravity="start"
+                android:maxLines="1"
+                android:textSize="9sp"
+                tools:text="0.80" />
+
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:contentDescription="@null" />
+
+            <TextView
+                android:id="@+id/widget_chart_y_axis_bottom_value"
+                style="@style/Widget.Flux.AppWidget.Text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:gravity="start"
+                android:maxLines="1"
+                android:textSize="9sp"
+                tools:text="0.40" />
+
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:contentDescription="@null" />
         </LinearLayout>
 
-    </FrameLayout>
+        <FrameLayout
+            android:id="@+id/chart_area_container"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1">
+
+            <LinearLayout
+                android:id="@+id/widget_chart_y_axis_guides"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp"
+                android:visibility="gone">
+
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:contentDescription="@null" />
+
+                <ImageView
+                    android:id="@+id/widget_chart_y_axis_top_guide"
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:alpha="0.18"
+                    android:background="@color/widget_text"
+                    android:contentDescription="@null" />
+
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:contentDescription="@null" />
+
+                <ImageView
+                    android:id="@+id/widget_chart_y_axis_upper_mid_guide"
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:alpha="0.12"
+                    android:background="@color/widget_text"
+                    android:contentDescription="@null" />
+
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:contentDescription="@null" />
+
+                <ImageView
+                    android:id="@+id/widget_chart_y_axis_lower_mid_guide"
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:alpha="0.12"
+                    android:background="@color/widget_text"
+                    android:contentDescription="@null" />
+
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:contentDescription="@null" />
+
+                <ImageView
+                    android:id="@+id/widget_chart_y_axis_bottom_guide"
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:alpha="0.18"
+                    android:background="@color/widget_text"
+                    android:contentDescription="@null" />
+
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:contentDescription="@null" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:orientation="vertical"
+                android:id="@+id/bar_graph_container"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="bottom">
+
+                    <ImageView
+                        android:id="@+id/bar_0"
+                        android:background="@drawable/bar_rounded_old"
+                        android:minHeight="50dp"
+                        style="@style/Widget.Flux.AppWidget.Bar" />
+                    <ImageView
+                        android:id="@+id/bar_1"
+                        android:background="@drawable/bar_rounded_old"
+                        android:minHeight="10dp"
+                        style="@style/Widget.Flux.AppWidget.Bar" />
+                    <ImageView
+                        android:id="@+id/bar_2"
+                        android:background="@drawable/bar_rounded_old"
+                        android:minHeight="30dp"
+                        style="@style/Widget.Flux.AppWidget.Bar" />
+                    <ImageView
+                        android:id="@+id/bar_3"
+                        android:background="@drawable/bar_rounded_current"
+                        android:minHeight="70dp"
+                        style="@style/Widget.Flux.AppWidget.Bar" />
+                    <ImageView
+                        android:id="@+id/bar_4"
+                        android:background="@drawable/bar_rounded"
+                        android:minHeight="70dp"
+                        style="@style/Widget.Flux.AppWidget.Bar" />
+                    <ImageView
+                        android:id="@+id/bar_5"
+                        android:background="@drawable/bar_rounded"
+                        android:minHeight="70dp"
+                        style="@style/Widget.Flux.AppWidget.Bar" />
+                    <ImageView
+                        android:id="@+id/bar_6"
+                        android:background="@drawable/bar_rounded"
+                        android:minHeight="70dp"
+                        style="@style/Widget.Flux.AppWidget.Bar" />
+                    <ImageView
+                        android:id="@+id/bar_7"
+                        android:background="@drawable/bar_rounded"
+                        android:minHeight="70dp"
+                        style="@style/Widget.Flux.AppWidget.Bar" />
+                    <ImageView
+                        android:id="@+id/bar_8"
+                        android:background="@drawable/bar_rounded"
+                        android:minHeight="70dp"
+                        style="@style/Widget.Flux.AppWidget.Bar" />
+                    <ImageView
+                        android:id="@+id/bar_9"
+                        android:background="@drawable/bar_rounded"
+                        android:minHeight="70dp"
+                        style="@style/Widget.Flux.AppWidget.Bar" />
+                    <ImageView
+                        android:id="@+id/bar_10"
+                        android:background="@drawable/bar_rounded"
+                        android:minHeight="70dp"
+                        style="@style/Widget.Flux.AppWidget.Bar" />
+                    <ImageView
+                        android:id="@+id/bar_11"
+                        android:background="@drawable/bar_rounded"
+                        android:minHeight="70dp"
+                        style="@style/Widget.Flux.AppWidget.Bar" />
+                    <ImageView
+                        android:id="@+id/bar_12"
+                        android:background="@drawable/bar_rounded"
+                        android:minHeight="70dp"
+                        style="@style/Widget.Flux.AppWidget.Bar" />
+                    <ImageView
+                        android:id="@+id/bar_13"
+                        android:background="@drawable/bar_rounded"
+                        android:minHeight="70dp"
+                        style="@style/Widget.Flux.AppWidget.Bar" />
+                    <ImageView
+                        android:id="@+id/bar_14"
+                        android:background="@drawable/bar_rounded"
+                        android:minHeight="70dp"
+                        style="@style/Widget.Flux.AppWidget.Bar" />
+                    <ImageView
+                        android:id="@+id/bar_15"
+                        android:background="@drawable/bar_rounded"
+                        android:minHeight="70dp"
+                        style="@style/Widget.Flux.AppWidget.Bar" />
+                    <ImageView
+                        android:id="@+id/bar_16"
+                        android:background="@drawable/bar_rounded"
+                        android:minHeight="70dp"
+                        style="@style/Widget.Flux.AppWidget.Bar" />
+                    <ImageView
+                        android:id="@+id/bar_17"
+                        android:background="@drawable/bar_rounded"
+                        android:minHeight="70dp"
+                        style="@style/Widget.Flux.AppWidget.Bar" />
+                    <ImageView
+                        android:id="@+id/bar_18"
+                        android:background="@drawable/bar_rounded"
+                        android:minHeight="70dp"
+                        style="@style/Widget.Flux.AppWidget.Bar" />
+                    <ImageView
+                        android:id="@+id/bar_19"
+                        android:background="@drawable/bar_rounded"
+                        android:minHeight="70dp"
+                        style="@style/Widget.Flux.AppWidget.Bar" />
+                    <ImageView
+                        android:id="@+id/bar_20"
+                        android:background="@drawable/bar_rounded"
+                        android:minHeight="70dp"
+                        style="@style/Widget.Flux.AppWidget.Bar" />
+                    <ImageView
+                        android:id="@+id/bar_21"
+                        android:background="@drawable/bar_rounded"
+                        android:minHeight="70dp"
+                        style="@style/Widget.Flux.AppWidget.Bar" />
+                    <ImageView
+                        android:id="@+id/bar_22"
+                        android:background="@drawable/bar_rounded"
+                        android:minHeight="70dp"
+                        style="@style/Widget.Flux.AppWidget.Bar" />
+                    <ImageView
+                        android:id="@+id/bar_23"
+                        android:background="@drawable/bar_rounded"
+                        android:minHeight="70dp"
+                        style="@style/Widget.Flux.AppWidget.Bar" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <ImageView
+                android:id="@+id/graph_image"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:scaleType="fitCenter"
+                android:visibility="gone" />
+
+            <LinearLayout
+                android:id="@+id/api_error_container"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <ImageView
+                    android:layout_marginBottom="2dp"
+                    android:src="@drawable/icon_api_error"
+                    android:layout_width="38dp"
+                    android:layout_height="38dp"/>
+
+                <TextView
+                    tools:text="ENTSO-E API error"
+                    android:id="@+id/api_error_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    style="@style/Widget.Flux.AppWidget.Text.ApiError" />
+            </LinearLayout>
+
+        </FrameLayout>
+    </LinearLayout>
 
     <LinearLayout
         android:id="@+id/widget_time_container"
         android:orientation="horizontal"
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
+
+        <ImageView
+            android:id="@+id/widget_chart_y_axis_spacer"
+            android:layout_width="28dp"
+            android:layout_height="1dp"
+            android:contentDescription="@null"
+            android:visibility="gone" />
 
         <TextView
             tools:text="10"
@@ -315,6 +483,3 @@
     </LinearLayout>
 
 </LinearLayout>
-
-
-
