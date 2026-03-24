@@ -377,7 +377,7 @@ public class GraphUtils {
         Paint guide = new Paint(Paint.ANTI_ALIAS_FLAG);
         guide.setStyle(Paint.Style.STROKE);
         guide.setStrokeWidth(Math.max(1f, lineWidthPx * 0.55f));
-        guide.setAlpha(128);
+        guide.setAlpha(104);
 
         float clampedSelectedFraction = Math.max(0f, Math.min(1f, selectedFraction));
         float selectedX = leftX + (usableW * clampedSelectedFraction);
