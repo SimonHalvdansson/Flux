@@ -24,6 +24,8 @@ import java.util.List;
 public class MainWidget extends AppWidgetProvider {
 
     private static final String TAG = "MainWidget";
+    private static final int ROOT_HORIZONTAL_PADDING_DP = 16;
+    private static final int Y_AXIS_WIDTH_DP = 28;
 
     // All bar IDs. Must be exactly 24 for consistent indexing.
     private static final int[] barIds = {
@@ -225,8 +227,11 @@ public class MainWidget extends AppWidgetProvider {
             views.setViewVisibility(R.id.graph_image, View.VISIBLE);
 
             int curWdp = options != null ? options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 0) : 0;
-            int curHdp = options != null ? options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 0) : 0;
-            int contentWdp = curWdp;
+            int contentWdp = curWdp - (ROOT_HORIZONTAL_PADDING_DP * 2);
+            if (showYAxis) {
+                contentWdp -= Y_AXIS_WIDTH_DP;
+            }
+            contentWdp = Math.max(1, contentWdp);
             int graphHeight = shortWidget ? barMaxHeightDp - 5 : barMaxHeightDp - 16;
 
             android.util.DisplayMetrics dm = context.getResources().getDisplayMetrics();
