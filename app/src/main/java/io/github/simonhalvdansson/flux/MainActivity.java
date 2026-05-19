@@ -108,8 +108,18 @@ public class MainActivity extends AppCompatActivity {
     private TextView currentPriceValue;
     private TextView currentPriceUnit;
     private View currentPriceInfoTrigger;
+    private TextView yesterdayAverageValue;
+    private TextView yesterdayAverageUnit;
+    private TextView yesterdayAverageDate;
+    private TextView yesterdayAverageRange;
     private TextView todayAverageValue;
+    private TextView todayAverageUnit;
+    private TextView todayAverageDate;
+    private TextView todayAverageRange;
     private TextView tomorrowAverageValue;
+    private TextView tomorrowAverageUnit;
+    private TextView tomorrowAverageDate;
+    private TextView tomorrowAverageRange;
     private View settingsToggleRow;
     private ImageView settingsToggleCaret;
     private View settingsExpandableContainer;
@@ -186,8 +196,18 @@ public class MainActivity extends AppCompatActivity {
         currentPriceValue = findViewById(R.id.current_price_value);
         currentPriceUnit = findViewById(R.id.current_price_unit);
         currentPriceInfoTrigger = findViewById(R.id.current_price_info_trigger);
+        yesterdayAverageValue = findViewById(R.id.yesterday_average_value);
+        yesterdayAverageUnit = findViewById(R.id.yesterday_average_unit);
+        yesterdayAverageDate = findViewById(R.id.yesterday_average_date);
+        yesterdayAverageRange = findViewById(R.id.yesterday_average_range);
         todayAverageValue = findViewById(R.id.today_average_value);
+        todayAverageUnit = findViewById(R.id.today_average_unit);
+        todayAverageDate = findViewById(R.id.today_average_date);
+        todayAverageRange = findViewById(R.id.today_average_range);
         tomorrowAverageValue = findViewById(R.id.tomorrow_average_value);
+        tomorrowAverageUnit = findViewById(R.id.tomorrow_average_unit);
+        tomorrowAverageDate = findViewById(R.id.tomorrow_average_date);
+        tomorrowAverageRange = findViewById(R.id.tomorrow_average_range);
         mainScrollView = findViewById(R.id.main_container);
         settingsToggleRow = findViewById(R.id.settings_toggle_row);
         settingsToggleCaret = findViewById(R.id.settings_toggle_caret);
@@ -840,8 +860,16 @@ public class MainActivity extends AppCompatActivity {
 
     private void renderLoadingPlaceholders() {
         currentPriceValue.setText(R.string.current_price_placeholder);
+        updateAverageCardDates();
+        yesterdayAverageValue.setText(R.string.current_price_placeholder);
+        yesterdayAverageUnit.setText(R.string.average_loading);
+        yesterdayAverageRange.setText(R.string.average_min_max_placeholder);
         todayAverageValue.setText(R.string.current_price_placeholder);
+        todayAverageUnit.setText(R.string.average_loading);
+        todayAverageRange.setText(R.string.average_min_max_placeholder);
         tomorrowAverageValue.setText(R.string.current_price_placeholder);
+        tomorrowAverageUnit.setText(R.string.average_loading);
+        tomorrowAverageRange.setText(R.string.average_min_max_placeholder);
     }
 
     private void renderBarChart() {
@@ -861,7 +889,7 @@ public class MainActivity extends AppCompatActivity {
             clearChartData();
             cancelBarAnimation();
             chartContainer.setVisibility(View.GONE);
-            renderAverageSummaries(hourlyData);
+            renderAverageSummaries(allData);
             return;
         }
 
@@ -926,7 +954,7 @@ public class MainActivity extends AppCompatActivity {
 
         logChartDiagnostics(allData, hourlyData, displayedGraphEntries, chartMode);
         updateTimeLabels(displayedBarEntries);
-        renderAverageSummaries(hourlyData);
+        renderAverageSummaries(allData);
     }
 
     private void clearChartData() {
@@ -1368,51 +1396,127 @@ public class MainActivity extends AppCompatActivity {
         return WidgetPreferences.POOL_MODE_AVERAGE;
     }
 
-    private void renderAverageSummaries(List<PriceFetcher.PriceEntry> hourlyData) {
+    private void renderAverageSummaries(List<PriceFetcher.PriceEntry> entries) {
         String country = getSelectedCountryCode();
-        ZoneId zoneId = ZoneId.systemDefault();
+        ZoneId zoneId = RegionConfig.getZoneId(country);
+        if (zoneId == null) {
+            zoneId = ZoneId.systemDefault();
+        }
         LocalDate today = LocalDate.now(zoneId);
+        LocalDate yesterday = today.minusDays(1);
         LocalDate tomorrow = today.plusDays(1);
+        updateAverageCardDates(yesterday, today, tomorrow);
 
-        double todayTotal = 0.0;
-        int todayCount = 0;
-        double tomorrowTotal = 0.0;
-        int tomorrowCount = 0;
+        AverageSummary yesterdaySummary = new AverageSummary();
+        AverageSummary todaySummary = new AverageSummary();
+        AverageSummary tomorrowSummary = new AverageSummary();
 
-        for (PriceFetcher.PriceEntry entry : hourlyData) {
-            if (entry.startTime == null) {
+        for (PriceFetcher.PriceEntry entry : entries) {
+            if (entry.startTime == null || entry.endTime == null) {
+                continue;
+            }
+            long minutes = Duration.between(entry.startTime, entry.endTime).toMinutes();
+            if (minutes <= 0) {
                 continue;
             }
             LocalDate entryDate = entry.startTime.atZoneSameInstant(zoneId).toLocalDate();
-            if (today.equals(entryDate)) {
-                todayTotal += entry.pricePerKwh;
-                todayCount++;
+            if (yesterday.equals(entryDate)) {
+                yesterdaySummary.add(entry.pricePerKwh, minutes);
+            } else if (today.equals(entryDate)) {
+                todaySummary.add(entry.pricePerKwh, minutes);
             } else if (tomorrow.equals(entryDate)) {
-                tomorrowTotal += entry.pricePerKwh;
-                tomorrowCount++;
+                tomorrowSummary.add(entry.pricePerKwh, minutes);
             }
         }
 
-        if (todayCount == 0) {
-            todayAverageValue.setText(R.string.today_average_unavailable);
-        } else {
-            String averageText = getString(
-                    R.string.today_average_format,
-                    PriceDisplayUtils.formatPrice(todayTotal / todayCount, country, sharedPreferences),
-                    PriceDisplayUtils.getUnitText(country, sharedPreferences)
-            );
-            todayAverageValue.setText(averageText);
+        String unitText = PriceDisplayUtils.getUnitText(country, sharedPreferences);
+        setAverageCard(
+                yesterdayAverageValue,
+                yesterdayAverageUnit,
+                yesterdayAverageRange,
+                yesterdaySummary,
+                country,
+                unitText,
+                R.string.average_unavailable_short
+        );
+        setAverageCard(
+                todayAverageValue,
+                todayAverageUnit,
+                todayAverageRange,
+                todaySummary,
+                country,
+                unitText,
+                R.string.average_unavailable_short
+        );
+        setAverageCard(
+                tomorrowAverageValue,
+                tomorrowAverageUnit,
+                tomorrowAverageRange,
+                tomorrowSummary,
+                country,
+                unitText,
+                R.string.tomorrow_average_pending
+        );
+    }
+
+    private void updateAverageCardDates() {
+        String country = getSelectedCountryCode();
+        ZoneId zoneId = RegionConfig.getZoneId(country);
+        if (zoneId == null) {
+            zoneId = ZoneId.systemDefault();
+        }
+        LocalDate today = LocalDate.now(zoneId);
+        updateAverageCardDates(today.minusDays(1), today, today.plusDays(1));
+    }
+
+    private void updateAverageCardDates(LocalDate yesterday, LocalDate today, LocalDate tomorrow) {
+        yesterdayAverageDate.setText(String.valueOf(yesterday.getDayOfMonth()));
+        todayAverageDate.setText(String.valueOf(today.getDayOfMonth()));
+        tomorrowAverageDate.setText(String.valueOf(tomorrow.getDayOfMonth()));
+    }
+
+    private void setAverageCard(TextView valueView,
+                                TextView captionView,
+                                TextView rangeView,
+                                AverageSummary summary,
+                                String country,
+                                String unitText,
+                                int unavailableCaptionResId) {
+        if (!summary.hasData()) {
+            valueView.setText(R.string.current_price_placeholder);
+            captionView.setText(unavailableCaptionResId);
+            rangeView.setText(R.string.average_min_max_placeholder);
+            return;
         }
 
-        if (tomorrowCount == 0) {
-            tomorrowAverageValue.setText(R.string.tomorrow_average_pending);
-        } else {
-            String tomorrowText = getString(
-                    R.string.tomorrow_average_format,
-                    PriceDisplayUtils.formatPrice(tomorrowTotal / tomorrowCount, country, sharedPreferences),
-                    PriceDisplayUtils.getUnitText(country, sharedPreferences)
-            );
-            tomorrowAverageValue.setText(tomorrowText);
+        valueView.setText(PriceDisplayUtils.formatPrice(summary.average(), country, sharedPreferences));
+        captionView.setText(unitText);
+        rangeView.setText(getString(
+                R.string.average_min_max_format,
+                PriceDisplayUtils.formatPrice(summary.minPrice, country, sharedPreferences),
+                PriceDisplayUtils.formatPrice(summary.maxPrice, country, sharedPreferences)
+        ));
+    }
+
+    private static final class AverageSummary {
+        private double weightedTotal = 0.0;
+        private long totalMinutes = 0L;
+        private double minPrice = Double.POSITIVE_INFINITY;
+        private double maxPrice = Double.NEGATIVE_INFINITY;
+
+        void add(double price, long minutes) {
+            weightedTotal += price * minutes;
+            totalMinutes += minutes;
+            minPrice = Math.min(minPrice, price);
+            maxPrice = Math.max(maxPrice, price);
+        }
+
+        boolean hasData() {
+            return totalMinutes > 0L;
+        }
+
+        double average() {
+            return weightedTotal / totalMinutes;
         }
     }
 
@@ -1611,7 +1715,7 @@ public class MainActivity extends AppCompatActivity {
                 contentView.findViewById(R.id.current_price_details_price_value),
                 getString(
                         R.string.current_price_details_value_exact,
-                        formatDetailedPrice(currentEntry.pricePerKwh * displayMultiplier, countryCode, 0, 6),
+                        formatDetailedPrice(currentEntry.pricePerKwh * displayMultiplier, countryCode, 0, 5),
                         unitText
                 )
         );
@@ -1668,7 +1772,7 @@ public class MainActivity extends AppCompatActivity {
 
         return getString(
                 R.string.current_price_details_value_original,
-                formatDetailedPrice(currentEntry.pricePerKwhEur, countryCode, 0, 6)
+                formatDetailedPrice(currentEntry.pricePerKwhEur, countryCode, 0, 5)
         );
     }
 
@@ -1690,7 +1794,7 @@ public class MainActivity extends AppCompatActivity {
 
         return getString(
                 R.string.current_price_details_value_exchange_rate,
-                formatDetailedPrice(currentEntry.exchangeRatePerEur, countryCode, 0, 3),
+                formatDetailedPrice(currentEntry.exchangeRatePerEur, countryCode, 0, 5),
                 currency
         );
     }

@@ -19,6 +19,25 @@ Notes:
 - After editing layout/resource files, run `assembleDebug` immediately. This catches XML/resource merger issues quickly.
 - Exception: for trivial, isolated visual tweaks like a 1-2sp text-size change or a small width/padding adjustment, you do not need to run `assembleDebug`.
 
+## Device Verification
+
+Do not run or control a connected Android device or emulator unless the user explicitly asks for device verification. When asked, use `adb devices` to confirm a device or emulator is online.
+
+If `adb` is not on `PATH` in the Codex environment on this Mac, use `/Users/simon/Library/Android/sdk/platform-tools/adb`.
+
+For UI verification, build the debug APK, install it, launch Flux, inspect the hierarchy as needed, and capture screenshots:
+
+```shell
+adb devices
+adb install -r app/build/outputs/apk/debug/app-debug.apk
+adb shell monkey -p io.github.simonhalvdansson.flux -c android.intent.category.LAUNCHER 1
+adb shell uiautomator dump /dev/tty
+adb shell screencap -p /sdcard/flux-ui.png
+adb pull /sdcard/flux-ui.png /tmp/flux-ui.png
+```
+
+Use `adb shell input tap ...`, `adb shell input swipe ...`, and additional `uiautomator dump` calls to navigate only when needed for the requested verification.
+
 ## File Guide
 
 - `app/src/main/java/io/github/simonhalvdansson/flux/`: main app Java source, activities, widgets, price logic.
