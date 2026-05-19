@@ -111,15 +111,18 @@ public class MainActivity extends AppCompatActivity {
     private TextView yesterdayAverageValue;
     private TextView yesterdayAverageUnit;
     private TextView yesterdayAverageDate;
-    private TextView yesterdayAverageRange;
+    private TextView yesterdayAverageMin;
+    private TextView yesterdayAverageMax;
     private TextView todayAverageValue;
     private TextView todayAverageUnit;
     private TextView todayAverageDate;
-    private TextView todayAverageRange;
+    private TextView todayAverageMin;
+    private TextView todayAverageMax;
     private TextView tomorrowAverageValue;
     private TextView tomorrowAverageUnit;
     private TextView tomorrowAverageDate;
-    private TextView tomorrowAverageRange;
+    private TextView tomorrowAverageMin;
+    private TextView tomorrowAverageMax;
     private View settingsToggleRow;
     private ImageView settingsToggleCaret;
     private View settingsExpandableContainer;
@@ -199,15 +202,18 @@ public class MainActivity extends AppCompatActivity {
         yesterdayAverageValue = findViewById(R.id.yesterday_average_value);
         yesterdayAverageUnit = findViewById(R.id.yesterday_average_unit);
         yesterdayAverageDate = findViewById(R.id.yesterday_average_date);
-        yesterdayAverageRange = findViewById(R.id.yesterday_average_range);
+        yesterdayAverageMin = findViewById(R.id.yesterday_average_min);
+        yesterdayAverageMax = findViewById(R.id.yesterday_average_max);
         todayAverageValue = findViewById(R.id.today_average_value);
         todayAverageUnit = findViewById(R.id.today_average_unit);
         todayAverageDate = findViewById(R.id.today_average_date);
-        todayAverageRange = findViewById(R.id.today_average_range);
+        todayAverageMin = findViewById(R.id.today_average_min);
+        todayAverageMax = findViewById(R.id.today_average_max);
         tomorrowAverageValue = findViewById(R.id.tomorrow_average_value);
         tomorrowAverageUnit = findViewById(R.id.tomorrow_average_unit);
         tomorrowAverageDate = findViewById(R.id.tomorrow_average_date);
-        tomorrowAverageRange = findViewById(R.id.tomorrow_average_range);
+        tomorrowAverageMin = findViewById(R.id.tomorrow_average_min);
+        tomorrowAverageMax = findViewById(R.id.tomorrow_average_max);
         mainScrollView = findViewById(R.id.main_container);
         settingsToggleRow = findViewById(R.id.settings_toggle_row);
         settingsToggleCaret = findViewById(R.id.settings_toggle_caret);
@@ -863,13 +869,16 @@ public class MainActivity extends AppCompatActivity {
         updateAverageCardDates();
         yesterdayAverageValue.setText(R.string.current_price_placeholder);
         yesterdayAverageUnit.setText(R.string.average_loading);
-        yesterdayAverageRange.setText(R.string.average_min_max_placeholder);
+        yesterdayAverageMin.setText(R.string.average_min_placeholder);
+        yesterdayAverageMax.setText(R.string.average_max_placeholder);
         todayAverageValue.setText(R.string.current_price_placeholder);
         todayAverageUnit.setText(R.string.average_loading);
-        todayAverageRange.setText(R.string.average_min_max_placeholder);
+        todayAverageMin.setText(R.string.average_min_placeholder);
+        todayAverageMax.setText(R.string.average_max_placeholder);
         tomorrowAverageValue.setText(R.string.current_price_placeholder);
         tomorrowAverageUnit.setText(R.string.average_loading);
-        tomorrowAverageRange.setText(R.string.average_min_max_placeholder);
+        tomorrowAverageMin.setText(R.string.average_min_placeholder);
+        tomorrowAverageMax.setText(R.string.average_max_placeholder);
     }
 
     private void renderBarChart() {
@@ -1433,7 +1442,8 @@ public class MainActivity extends AppCompatActivity {
         setAverageCard(
                 yesterdayAverageValue,
                 yesterdayAverageUnit,
-                yesterdayAverageRange,
+                yesterdayAverageMin,
+                yesterdayAverageMax,
                 yesterdaySummary,
                 country,
                 unitText,
@@ -1442,7 +1452,8 @@ public class MainActivity extends AppCompatActivity {
         setAverageCard(
                 todayAverageValue,
                 todayAverageUnit,
-                todayAverageRange,
+                todayAverageMin,
+                todayAverageMax,
                 todaySummary,
                 country,
                 unitText,
@@ -1451,7 +1462,8 @@ public class MainActivity extends AppCompatActivity {
         setAverageCard(
                 tomorrowAverageValue,
                 tomorrowAverageUnit,
-                tomorrowAverageRange,
+                tomorrowAverageMin,
+                tomorrowAverageMax,
                 tomorrowSummary,
                 country,
                 unitText,
@@ -1477,7 +1489,8 @@ public class MainActivity extends AppCompatActivity {
 
     private void setAverageCard(TextView valueView,
                                 TextView captionView,
-                                TextView rangeView,
+                                TextView minView,
+                                TextView maxView,
                                 AverageSummary summary,
                                 String country,
                                 String unitText,
@@ -1485,15 +1498,19 @@ public class MainActivity extends AppCompatActivity {
         if (!summary.hasData()) {
             valueView.setText(R.string.current_price_placeholder);
             captionView.setText(unavailableCaptionResId);
-            rangeView.setText(R.string.average_min_max_placeholder);
+            minView.setText(R.string.average_min_placeholder);
+            maxView.setText(R.string.average_max_placeholder);
             return;
         }
 
         valueView.setText(PriceDisplayUtils.formatPrice(summary.average(), country, sharedPreferences));
         captionView.setText(unitText);
-        rangeView.setText(getString(
-                R.string.average_min_max_format,
-                PriceDisplayUtils.formatPrice(summary.minPrice, country, sharedPreferences),
+        minView.setText(getString(
+                R.string.average_min_format,
+                PriceDisplayUtils.formatPrice(summary.minPrice, country, sharedPreferences)
+        ));
+        maxView.setText(getString(
+                R.string.average_max_format,
                 PriceDisplayUtils.formatPrice(summary.maxPrice, country, sharedPreferences)
         ));
     }

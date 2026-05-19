@@ -25,9 +25,11 @@
     <string name="average_label">Average</string>
     <string name="average_unavailable_short">No data</string>
     <string name="average_loading">Loading</string>
-    <string name="average_min_max_format">Min %1$s  Max %2$s</string>
-    <string name="average_min_max_placeholder">Min --  Max --</string>
-    <string name="tomorrow_average_pending">Around 14:00</string>
+    <string name="average_min_format">%1$s</string>
+    <string name="average_max_format">%1$s</string>
+    <string name="average_min_placeholder">--</string>
+    <string name="average_max_placeholder">--</string>
+    <string name="tomorrow_average_pending">Arriving by 14:00</string>
     <string name="configuration_label">Configuration</string>
     <string name="price_settings_title">Price settings</string>
     <string name="country_label">Country</string>
