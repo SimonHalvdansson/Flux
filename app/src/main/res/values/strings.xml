@@ -29,6 +29,10 @@
     <string name="average_max_format">%1$s</string>
     <string name="average_min_placeholder">--</string>
     <string name="average_max_placeholder">--</string>
+    <string name="average_details_density_15_minutes">15 min</string>
+    <string name="average_details_density_30_minutes">30 min</string>
+    <string name="average_details_density_hourly">Hourly</string>
+    <string name="average_details_no_prices">No prices available</string>
     <string name="tomorrow_average_pending">Arriving by 14:00</string>
     <string name="configuration_label">Configuration</string>
     <string name="price_settings_title">Price settings</string>
