@@ -17,8 +17,12 @@ import android.os.Handler;
 import android.os.Looper;
 import android.transition.Transition;
 import android.transition.TransitionManager;
+import android.text.SpannableString;
+import android.text.Spanned;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.text.style.ForegroundColorSpan;
+import android.text.style.RelativeSizeSpan;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.Gravity;
@@ -87,8 +91,6 @@ public class MainActivity extends AppCompatActivity {
     private static final long AVERAGE_DETAILS_SCRIM_DURATION_MS = 180L;
     private static final int AVERAGE_DETAILS_MAX_WIDTH_DP = 520;
     private static final int AVERAGE_DETAILS_SIDE_MARGIN_DP = 24;
-    private static final int AVERAGE_DETAILS_PRICE_LIST_HEIGHT_DP = 300;
-    private static final int AVERAGE_DETAILS_EMPTY_PRICE_LIST_HEIGHT_DP = 140;
     private static final DateTimeFormatter AVERAGE_DETAILS_DATE_FORMATTER =
             DateTimeFormatter.ofPattern("MMMM d", Locale.ENGLISH);
     private static final int AVERAGE_DAY_YESTERDAY = -1;
@@ -131,16 +133,19 @@ public class MainActivity extends AppCompatActivity {
     private TextView currentPriceUnit;
     private View currentPriceInfoTrigger;
     private FrameLayout activityRoot;
+    private View yesterdayAverageCard;
     private TextView yesterdayAverageValue;
     private TextView yesterdayAverageUnit;
     private TextView yesterdayAverageDate;
     private TextView yesterdayAverageMin;
     private TextView yesterdayAverageMax;
+    private View todayAverageCard;
     private TextView todayAverageValue;
     private TextView todayAverageUnit;
     private TextView todayAverageDate;
     private TextView todayAverageMin;
     private TextView todayAverageMax;
+    private View tomorrowAverageCard;
     private TextView tomorrowAverageValue;
     private TextView tomorrowAverageUnit;
     private TextView tomorrowAverageDate;
@@ -232,16 +237,19 @@ public class MainActivity extends AppCompatActivity {
         currentPriceValue = findViewById(R.id.current_price_value);
         currentPriceUnit = findViewById(R.id.current_price_unit);
         currentPriceInfoTrigger = findViewById(R.id.current_price_info_trigger);
+        yesterdayAverageCard = findViewById(R.id.yesterday_average_card);
         yesterdayAverageValue = findViewById(R.id.yesterday_average_value);
         yesterdayAverageUnit = findViewById(R.id.yesterday_average_unit);
         yesterdayAverageDate = findViewById(R.id.yesterday_average_date);
         yesterdayAverageMin = findViewById(R.id.yesterday_average_min);
         yesterdayAverageMax = findViewById(R.id.yesterday_average_max);
+        todayAverageCard = findViewById(R.id.today_average_card);
         todayAverageValue = findViewById(R.id.today_average_value);
         todayAverageUnit = findViewById(R.id.today_average_unit);
         todayAverageDate = findViewById(R.id.today_average_date);
         todayAverageMin = findViewById(R.id.today_average_min);
         todayAverageMax = findViewById(R.id.today_average_max);
+        tomorrowAverageCard = findViewById(R.id.tomorrow_average_card);
         tomorrowAverageValue = findViewById(R.id.tomorrow_average_value);
         tomorrowAverageUnit = findViewById(R.id.tomorrow_average_unit);
         tomorrowAverageDate = findViewById(R.id.tomorrow_average_date);
@@ -914,6 +922,9 @@ public class MainActivity extends AppCompatActivity {
         tomorrowAverageUnit.setText(R.string.average_loading);
         tomorrowAverageMin.setText(R.string.average_min_placeholder);
         tomorrowAverageMax.setText(R.string.average_max_placeholder);
+        setAverageCardEnabled(yesterdayAverageCard, false);
+        setAverageCardEnabled(todayAverageCard, false);
+        setAverageCardEnabled(tomorrowAverageCard, false);
     }
 
     private void renderBarChart() {
@@ -1504,6 +1515,9 @@ public class MainActivity extends AppCompatActivity {
                 unitText,
                 R.string.tomorrow_average_pending
         );
+        setAverageCardEnabled(yesterdayAverageCard, yesterdaySummary.hasData());
+        setAverageCardEnabled(todayAverageCard, todaySummary.hasData());
+        setAverageCardEnabled(tomorrowAverageCard, tomorrowSummary.hasData());
     }
 
     private void updateAverageCardDates() {
@@ -1550,6 +1564,15 @@ public class MainActivity extends AppCompatActivity {
         ));
     }
 
+    private void setAverageCardEnabled(View card, boolean enabled) {
+        if (card == null) {
+            return;
+        }
+        card.setEnabled(enabled);
+        card.setClickable(enabled);
+        card.setFocusable(enabled);
+    }
+
     private static final class AverageSummary {
         private double weightedTotal = 0.0;
         private long totalMinutes = 0L;
@@ -1574,30 +1597,33 @@ public class MainActivity extends AppCompatActivity {
 
     private static final class AverageDayDetails {
         private final int titleResId;
-        private final int unavailableTextResId;
         private final LocalDate date;
         private final ZoneId zoneId;
         private final String countryCode;
         private final String unitText;
         private final List<PriceFetcher.PriceEntry> entries;
         private final AverageSummary summary;
+        private final PriceFetcher.PriceEntry minEntry;
+        private final PriceFetcher.PriceEntry maxEntry;
 
         AverageDayDetails(int titleResId,
-                          int unavailableTextResId,
                           LocalDate date,
                           ZoneId zoneId,
                           String countryCode,
                           String unitText,
                           List<PriceFetcher.PriceEntry> entries,
-                          AverageSummary summary) {
+                          AverageSummary summary,
+                          PriceFetcher.PriceEntry minEntry,
+                          PriceFetcher.PriceEntry maxEntry) {
             this.titleResId = titleResId;
-            this.unavailableTextResId = unavailableTextResId;
             this.date = date;
             this.zoneId = zoneId;
             this.countryCode = countryCode;
             this.unitText = unitText;
             this.entries = entries;
             this.summary = summary;
+            this.minEntry = minEntry;
+            this.maxEntry = maxEntry;
         }
     }
 
@@ -1766,13 +1792,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupAverageCardDialogs() {
-        findViewById(R.id.yesterday_average_card).setOnClickListener(
+        yesterdayAverageCard.setOnClickListener(
                 v -> showAverageDetailsDialog(AVERAGE_DAY_YESTERDAY, v)
         );
-        findViewById(R.id.today_average_card).setOnClickListener(
+        todayAverageCard.setOnClickListener(
                 v -> showAverageDetailsDialog(AVERAGE_DAY_TODAY, v)
         );
-        findViewById(R.id.tomorrow_average_card).setOnClickListener(
+        tomorrowAverageCard.setOnClickListener(
                 v -> showAverageDetailsDialog(AVERAGE_DAY_TOMORROW, v)
         );
     }
@@ -1783,6 +1809,9 @@ public class MainActivity extends AppCompatActivity {
         }
 
         AverageDayDetails details = buildAverageDayDetails(dayOffset);
+        if (!details.summary.hasData()) {
+            return;
+        }
         View overlay = getLayoutInflater().inflate(R.layout.dialog_average_details, activityRoot, false);
         View scrim = overlay.findViewById(R.id.average_details_scrim);
         View dialogCard = overlay.findViewById(R.id.average_details_card);
@@ -1792,9 +1821,6 @@ public class MainActivity extends AppCompatActivity {
 
         bindAverageDetailsDialog(overlay, details);
         scrim.setOnClickListener(v -> dismissAverageDetailsDialog(true));
-        dialogCard.setOnClickListener(v -> {
-            // Consume clicks inside the dialog so the scrim remains the close target.
-        });
 
         activityRoot.addView(overlay, new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
@@ -1819,49 +1845,79 @@ public class MainActivity extends AppCompatActivity {
 
         TextView valueView = overlay.findViewById(R.id.average_details_value);
         TextView unitView = overlay.findViewById(R.id.average_details_unit);
-        TextView minView = overlay.findViewById(R.id.average_details_min);
-        TextView maxView = overlay.findViewById(R.id.average_details_max);
-        if (details.summary.hasData()) {
-            valueView.setText(PriceDisplayUtils.formatPrice(
-                    details.summary.average(),
-                    details.countryCode,
-                    sharedPreferences
-            ));
-            unitView.setText(details.unitText);
-            minView.setText(getString(
-                    R.string.average_min_format,
-                    PriceDisplayUtils.formatPrice(details.summary.minPrice, details.countryCode, sharedPreferences)
-            ));
-            maxView.setText(getString(
-                    R.string.average_max_format,
-                    PriceDisplayUtils.formatPrice(details.summary.maxPrice, details.countryCode, sharedPreferences)
-            ));
-        } else {
-            valueView.setText(R.string.current_price_placeholder);
-            unitView.setText(details.unavailableTextResId);
-            minView.setText(R.string.average_min_placeholder);
-            maxView.setText(R.string.average_max_placeholder);
-        }
+        TextView minPriceView = overlay.findViewById(R.id.average_details_min_price);
+        TextView minTimeView = overlay.findViewById(R.id.average_details_min_time);
+        TextView maxPriceView = overlay.findViewById(R.id.average_details_max_price);
+        TextView maxTimeView = overlay.findViewById(R.id.average_details_max_time);
+        valueView.setText(PriceDisplayUtils.formatPrice(
+                details.summary.average(),
+                details.countryCode,
+                sharedPreferences
+        ));
+        unitView.setText(details.unitText);
+        bindAverageDetailsExtreme(
+                minPriceView,
+                minTimeView,
+                details.minEntry,
+                details
+        );
+        bindAverageDetailsExtreme(
+                maxPriceView,
+                maxTimeView,
+                details.maxEntry,
+                details
+        );
 
         ChipGroup chipGroup = overlay.findViewById(R.id.average_details_density_chip_group);
-        if (details.entries.isEmpty()) {
-            chipGroup.setVisibility(View.GONE);
-        } else {
-            chipGroup.setVisibility(View.VISIBLE);
-            configureAverageDetailsChipAnimation(chipGroup);
-            chipGroup.check(R.id.average_details_density_15_chip);
-            chipGroup.setOnCheckedChangeListener((group, checkedId) -> {
-                if (checkedId == View.NO_ID) {
-                    return;
-                }
-                renderAverageDetailsPriceRows(
-                        overlay,
-                        details,
-                        getAverageDetailsIncrementForChip(checkedId)
-                );
-            });
-        }
-        renderAverageDetailsPriceRows(overlay, details, WidgetPreferences.INCREMENT_15_MINUTES);
+        configureAverageDetailsChipAnimation(chipGroup);
+        chipGroup.check(R.id.average_details_density_hourly_chip);
+        chipGroup.setOnCheckedChangeListener((group, checkedId) -> {
+            if (checkedId == View.NO_ID) {
+                return;
+            }
+            renderAverageDetailsPriceRows(
+                    overlay,
+                    details,
+                    getAverageDetailsIncrementForChip(checkedId)
+            );
+        });
+        renderAverageDetailsPriceRows(overlay, details, WidgetPreferences.INCREMENT_60_MINUTES);
+    }
+
+    private void bindAverageDetailsExtreme(TextView priceView,
+                                           TextView timeView,
+                                           PriceFetcher.PriceEntry entry,
+                                           AverageDayDetails details) {
+        String priceText = PriceDisplayUtils.formatPrice(
+                entry.pricePerKwh,
+                details.countryCode,
+                sharedPreferences
+        );
+        String displayText = getString(
+                R.string.current_price_details_value_exact,
+                priceText,
+                details.unitText
+        );
+        SpannableString styledText = new SpannableString(displayText);
+        int unitStart = Math.max(0, displayText.length() - details.unitText.length());
+        int unitColor = MaterialColors.getColor(
+                priceView,
+                com.google.android.material.R.attr.colorOnSurfaceVariant
+        );
+        styledText.setSpan(
+                new RelativeSizeSpan(0.78f),
+                unitStart,
+                displayText.length(),
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+        );
+        styledText.setSpan(
+                new ForegroundColorSpan(unitColor),
+                unitStart,
+                displayText.length(),
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+        );
+        priceView.setText(styledText);
+        timeView.setText(formatAverageDetailsTimeRange(entry, details.zoneId));
     }
 
     private String formatAverageDetailsDate(LocalDate date) {
@@ -1890,29 +1946,6 @@ public class MainActivity extends AppCompatActivity {
                 details.entries,
                 incrementMinutes
         );
-        boolean hasPrices = !displayEntries.isEmpty();
-        setAverageDetailsPriceListHeight(
-                scrollView,
-                hasPrices ? AVERAGE_DETAILS_PRICE_LIST_HEIGHT_DP : AVERAGE_DETAILS_EMPTY_PRICE_LIST_HEIGHT_DP
-        );
-        scrollView.setFillViewport(!hasPrices);
-        rows.setGravity(hasPrices ? Gravity.NO_GRAVITY : Gravity.CENTER);
-        if (displayEntries.isEmpty()) {
-            TextView emptyView = new TextView(this);
-            emptyView.setGravity(Gravity.CENTER);
-            emptyView.setText(R.string.average_details_no_prices);
-            emptyView.setTextColor(MaterialColors.getColor(
-                    emptyView,
-                    com.google.android.material.R.attr.colorOnSurfaceVariant
-            ));
-            emptyView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f);
-            emptyView.setTypeface(Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD));
-            rows.addView(emptyView, new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.MATCH_PARENT
-            ));
-            return;
-        }
 
         for (int i = 0; i < displayEntries.size(); i++) {
             if (i > 0) {
@@ -1931,15 +1964,6 @@ public class MainActivity extends AppCompatActivity {
             rows.addView(row);
         }
         scrollView.scrollTo(0, 0);
-    }
-
-    private void setAverageDetailsPriceListHeight(ScrollView scrollView, int heightDp) {
-        ViewGroup.LayoutParams params = scrollView.getLayoutParams();
-        int heightPx = dpToPx(heightDp);
-        if (params.height != heightPx) {
-            params.height = heightPx;
-            scrollView.setLayoutParams(params);
-        }
     }
 
     private void addAverageDetailsRowDivider(LinearLayout rows) {
@@ -2003,15 +2027,18 @@ public class MainActivity extends AppCompatActivity {
         List<PriceFetcher.PriceEntry> allEntries = CurrentPriceResolver.getAdjustedEntries(this, sharedPreferences);
         List<PriceFetcher.PriceEntry> entries = getEntriesForLocalDate(allEntries, date, zoneId);
         AverageSummary summary = summarizeAverageEntries(entries);
+        PriceFetcher.PriceEntry minEntry = findAverageDetailsExtremeEntry(entries, true);
+        PriceFetcher.PriceEntry maxEntry = findAverageDetailsExtremeEntry(entries, false);
         return new AverageDayDetails(
                 getAverageDetailsTitleResId(dayOffset),
-                getAverageDetailsUnavailableTextResId(dayOffset),
                 date,
                 zoneId,
                 countryCode,
                 PriceDisplayUtils.getUnitText(countryCode, sharedPreferences),
                 entries,
-                summary
+                summary,
+                minEntry,
+                maxEntry
         );
     }
 
@@ -2042,6 +2069,26 @@ public class MainActivity extends AppCompatActivity {
         return summary;
     }
 
+    private PriceFetcher.PriceEntry findAverageDetailsExtremeEntry(List<PriceFetcher.PriceEntry> entries,
+                                                                   boolean findMinimum) {
+        PriceFetcher.PriceEntry extremeEntry = null;
+        for (PriceFetcher.PriceEntry entry : entries) {
+            if (entry == null || entry.startTime == null || entry.endTime == null) {
+                continue;
+            }
+            long minutes = Duration.between(entry.startTime, entry.endTime).toMinutes();
+            if (minutes <= 0L) {
+                continue;
+            }
+            if (extremeEntry == null
+                    || (findMinimum && entry.pricePerKwh < extremeEntry.pricePerKwh)
+                    || (!findMinimum && entry.pricePerKwh > extremeEntry.pricePerKwh)) {
+                extremeEntry = entry;
+            }
+        }
+        return extremeEntry;
+    }
+
     private int getAverageDetailsTitleResId(int dayOffset) {
         if (dayOffset == AVERAGE_DAY_YESTERDAY) {
             return R.string.average_yesterday_label;
@@ -2050,13 +2097,6 @@ public class MainActivity extends AppCompatActivity {
             return R.string.average_tomorrow_label;
         }
         return R.string.average_today_label;
-    }
-
-    private int getAverageDetailsUnavailableTextResId(int dayOffset) {
-        if (dayOffset == AVERAGE_DAY_TOMORROW) {
-            return R.string.tomorrow_average_pending;
-        }
-        return R.string.average_unavailable_short;
     }
 
     private void applyAverageDetailsCardSize(View dialogCard) {
