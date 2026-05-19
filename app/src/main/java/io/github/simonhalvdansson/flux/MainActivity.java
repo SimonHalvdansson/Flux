@@ -79,6 +79,10 @@ public class MainActivity extends AppCompatActivity {
     private static final String KEY_MAIN_ACTIVITY_BAR_POOL_MODE = "main_activity_bar_pool_mode";
     private static final String KEY_MAIN_ACTIVITY_SHOW_Y_AXIS = "main_activity_show_y_axis";
     private static final String STATE_SETTINGS_EXPANDED = "state_settings_expanded";
+    private static final String STATE_AVERAGE_DETAILS_DAY_OFFSET = "state_average_details_day_offset";
+    private static final String STATE_AVERAGE_DETAILS_INCREMENT_MINUTES =
+            "state_average_details_increment_minutes";
+    private static final String STATE_AVERAGE_DETAILS_SCROLL_Y = "state_average_details_scroll_y";
     private static final int MAIN_CHART_MODE_BARS = 0;
     private static final int MAIN_CHART_MODE_GRAPH = 1;
     private static final int MAIN_CHART_MODE_LINES = 2;
@@ -96,6 +100,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int AVERAGE_DAY_YESTERDAY = -1;
     private static final int AVERAGE_DAY_TODAY = 0;
     private static final int AVERAGE_DAY_TOMORROW = 1;
+    private static final int AVERAGE_DETAILS_NO_RESTORE = Integer.MIN_VALUE;
 
     public static final String EXTRA_DISABLE_CHART_ANIMATION =
             "io.github.simonhalvdansson.flux.extra.DISABLE_CHART_ANIMATION";
@@ -215,6 +220,11 @@ public class MainActivity extends AppCompatActivity {
     private MaterialButtonToggleGroup mainBarPoolToggleGroup;
     private View averageDetailsOverlay;
     private View activeAverageDetailsSourceCard;
+    private int activeAverageDetailsDayOffset = AVERAGE_DETAILS_NO_RESTORE;
+    private int activeAverageDetailsIncrementMinutes = WidgetPreferences.INCREMENT_60_MINUTES;
+    private int pendingAverageDetailsDayOffset = AVERAGE_DETAILS_NO_RESTORE;
+    private int pendingAverageDetailsIncrementMinutes = WidgetPreferences.INCREMENT_60_MINUTES;
+    private int pendingAverageDetailsScrollY;
 
     private final OnBackPressedCallback averageDetailsBackCallback = new OnBackPressedCallback(false) {
         @Override
@@ -276,6 +286,21 @@ public class MainActivity extends AppCompatActivity {
                 && !getIntent().getBooleanExtra(EXTRA_DISABLE_CHART_ANIMATION, false);
         boolean restoreSettingsExpanded = savedInstanceState != null
                 && savedInstanceState.getBoolean(STATE_SETTINGS_EXPANDED, false);
+        if (savedInstanceState != null
+                && savedInstanceState.containsKey(STATE_AVERAGE_DETAILS_DAY_OFFSET)) {
+            pendingAverageDetailsDayOffset = savedInstanceState.getInt(
+                    STATE_AVERAGE_DETAILS_DAY_OFFSET,
+                    AVERAGE_DETAILS_NO_RESTORE
+            );
+            pendingAverageDetailsIncrementMinutes = savedInstanceState.getInt(
+                    STATE_AVERAGE_DETAILS_INCREMENT_MINUTES,
+                    WidgetPreferences.INCREMENT_60_MINUTES
+            );
+            pendingAverageDetailsScrollY = savedInstanceState.getInt(
+                    STATE_AVERAGE_DETAILS_SCROLL_Y,
+                    0
+            );
+        }
 
         setupAppSettings();
         setupSettingsToggle(restoreSettingsExpanded);
@@ -343,6 +368,21 @@ public class MainActivity extends AppCompatActivity {
                 settingsExpandableContainer != null
                         && settingsExpandableContainer.getVisibility() == View.VISIBLE
         );
+        if (averageDetailsOverlay != null
+                && activeAverageDetailsDayOffset != AVERAGE_DETAILS_NO_RESTORE) {
+            outState.putInt(STATE_AVERAGE_DETAILS_DAY_OFFSET, activeAverageDetailsDayOffset);
+            outState.putInt(
+                    STATE_AVERAGE_DETAILS_INCREMENT_MINUTES,
+                    activeAverageDetailsIncrementMinutes
+            );
+            ScrollView scrollView = averageDetailsOverlay.findViewById(
+                    R.id.average_details_price_scroll
+            );
+            outState.putInt(
+                    STATE_AVERAGE_DETAILS_SCROLL_Y,
+                    scrollView != null ? scrollView.getScrollY() : 0
+            );
+        }
     }
 
     private void setupAppSettings() {
@@ -1518,6 +1558,7 @@ public class MainActivity extends AppCompatActivity {
         setAverageCardEnabled(yesterdayAverageCard, yesterdaySummary.hasData());
         setAverageCardEnabled(todayAverageCard, todaySummary.hasData());
         setAverageCardEnabled(tomorrowAverageCard, tomorrowSummary.hasData());
+        restorePendingAverageDetailsDialogIfPossible();
     }
 
     private void updateAverageCardDates() {
@@ -1804,6 +1845,20 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void showAverageDetailsDialog(int dayOffset, View sourceCard) {
+        showAverageDetailsDialog(
+                dayOffset,
+                sourceCard,
+                true,
+                WidgetPreferences.INCREMENT_60_MINUTES,
+                0
+        );
+    }
+
+    private void showAverageDetailsDialog(int dayOffset,
+                                          View sourceCard,
+                                          boolean animate,
+                                          int initialIncrementMinutes,
+                                          int initialScrollY) {
         if (averageDetailsOverlay != null || sourceCard == null) {
             return;
         }
@@ -1818,8 +1873,15 @@ public class MainActivity extends AppCompatActivity {
 
         averageDetailsOverlay = overlay;
         activeAverageDetailsSourceCard = sourceCard;
+        activeAverageDetailsDayOffset = dayOffset;
+        activeAverageDetailsIncrementMinutes = normalizeAverageDetailsIncrement(initialIncrementMinutes);
 
-        bindAverageDetailsDialog(overlay, details);
+        bindAverageDetailsDialog(
+                overlay,
+                details,
+                activeAverageDetailsIncrementMinutes,
+                initialScrollY
+        );
         scrim.setOnClickListener(v -> dismissAverageDetailsDialog(true));
 
         activityRoot.addView(overlay, new FrameLayout.LayoutParams(
@@ -1832,11 +1894,20 @@ public class MainActivity extends AppCompatActivity {
 
         activityRoot.post(() -> {
             applyAverageDetailsCardSize(dialogCard);
-            startAverageDetailsEnterTransition(sourceCard, overlay, dialogCard);
+            if (animate) {
+                startAverageDetailsEnterTransition(sourceCard, overlay, dialogCard);
+            } else {
+                scrim.setAlpha(1f);
+                sourceCard.setVisibility(View.INVISIBLE);
+                dialogCard.setVisibility(View.VISIBLE);
+            }
         });
     }
 
-    private void bindAverageDetailsDialog(View overlay, AverageDayDetails details) {
+    private void bindAverageDetailsDialog(View overlay,
+                                          AverageDayDetails details,
+                                          int initialIncrementMinutes,
+                                          int initialScrollY) {
         ((TextView) overlay.findViewById(R.id.average_details_title)).setText(details.titleResId);
         ((TextView) overlay.findViewById(R.id.average_details_date)).setText(
                 formatAverageDetailsDate(details.date)
@@ -1870,18 +1941,23 @@ public class MainActivity extends AppCompatActivity {
 
         ChipGroup chipGroup = overlay.findViewById(R.id.average_details_density_chip_group);
         configureAverageDetailsChipAnimation(chipGroup);
-        chipGroup.check(R.id.average_details_density_hourly_chip);
+        chipGroup.check(getAverageDetailsChipForIncrement(initialIncrementMinutes));
         chipGroup.setOnCheckedChangeListener((group, checkedId) -> {
             if (checkedId == View.NO_ID) {
                 return;
             }
+            activeAverageDetailsIncrementMinutes = getAverageDetailsIncrementForChip(checkedId);
             renderAverageDetailsPriceRows(
                     overlay,
                     details,
-                    getAverageDetailsIncrementForChip(checkedId)
+                    activeAverageDetailsIncrementMinutes
             );
         });
-        renderAverageDetailsPriceRows(overlay, details, WidgetPreferences.INCREMENT_60_MINUTES);
+        renderAverageDetailsPriceRows(overlay, details, initialIncrementMinutes);
+        if (initialScrollY > 0) {
+            ScrollView scrollView = overlay.findViewById(R.id.average_details_price_scroll);
+            scrollView.post(() -> scrollView.scrollTo(0, initialScrollY));
+        }
     }
 
     private void bindAverageDetailsExtreme(TextView priceView,
@@ -2001,6 +2077,58 @@ public class MainActivity extends AppCompatActivity {
         return WidgetPreferences.INCREMENT_15_MINUTES;
     }
 
+    private int getAverageDetailsChipForIncrement(int incrementMinutes) {
+        if (incrementMinutes == WidgetPreferences.INCREMENT_15_MINUTES) {
+            return R.id.average_details_density_15_chip;
+        }
+        if (incrementMinutes == WidgetPreferences.INCREMENT_30_MINUTES) {
+            return R.id.average_details_density_30_chip;
+        }
+        return R.id.average_details_density_hourly_chip;
+    }
+
+    private int normalizeAverageDetailsIncrement(int incrementMinutes) {
+        if (incrementMinutes == WidgetPreferences.INCREMENT_15_MINUTES
+                || incrementMinutes == WidgetPreferences.INCREMENT_30_MINUTES
+                || incrementMinutes == WidgetPreferences.INCREMENT_60_MINUTES) {
+            return incrementMinutes;
+        }
+        return WidgetPreferences.INCREMENT_60_MINUTES;
+    }
+
+    private void restorePendingAverageDetailsDialogIfPossible() {
+        if (pendingAverageDetailsDayOffset == AVERAGE_DETAILS_NO_RESTORE
+                || averageDetailsOverlay != null) {
+            return;
+        }
+
+        View sourceCard = getAverageDetailsSourceCard(pendingAverageDetailsDayOffset);
+        if (sourceCard == null || !sourceCard.isEnabled()) {
+            return;
+        }
+
+        int dayOffset = pendingAverageDetailsDayOffset;
+        int incrementMinutes = normalizeAverageDetailsIncrement(pendingAverageDetailsIncrementMinutes);
+        int scrollY = pendingAverageDetailsScrollY;
+        pendingAverageDetailsDayOffset = AVERAGE_DETAILS_NO_RESTORE;
+        pendingAverageDetailsIncrementMinutes = WidgetPreferences.INCREMENT_60_MINUTES;
+        pendingAverageDetailsScrollY = 0;
+        showAverageDetailsDialog(dayOffset, sourceCard, false, incrementMinutes, scrollY);
+    }
+
+    private View getAverageDetailsSourceCard(int dayOffset) {
+        if (dayOffset == AVERAGE_DAY_YESTERDAY) {
+            return yesterdayAverageCard;
+        }
+        if (dayOffset == AVERAGE_DAY_TOMORROW) {
+            return tomorrowAverageCard;
+        }
+        if (dayOffset == AVERAGE_DAY_TODAY) {
+            return todayAverageCard;
+        }
+        return null;
+    }
+
     private String formatAverageDetailsTimeRange(PriceFetcher.PriceEntry entry, ZoneId zoneId) {
         if (entry == null || entry.startTime == null || entry.endTime == null) {
             return "";
@@ -2104,11 +2232,22 @@ public class MainActivity extends AppCompatActivity {
         if (rootWidth <= 0) {
             rootWidth = getResources().getDisplayMetrics().widthPixels;
         }
+        int rootHeight = activityRoot.getHeight();
+        if (rootHeight <= 0) {
+            rootHeight = getResources().getDisplayMetrics().heightPixels;
+        }
         int availableWidth = Math.max(1, rootWidth - dpToPx(AVERAGE_DETAILS_SIDE_MARGIN_DP * 2));
+        int availableHeight = Math.max(1, rootHeight - dpToPx(AVERAGE_DETAILS_SIDE_MARGIN_DP * 2));
         int targetWidth = Math.min(availableWidth, dpToPx(AVERAGE_DETAILS_MAX_WIDTH_DP));
         FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) dialogCard.getLayoutParams();
         params.width = targetWidth;
-        params.height = FrameLayout.LayoutParams.WRAP_CONTENT;
+        dialogCard.measure(
+                View.MeasureSpec.makeMeasureSpec(targetWidth, View.MeasureSpec.EXACTLY),
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+        );
+        params.height = dialogCard.getMeasuredHeight() > availableHeight
+                ? availableHeight
+                : FrameLayout.LayoutParams.WRAP_CONTENT;
         params.gravity = Gravity.CENTER;
         dialogCard.setLayoutParams(params);
     }
@@ -2254,6 +2393,8 @@ public class MainActivity extends AppCompatActivity {
         }
         averageDetailsOverlay = null;
         activeAverageDetailsSourceCard = null;
+        activeAverageDetailsDayOffset = AVERAGE_DETAILS_NO_RESTORE;
+        activeAverageDetailsIncrementMinutes = WidgetPreferences.INCREMENT_60_MINUTES;
         averageDetailsBackCallback.setEnabled(false);
     }
 
