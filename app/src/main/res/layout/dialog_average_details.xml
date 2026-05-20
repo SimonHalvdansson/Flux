@@ -18,7 +18,7 @@
         android:background="#66000000" />
 
     <com.google.android.material.card.MaterialCardView
-        android:id="@+id/average_details_card"
+        android:id="@+id/average_details_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
@@ -27,7 +27,7 @@
         android:visibility="invisible"
         app:cardBackgroundColor="?attr/colorSurfaceContainerHigh"
         app:cardCornerRadius="28dp"
-        app:cardElevation="16dp"
+        app:cardElevation="6dp"
         app:strokeColor="?attr/colorOutlineVariant"
         app:strokeWidth="1dp">
 
@@ -175,7 +175,7 @@
                     android:clipToPadding="false"
                     android:fillViewport="false"
                     android:nestedScrollingEnabled="true"
-                    android:overScrollMode="ifContentScrolls">
+                    android:overScrollMode="never">
 
                     <LinearLayout
                         android:id="@+id/average_details_price_rows"
@@ -200,6 +200,10 @@
                         android:layout_weight="1"
                         android:background="@drawable/average_metric_pill_background"
                         android:baselineAligned="false"
+                        android:clickable="true"
+                        android:clipToOutline="true"
+                        android:focusable="true"
+                        android:foreground="?attr/selectableItemBackground"
                         android:gravity="center_vertical"
                         android:orientation="horizontal"
                         android:paddingStart="14dp"
@@ -249,6 +253,10 @@
                         android:layout_weight="1"
                         android:background="@drawable/average_metric_pill_background"
                         android:baselineAligned="false"
+                        android:clickable="true"
+                        android:clipToOutline="true"
+                        android:focusable="true"
+                        android:foreground="?attr/selectableItemBackground"
                         android:gravity="center_vertical"
                         android:orientation="horizontal"
                         android:paddingStart="14dp"

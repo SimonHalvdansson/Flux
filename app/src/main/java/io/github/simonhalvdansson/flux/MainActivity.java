@@ -11,6 +11,7 @@ import android.graphics.Rect;
 import android.graphics.Outline;
 import android.graphics.Typeface;
 import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.os.Handler;
@@ -95,6 +96,10 @@ public class MainActivity extends AppCompatActivity {
     private static final long AVERAGE_DETAILS_SCRIM_DURATION_MS = 180L;
     private static final int AVERAGE_DETAILS_MAX_WIDTH_DP = 520;
     private static final int AVERAGE_DETAILS_SIDE_MARGIN_DP = 24;
+    private static final int AVERAGE_DETAILS_CONTAINER_TRANSFORM_ELEVATION_DP = 10;
+    private static final long AVERAGE_DETAILS_ROW_HIGHLIGHT_DELAY_MS = 220L;
+    private static final long AVERAGE_DETAILS_ROW_HIGHLIGHT_DURATION_MS = 700L;
+    private static final int AVERAGE_DETAILS_ROW_HIGHLIGHT_ALPHA = 96;
     private static final DateTimeFormatter AVERAGE_DETAILS_DATE_FORMATTER =
             DateTimeFormatter.ofPattern("MMMM d", Locale.ENGLISH);
     private static final int AVERAGE_DAY_YESTERDAY = -1;
@@ -1869,7 +1874,7 @@ public class MainActivity extends AppCompatActivity {
         }
         View overlay = getLayoutInflater().inflate(R.layout.dialog_average_details, activityRoot, false);
         View scrim = overlay.findViewById(R.id.average_details_scrim);
-        View dialogCard = overlay.findViewById(R.id.average_details_card);
+        View detailsContainer = overlay.findViewById(R.id.average_details_container);
 
         averageDetailsOverlay = overlay;
         activeAverageDetailsSourceCard = sourceCard;
@@ -1893,13 +1898,13 @@ public class MainActivity extends AppCompatActivity {
         overlay.requestFocus();
 
         activityRoot.post(() -> {
-            applyAverageDetailsCardSize(dialogCard);
+            applyAverageDetailsContainerSize(detailsContainer);
             if (animate) {
-                startAverageDetailsEnterTransition(sourceCard, overlay, dialogCard);
+                startAverageDetailsEnterTransition(sourceCard, overlay, detailsContainer);
             } else {
                 scrim.setAlpha(1f);
                 sourceCard.setVisibility(View.INVISIBLE);
-                dialogCard.setVisibility(View.VISIBLE);
+                detailsContainer.setVisibility(View.VISIBLE);
             }
         });
     }
@@ -1938,6 +1943,7 @@ public class MainActivity extends AppCompatActivity {
                 details.maxEntry,
                 details
         );
+        bindAverageDetailsExtremeActions(overlay, details);
 
         ChipGroup chipGroup = overlay.findViewById(R.id.average_details_density_chip_group);
         configureAverageDetailsChipAnimation(chipGroup);
@@ -2029,6 +2035,7 @@ public class MainActivity extends AppCompatActivity {
             }
             PriceFetcher.PriceEntry entry = displayEntries.get(i);
             View row = getLayoutInflater().inflate(R.layout.list_item_average_price, rows, false);
+            row.setTag(entry);
             TextView timeView = row.findViewById(R.id.average_details_price_row_time);
             TextView priceView = row.findViewById(R.id.average_details_price_row_value);
             timeView.setText(formatAverageDetailsTimeRange(entry, details.zoneId));
@@ -2040,6 +2047,113 @@ public class MainActivity extends AppCompatActivity {
             rows.addView(row);
         }
         scrollView.scrollTo(0, 0);
+    }
+
+    private void bindAverageDetailsExtremeActions(View overlay, AverageDayDetails details) {
+        bindAverageDetailsExtremeAction(
+                overlay.findViewById(R.id.average_details_min),
+                overlay,
+                details.minEntry
+        );
+        bindAverageDetailsExtremeAction(
+                overlay.findViewById(R.id.average_details_max),
+                overlay,
+                details.maxEntry
+        );
+    }
+
+    private void bindAverageDetailsExtremeAction(View container,
+                                                 View overlay,
+                                                 PriceFetcher.PriceEntry entry) {
+        boolean enabled = entry != null;
+        container.setEnabled(enabled);
+        container.setClickable(enabled);
+        container.setFocusable(enabled);
+        container.setOnClickListener(enabled
+                ? v -> scrollToAverageDetailsEntry(overlay, entry)
+                : null);
+    }
+
+    private void scrollToAverageDetailsEntry(View overlay, PriceFetcher.PriceEntry entry) {
+        ScrollView scrollView = overlay.findViewById(R.id.average_details_price_scroll);
+        LinearLayout rows = overlay.findViewById(R.id.average_details_price_rows);
+        View targetRow = findAverageDetailsRow(rows, entry);
+        if (targetRow == null) {
+            return;
+        }
+
+        scrollView.post(() -> {
+            int targetScrollY = targetRow.getTop() - ((scrollView.getHeight() - targetRow.getHeight()) / 2);
+            int maxScrollY = Math.max(0, rows.getHeight() - scrollView.getHeight());
+            targetScrollY = Math.max(0, Math.min(targetScrollY, maxScrollY));
+            scrollView.smoothScrollTo(0, targetScrollY);
+            targetRow.postDelayed(
+                    () -> highlightAverageDetailsRow(targetRow),
+                    AVERAGE_DETAILS_ROW_HIGHLIGHT_DELAY_MS
+            );
+        });
+    }
+
+    private View findAverageDetailsRow(LinearLayout rows, PriceFetcher.PriceEntry targetEntry) {
+        for (int i = 0; i < rows.getChildCount(); i++) {
+            View child = rows.getChildAt(i);
+            Object tag = child.getTag();
+            if (tag instanceof PriceFetcher.PriceEntry
+                    && averageDetailsEntryContains((PriceFetcher.PriceEntry) tag, targetEntry)) {
+                return child;
+            }
+        }
+        return null;
+    }
+
+    private boolean averageDetailsEntryContains(PriceFetcher.PriceEntry displayEntry,
+                                                PriceFetcher.PriceEntry targetEntry) {
+        if (displayEntry == null
+                || targetEntry == null
+                || displayEntry.startTime == null
+                || displayEntry.endTime == null
+                || targetEntry.startTime == null
+                || targetEntry.endTime == null) {
+            return false;
+        }
+        boolean containsTarget = !targetEntry.startTime.isBefore(displayEntry.startTime)
+                && !targetEntry.endTime.isAfter(displayEntry.endTime);
+        boolean overlapsTarget = targetEntry.startTime.isBefore(displayEntry.endTime)
+                && targetEntry.endTime.isAfter(displayEntry.startTime);
+        return containsTarget || overlapsTarget;
+    }
+
+    private void highlightAverageDetailsRow(View row) {
+        Drawable originalForeground = row.getForeground();
+        int highlightColor = MaterialColors.getColor(
+                row,
+                com.google.android.material.R.attr.colorSecondaryContainer
+        );
+        GradientDrawable highlight = new GradientDrawable();
+        highlight.setColor(withAlpha(highlightColor, AVERAGE_DETAILS_ROW_HIGHLIGHT_ALPHA));
+        highlight.setCornerRadius(dpToPx(12));
+        row.setForeground(highlight);
+
+        ValueAnimator animator = ValueAnimator.ofInt(AVERAGE_DETAILS_ROW_HIGHLIGHT_ALPHA, 0);
+        animator.setDuration(AVERAGE_DETAILS_ROW_HIGHLIGHT_DURATION_MS);
+        animator.setInterpolator(new LinearOutSlowInInterpolator());
+        animator.addUpdateListener(animation -> highlight.setColor(withAlpha(
+                highlightColor,
+                (int) animation.getAnimatedValue()
+        )));
+        animator.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                if (row.getForeground() == highlight) {
+                    row.setForeground(originalForeground);
+                }
+            }
+        });
+        animator.start();
+    }
+
+    private int withAlpha(int color, int alpha) {
+        return Color.argb(alpha, Color.red(color), Color.green(color), Color.blue(color));
     }
 
     private void addAverageDetailsRowDivider(LinearLayout rows) {
@@ -2227,7 +2341,7 @@ public class MainActivity extends AppCompatActivity {
         return R.string.average_today_label;
     }
 
-    private void applyAverageDetailsCardSize(View dialogCard) {
+    private void applyAverageDetailsContainerSize(View detailsContainer) {
         int rootWidth = activityRoot.getWidth();
         if (rootWidth <= 0) {
             rootWidth = getResources().getDisplayMetrics().widthPixels;
@@ -2239,29 +2353,29 @@ public class MainActivity extends AppCompatActivity {
         int availableWidth = Math.max(1, rootWidth - dpToPx(AVERAGE_DETAILS_SIDE_MARGIN_DP * 2));
         int availableHeight = Math.max(1, rootHeight - dpToPx(AVERAGE_DETAILS_SIDE_MARGIN_DP * 2));
         int targetWidth = Math.min(availableWidth, dpToPx(AVERAGE_DETAILS_MAX_WIDTH_DP));
-        FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) dialogCard.getLayoutParams();
+        FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) detailsContainer.getLayoutParams();
         params.width = targetWidth;
-        dialogCard.measure(
+        detailsContainer.measure(
                 View.MeasureSpec.makeMeasureSpec(targetWidth, View.MeasureSpec.EXACTLY),
                 View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
         );
-        params.height = dialogCard.getMeasuredHeight() > availableHeight
+        params.height = detailsContainer.getMeasuredHeight() > availableHeight
                 ? availableHeight
                 : FrameLayout.LayoutParams.WRAP_CONTENT;
         params.gravity = Gravity.CENTER;
-        dialogCard.setLayoutParams(params);
+        detailsContainer.setLayoutParams(params);
     }
 
-    private void startAverageDetailsEnterTransition(View sourceCard, View overlay, View dialogCard) {
+    private void startAverageDetailsEnterTransition(View sourceCard, View overlay, View detailsContainer) {
         View scrim = overlay.findViewById(R.id.average_details_scrim);
         scrim.animate()
                 .alpha(1f)
                 .setDuration(AVERAGE_DETAILS_SCRIM_DURATION_MS)
                 .start();
 
-        MaterialContainerTransform transform = createAverageDetailsTransform(sourceCard, dialogCard);
+        MaterialContainerTransform transform = createAverageDetailsContainerTransform(sourceCard, detailsContainer);
         transform.setTransitionDirection(MaterialContainerTransform.TRANSITION_DIRECTION_ENTER);
-        transform.addTarget(dialogCard);
+        transform.addTarget(detailsContainer);
         transform.addListener(new Transition.TransitionListener() {
             @Override
             public void onTransitionStart(Transition transition) {
@@ -2269,13 +2383,13 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onTransitionEnd(Transition transition) {
-                dialogCard.setVisibility(View.VISIBLE);
+                detailsContainer.setVisibility(View.VISIBLE);
                 sourceCard.setVisibility(View.INVISIBLE);
             }
 
             @Override
             public void onTransitionCancel(Transition transition) {
-                dialogCard.setVisibility(View.VISIBLE);
+                detailsContainer.setVisibility(View.VISIBLE);
                 sourceCard.setVisibility(View.INVISIBLE);
             }
 
@@ -2290,7 +2404,7 @@ public class MainActivity extends AppCompatActivity {
 
         TransitionManager.beginDelayedTransition(activityRoot, transform);
         sourceCard.setVisibility(View.INVISIBLE);
-        dialogCard.setVisibility(View.VISIBLE);
+        detailsContainer.setVisibility(View.VISIBLE);
     }
 
     private void dismissAverageDetailsDialog(boolean animate) {
@@ -2300,7 +2414,7 @@ public class MainActivity extends AppCompatActivity {
 
         View overlay = averageDetailsOverlay;
         View sourceCard = activeAverageDetailsSourceCard;
-        View dialogCard = overlay.findViewById(R.id.average_details_card);
+        View detailsContainer = overlay.findViewById(R.id.average_details_container);
         averageDetailsBackCallback.setEnabled(false);
 
         if (!animate || sourceCard == null || !sourceCard.isAttachedToWindow()) {
@@ -2314,7 +2428,7 @@ public class MainActivity extends AppCompatActivity {
                 .setDuration(AVERAGE_DETAILS_SCRIM_DURATION_MS)
                 .start();
 
-        MaterialContainerTransform transform = createAverageDetailsTransform(dialogCard, sourceCard);
+        MaterialContainerTransform transform = createAverageDetailsContainerTransform(detailsContainer, sourceCard);
         transform.setTransitionDirection(MaterialContainerTransform.TRANSITION_DIRECTION_RETURN);
         transform.addTarget(sourceCard);
         transform.addListener(new Transition.TransitionListener() {
@@ -2352,11 +2466,11 @@ public class MainActivity extends AppCompatActivity {
         });
 
         TransitionManager.beginDelayedTransition(activityRoot, transform);
-        dialogCard.setVisibility(View.INVISIBLE);
+        detailsContainer.setVisibility(View.INVISIBLE);
         sourceCard.setVisibility(View.VISIBLE);
     }
 
-    private MaterialContainerTransform createAverageDetailsTransform(View startView, View endView) {
+    private MaterialContainerTransform createAverageDetailsContainerTransform(View startView, View endView) {
         MaterialContainerTransform transform = new MaterialContainerTransform();
         transform.setStartView(startView);
         transform.setEndView(endView);
@@ -2366,11 +2480,22 @@ public class MainActivity extends AppCompatActivity {
         transform.setFadeMode(MaterialContainerTransform.FADE_MODE_THROUGH);
         transform.setFitMode(MaterialContainerTransform.FIT_MODE_AUTO);
         transform.setPathMotion(new MaterialArcMotion());
+        transform.setElevationShadowEnabled(true);
         transform.setStartContainerColor(getAverageDetailsContainerColor(startView));
         transform.setEndContainerColor(getAverageDetailsContainerColor(endView));
-        transform.setStartElevation(startView.getElevation());
-        transform.setEndElevation(endView.getElevation());
+        transform.setStartElevation(getAverageDetailsContainerElevation(startView));
+        transform.setEndElevation(getAverageDetailsContainerElevation(endView));
         return transform;
+    }
+
+    private float getAverageDetailsContainerElevation(View view) {
+        if (view.getId() == R.id.average_details_container) {
+            return dpToPx(AVERAGE_DETAILS_CONTAINER_TRANSFORM_ELEVATION_DP);
+        }
+        if (view instanceof MaterialCardView) {
+            return ((MaterialCardView) view).getCardElevation();
+        }
+        return view.getElevation();
     }
 
     private int getAverageDetailsContainerColor(View view) {
