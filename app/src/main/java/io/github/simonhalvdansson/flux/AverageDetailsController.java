@@ -23,13 +23,16 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
+import androidx.activity.BackEventCompat;
 import androidx.activity.OnBackPressedCallback;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.interpolator.view.animation.LinearOutSlowInInterpolator;
 
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.color.MaterialColors;
+import com.google.android.material.shape.ShapeAppearanceModel;
 import com.google.android.material.transition.platform.MaterialArcMotion;
 import com.google.android.material.transition.platform.MaterialContainerTransform;
 
@@ -55,6 +58,12 @@ final class AverageDetailsController {
     private static final long ROW_HIGHLIGHT_DELAY_MS = 220L;
     private static final long ROW_HIGHLIGHT_DURATION_MS = 700L;
     private static final int ROW_HIGHLIGHT_ALPHA = 96;
+    private static final int SOURCE_CARD_CORNER_RADIUS_DP = 8;
+    private static final int DETAILS_CARD_CORNER_RADIUS_DP = 28;
+    private static final int PREDICTIVE_BACK_TRANSLATION_X_DP = 56;
+    private static final int PREDICTIVE_BACK_TRANSLATION_Y_DP = 18;
+    private static final float PREDICTIVE_BACK_MIN_SCALE = 0.9f;
+    private static final float PREDICTIVE_BACK_MIN_SCRIM_ALPHA = 0.45f;
     private static final DateTimeFormatter DATE_FORMATTER =
             DateTimeFormatter.ofPattern("MMMM d", Locale.ENGLISH);
 
@@ -66,8 +75,27 @@ final class AverageDetailsController {
     private final View tomorrowAverageCard;
     private final OnBackPressedCallback backCallback = new OnBackPressedCallback(false) {
         @Override
+        public void handleOnBackStarted(@NonNull BackEventCompat backEvent) {
+            startPredictiveBack(backEvent);
+        }
+
+        @Override
+        public void handleOnBackProgressed(@NonNull BackEventCompat backEvent) {
+            updatePredictiveBack(backEvent);
+        }
+
+        @Override
+        public void handleOnBackCancelled() {
+            cancelPredictiveBack();
+        }
+
+        @Override
         public void handleOnBackPressed() {
-            dismiss(true);
+            if (predictiveBackActive) {
+                commitPredictiveBack();
+            } else {
+                dismiss(true);
+            }
         }
     };
 
@@ -78,6 +106,7 @@ final class AverageDetailsController {
     private int pendingDayOffset = NO_RESTORE;
     private int pendingIncrementMinutes = WidgetPreferences.INCREMENT_60_MINUTES;
     private int pendingScrollY;
+    private boolean predictiveBackActive;
 
     AverageDetailsController(AppCompatActivity activity,
                              FrameLayout activityRoot,
@@ -145,6 +174,7 @@ final class AverageDetailsController {
             return;
         }
 
+        predictiveBackActive = false;
         View currentOverlay = overlay;
         View sourceCard = activeSourceCard;
         View detailsContainer = currentOverlay.findViewById(R.id.average_details_container);
@@ -263,6 +293,106 @@ final class AverageDetailsController {
                 detailsContainer.setVisibility(View.VISIBLE);
             }
         });
+    }
+
+    private void startPredictiveBack(@NonNull BackEventCompat backEvent) {
+        if (overlay == null) {
+            return;
+        }
+
+        predictiveBackActive = true;
+        View detailsContainer = overlay.findViewById(R.id.average_details_container);
+        View scrim = overlay.findViewById(R.id.average_details_scrim);
+        detailsContainer.animate().cancel();
+        scrim.animate().cancel();
+        updatePredictiveBack(backEvent);
+    }
+
+    private void updatePredictiveBack(@NonNull BackEventCompat backEvent) {
+        if (overlay == null) {
+            return;
+        }
+
+        if (!predictiveBackActive) {
+            startPredictiveBack(backEvent);
+            return;
+        }
+
+        float clampedProgress = clamp(backEvent.getProgress());
+        View detailsContainer = overlay.findViewById(R.id.average_details_container);
+        View scrim = overlay.findViewById(R.id.average_details_scrim);
+        applyPredictiveBackProgress(
+                detailsContainer,
+                scrim,
+                clampedProgress,
+                backEvent.getSwipeEdge(),
+                backEvent.getTouchY()
+        );
+    }
+
+    private void cancelPredictiveBack() {
+        if (!predictiveBackActive || overlay == null) {
+            return;
+        }
+
+        predictiveBackActive = false;
+        View detailsContainer = overlay.findViewById(R.id.average_details_container);
+        View scrim = overlay.findViewById(R.id.average_details_scrim);
+        detailsContainer.animate()
+                .translationX(0f)
+                .translationY(0f)
+                .scaleX(1f)
+                .scaleY(1f)
+                .setDuration(TRANSITION_DURATION_MS)
+                .setListener(null)
+                .start();
+        scrim.animate()
+                .alpha(1f)
+                .setDuration(TRANSITION_DURATION_MS)
+                .start();
+    }
+
+    private void commitPredictiveBack() {
+        if (overlay == null) {
+            return;
+        }
+
+        predictiveBackActive = false;
+        View detailsContainer = overlay.findViewById(R.id.average_details_container);
+        View scrim = overlay.findViewById(R.id.average_details_scrim);
+        detailsContainer.animate().cancel();
+        scrim.animate().cancel();
+        dismiss(true);
+    }
+
+    private void applyPredictiveBackProgress(View detailsContainer,
+                                             View scrim,
+                                             float progress,
+                                             int swipeEdge,
+                                             float touchY) {
+        float easedProgress = 1f - ((1f - progress) * (1f - progress));
+        float scale = 1f - ((1f - PREDICTIVE_BACK_MIN_SCALE) * easedProgress);
+        float edgeDirection = swipeEdge == BackEventCompat.EDGE_RIGHT ? -1f : 1f;
+
+        detailsContainer.setPivotX(edgeDirection > 0f ? 0f : detailsContainer.getWidth());
+        detailsContainer.setPivotY(touchY > 0f
+                ? Math.max(0f, Math.min(
+                        detailsContainer.getHeight(),
+                        touchY - detailsContainer.getTop()
+                ))
+                : detailsContainer.getHeight() / 2f);
+        detailsContainer.setScaleX(scale);
+        detailsContainer.setScaleY(scale);
+        detailsContainer.setTranslationX(edgeDirection
+                * dpToPx(PREDICTIVE_BACK_TRANSLATION_X_DP)
+                * easedProgress);
+        detailsContainer.setTranslationY(dpToPx(PREDICTIVE_BACK_TRANSLATION_Y_DP)
+                * easedProgress);
+        scrim.setAlpha(1f - ((1f - PREDICTIVE_BACK_MIN_SCRIM_ALPHA) * easedProgress));
+    }
+
+    private float clamp(float value) {
+        return Math.max(0f, Math.min(1f, value));
     }
 
     private void bindDialog(View currentOverlay,
@@ -671,11 +801,27 @@ final class AverageDetailsController {
         transform.setFitMode(MaterialContainerTransform.FIT_MODE_AUTO);
         transform.setPathMotion(new MaterialArcMotion());
         transform.setElevationShadowEnabled(true);
-        transform.setStartContainerColor(getContainerColor(startView));
-        transform.setEndContainerColor(getContainerColor(endView));
+        transform.setStartShapeAppearanceModel(createContainerShape(startView));
+        transform.setEndShapeAppearanceModel(createContainerShape(endView));
+        transform.setScaleMaskProgressThresholds(createContainerProgressThresholds());
+        transform.setShapeMaskProgressThresholds(createContainerProgressThresholds());
+        transform.setAllContainerColors(getContainerColor(endView));
         transform.setStartElevation(getContainerElevation(startView));
         transform.setEndElevation(getContainerElevation(endView));
         return transform;
+    }
+
+    private MaterialContainerTransform.ProgressThresholds createContainerProgressThresholds() {
+        return new MaterialContainerTransform.ProgressThresholds(0f, 1f);
+    }
+
+    private ShapeAppearanceModel createContainerShape(View view) {
+        int cornerRadiusDp = view.getId() == R.id.average_details_container
+                ? DETAILS_CARD_CORNER_RADIUS_DP
+                : SOURCE_CARD_CORNER_RADIUS_DP;
+        return ShapeAppearanceModel.builder()
+                .setAllCornerSizes(dpToPx(cornerRadiusDp))
+                .build();
     }
 
     private float getContainerElevation(View view) {
