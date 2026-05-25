@@ -374,14 +374,10 @@ public class GraphUtils {
         line.setStrokeCap(Paint.Cap.BUTT);
         line.setStrokeJoin(Paint.Join.MITER);
 
-        Paint guide = new Paint(Paint.ANTI_ALIAS_FLAG);
-        guide.setStyle(Paint.Style.STROKE);
-        guide.setStrokeWidth(Math.max(1f, lineWidthPx * 0.55f));
-        guide.setAlpha(104);
-
         float clampedSelectedFraction = Math.max(0f, Math.min(1f, selectedFraction));
         float selectedX = leftX + (usableW * clampedSelectedFraction);
         float selectedY = Float.NaN;
+        android.graphics.Path wholeStepPath = buildStepPath(data, maxPrice, windowStart, totalMinutes, leftX, usableW, usableH, topY, bottomY);
 
         for (int i = 0; i < data.size(); i++) {
             PriceFetcher.PriceEntry entry = data.get(i);
@@ -398,36 +394,16 @@ public class GraphUtils {
             boolean isPast = now.isAfter(end);
             int segmentColor = resolveTimelineColor(isNegative, isPast, isCurrent, positivePalette, negativePalette);
 
-            if (start.getMinute() == 0) {
-                guide.setColor(resolveStepGuideColor(isNegative, isPast, positivePalette, negativePalette));
-                canvas.drawLine(startX, bottomY, startX, y, guide);
-            }
             line.setColor(segmentColor);
-            canvas.drawLine(startX, y, endX, y, line);
+            int clipSave = canvas.save();
+            canvas.clipRect(startX - lineWidthPx, 0f, endX + lineWidthPx, heightPx);
+            canvas.drawPath(wholeStepPath, line);
+            canvas.restoreToCount(clipSave);
 
             if (!Float.isNaN(selectedFraction)
                     && selectedFraction >= startFraction
                     && (selectedFraction <= endFraction || i == data.size() - 1)) {
                 selectedY = y;
-            }
-
-            if (i < data.size() - 1) {
-                PriceFetcher.PriceEntry next = data.get(i + 1);
-                boolean nextIsNegative = next.pricePerKwh < 0;
-                float nextY = bottomY - (((float) Math.abs(next.pricePerKwh) / (float) maxPrice) * usableH);
-                nextY = Math.max(topY, Math.min(bottomY, nextY));
-                ZonedDateTime nextStart = next.startTime.atZoneSameInstant(ZoneId.systemDefault());
-                ZonedDateTime nextEnd = next.endTime.atZoneSameInstant(ZoneId.systemDefault());
-                boolean nextIsCurrent = (now.isEqual(nextStart) || now.isAfter(nextStart)) && now.isBefore(nextEnd);
-                boolean nextIsPast = now.isAfter(nextEnd);
-                line.setColor(resolveTimelineColor(
-                        nextIsNegative,
-                        nextIsPast,
-                        nextIsCurrent,
-                        positivePalette,
-                        negativePalette
-                ));
-                canvas.drawLine(endX, y, endX, nextY, line);
             }
         }
 
@@ -556,6 +532,34 @@ public class GraphUtils {
             colors[i] = ColorUtils.setAlphaComponent(color, alpha);
         }
         return colors;
+    }
+
+    private static android.graphics.Path buildStepPath(List<PriceFetcher.PriceEntry> data,
+                                                       double maxPrice,
+                                                       OffsetDateTime windowStart,
+                                                       long totalMinutes,
+                                                       float leftX,
+                                                       float usableW,
+                                                       float usableH,
+                                                       float topY,
+                                                       float bottomY) {
+        android.graphics.Path path = new android.graphics.Path();
+        for (int i = 0; i < data.size(); i++) {
+            PriceFetcher.PriceEntry entry = data.get(i);
+            float startFraction = Duration.between(windowStart, entry.startTime).toMinutes() / (float) totalMinutes;
+            float endFraction = Duration.between(windowStart, entry.endTime).toMinutes() / (float) totalMinutes;
+            float startX = leftX + (usableW * startFraction);
+            float endX = leftX + (usableW * endFraction);
+            float y = bottomY - (((float) Math.abs(entry.pricePerKwh) / (float) maxPrice) * usableH);
+            y = Math.max(topY, Math.min(bottomY, y));
+            if (i == 0) {
+                path.moveTo(startX, y);
+            } else {
+                path.lineTo(startX, y);
+            }
+            path.lineTo(endX, y);
+        }
+        return path;
     }
 
     private static void drawFillSegment(Canvas canvas,
