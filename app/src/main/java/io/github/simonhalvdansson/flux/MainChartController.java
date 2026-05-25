@@ -23,6 +23,7 @@ import android.widget.PopupWindow;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.interpolator.view.animation.FastOutSlowInInterpolator;
 import androidx.interpolator.view.animation.LinearOutSlowInInterpolator;
 
 import com.google.android.material.button.MaterialButton;
@@ -49,7 +50,10 @@ final class MainChartController {
     private static final int TOOLTIP_VERTICAL_OFFSET_DP = 6;
     private static final int TOOLTIP_HORIZONTAL_PADDING_DP = 12;
     private static final int TOOLTIP_VERTICAL_PADDING_DP = 10;
-    private static final long CHART_MODE_TRANSITION_DURATION_MS = 100L;
+    private static final long CHART_MODE_SCALE_OUT_DURATION_MS = 135L;
+    private static final long CHART_MODE_SCALE_IN_DURATION_MS = 180L;
+    private static final float CHART_MODE_SCALE_OUT = 0.94f;
+    private static final float CHART_MODE_SCALE_IN_START = 1.04f;
     private static final int CHART_MAX_HEIGHT_DP = 160;
     private static final long BAR_ANIMATION_DURATION_MS = 468L;
     private static final long BAR_ANIMATION_STAGGER_MS = 20L;
@@ -79,7 +83,8 @@ final class MainChartController {
     private final Runnable renderCallback;
 
     private View chartContainer;
-    private View chartVisualContainer;
+    private ViewGroup chartVisualContainer;
+    private View chartModeContentContainer;
     private View chartYAxisContainer;
     private View chartYAxisGuides;
     private View chartYAxisSpacer;
@@ -130,6 +135,7 @@ final class MainChartController {
     void setup() {
         chartContainer = activity.findViewById(R.id.bar_chart_section);
         chartVisualContainer = activity.findViewById(R.id.chart_visual_container);
+        chartModeContentContainer = activity.findViewById(R.id.chart_mode_content_container);
         chartYAxisContainer = activity.findViewById(R.id.chart_y_axis_container);
         chartYAxisGuides = activity.findViewById(R.id.chart_y_axis_guides);
         chartYAxisSpacer = activity.findViewById(R.id.chart_y_axis_spacer);
@@ -168,6 +174,7 @@ final class MainChartController {
     }
 
     void onStop() {
+        cancelChartModeTransition();
         cancelBarAnimation();
         cancelGraphAnimation();
         clearSelection(false);
@@ -349,42 +356,77 @@ final class MainChartController {
     private void animateChartModeChange() {
         chartModeTransitionId++;
         int transitionId = chartModeTransitionId;
-        chartVisualContainer.animate().cancel();
+        chartModeContentContainer.animate().cancel();
+        chartModeContentContainer.setVisibility(View.VISIBLE);
+        chartModeContentContainer.setAlpha(1f);
+        chartModeContentContainer.setScaleX(1f);
+        chartModeContentContainer.setScaleY(1f);
 
         if (chartContainer.getVisibility() != View.VISIBLE) {
-            chartVisualContainer.setAlpha(1f);
+            chartVisualContainer.setClipChildren(false);
             renderCallback.run();
             return;
         }
 
+        chartVisualContainer.setClipChildren(true);
         chartTouchOverlay.setEnabled(false);
-        chartVisualContainer.animate()
+        FastOutSlowInInterpolator interpolator = new FastOutSlowInInterpolator();
+        chartModeContentContainer.animate()
                 .alpha(0f)
-                .setDuration(CHART_MODE_TRANSITION_DURATION_MS)
-                .setInterpolator(new LinearOutSlowInInterpolator())
+                .scaleX(CHART_MODE_SCALE_OUT)
+                .scaleY(CHART_MODE_SCALE_OUT)
+                .setDuration(CHART_MODE_SCALE_OUT_DURATION_MS)
+                .setInterpolator(interpolator)
                 .withEndAction(() -> {
-                    if (transitionId != chartModeTransitionId) {
-                        return;
-                    }
-                    renderCallback.run();
-                    if (chartContainer.getVisibility() != View.VISIBLE) {
-                        chartVisualContainer.setAlpha(1f);
-                        return;
-                    }
-                    chartVisualContainer.setAlpha(0f);
-                    chartVisualContainer.animate()
-                            .alpha(1f)
-                            .setDuration(CHART_MODE_TRANSITION_DURATION_MS)
-                            .setInterpolator(new LinearOutSlowInInterpolator())
-                            .withEndAction(() -> {
-                                if (transitionId != chartModeTransitionId) {
-                                    return;
-                                }
-                                chartVisualContainer.setAlpha(1f);
-                            })
-                            .start();
+                        if (transitionId != chartModeTransitionId) {
+                            return;
+                        }
+
+                        chartModeContentContainer.setVisibility(View.INVISIBLE);
+                        renderCallback.run();
+                        if (chartContainer.getVisibility() != View.VISIBLE) {
+                            chartVisualContainer.setClipChildren(false);
+                            chartModeContentContainer.setVisibility(View.VISIBLE);
+                            chartModeContentContainer.setAlpha(1f);
+                            chartModeContentContainer.setScaleX(1f);
+                            chartModeContentContainer.setScaleY(1f);
+                            return;
+                        }
+
+                        chartModeContentContainer.setVisibility(View.VISIBLE);
+                        chartModeContentContainer.setAlpha(0f);
+                        chartModeContentContainer.setScaleX(CHART_MODE_SCALE_IN_START);
+                        chartModeContentContainer.setScaleY(CHART_MODE_SCALE_IN_START);
+                        chartModeContentContainer.animate()
+                                .alpha(1f)
+                                .scaleX(1f)
+                                .scaleY(1f)
+                                .setDuration(CHART_MODE_SCALE_IN_DURATION_MS)
+                                .setInterpolator(interpolator)
+                                .withEndAction(() -> {
+                                    if (transitionId != chartModeTransitionId) {
+                                        return;
+                                    }
+                                    chartVisualContainer.setClipChildren(false);
+                                    chartTouchOverlay.setEnabled(true);
+                                })
+                                .start();
                 })
                 .start();
+    }
+
+    private void cancelChartModeTransition() {
+        chartModeTransitionId++;
+        if (chartModeContentContainer != null) {
+            chartModeContentContainer.animate().cancel();
+            chartModeContentContainer.setVisibility(View.VISIBLE);
+            chartModeContentContainer.setAlpha(1f);
+            chartModeContentContainer.setScaleX(1f);
+            chartModeContentContainer.setScaleY(1f);
+        }
+        if (chartVisualContainer != null) {
+            chartVisualContainer.setClipChildren(false);
+        }
     }
 
     private void configureBarShadows() {
