@@ -56,7 +56,8 @@ final class AverageDetailsController {
     private static final int SIDE_MARGIN_DP = 24;
     private static final int CONTAINER_TRANSFORM_ELEVATION_DP = 10;
     private static final long ROW_HIGHLIGHT_DELAY_MS = 220L;
-    private static final long ROW_HIGHLIGHT_DURATION_MS = 700L;
+    private static final long ROW_HIGHLIGHT_HOLD_MS = 850L;
+    private static final long ROW_HIGHLIGHT_FADE_MS = 900L;
     private static final int ROW_HIGHLIGHT_ALPHA = 96;
     private static final int SOURCE_CARD_CORNER_RADIUS_DP = 8;
     private static final int DETAILS_CARD_CORNER_RADIUS_DP = 28;
@@ -614,7 +615,8 @@ final class AverageDetailsController {
         row.setForeground(highlight);
 
         ValueAnimator animator = ValueAnimator.ofInt(ROW_HIGHLIGHT_ALPHA, 0);
-        animator.setDuration(ROW_HIGHLIGHT_DURATION_MS);
+        animator.setStartDelay(ROW_HIGHLIGHT_HOLD_MS);
+        animator.setDuration(ROW_HIGHLIGHT_FADE_MS);
         animator.setInterpolator(new LinearOutSlowInInterpolator());
         animator.addUpdateListener(animation -> highlight.setColor(withAlpha(
                 highlightColor,
