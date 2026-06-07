@@ -3,6 +3,7 @@ package io.github.simonhalvdansson.flux;
 import android.content.SharedPreferences;
 import android.graphics.Rect;
 import android.graphics.Outline;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -139,6 +140,7 @@ public class MainActivity extends AppCompatActivity {
         tomorrowAverageDate = findViewById(R.id.tomorrow_average_date);
         tomorrowAverageMin = findViewById(R.id.tomorrow_average_min);
         tomorrowAverageMax = findViewById(R.id.tomorrow_average_max);
+        configureAveragePreviewIcons();
         mainScrollView = findViewById(R.id.main_container);
         settingsToggleRow = findViewById(R.id.settings_toggle_row);
         settingsToggleCaret = findViewById(R.id.settings_toggle_caret);
@@ -660,6 +662,26 @@ public class MainActivity extends AppCompatActivity {
                 dp,
                 getResources().getDisplayMetrics()
         ));
+    }
+
+    private void configureAveragePreviewIcons() {
+        setAveragePreviewIcon(yesterdayAverageMin, R.drawable.ic_average_min_16);
+        setAveragePreviewIcon(yesterdayAverageMax, R.drawable.ic_average_max_16);
+        setAveragePreviewIcon(todayAverageMin, R.drawable.ic_average_min_16);
+        setAveragePreviewIcon(todayAverageMax, R.drawable.ic_average_max_16);
+        setAveragePreviewIcon(tomorrowAverageMin, R.drawable.ic_average_min_16);
+        setAveragePreviewIcon(tomorrowAverageMax, R.drawable.ic_average_max_16);
+    }
+
+    private void setAveragePreviewIcon(TextView textView, int drawableResId) {
+        Drawable drawable = getDrawable(drawableResId);
+        if (drawable == null) {
+            return;
+        }
+
+        int iconSize = dpToPx(15);
+        drawable.setBounds(0, 0, iconSize, iconSize);
+        textView.setCompoundDrawablesRelative(drawable, null, null, null);
     }
 
     private void renderAverageSummaries(List<PriceFetcher.PriceEntry> entries) {
