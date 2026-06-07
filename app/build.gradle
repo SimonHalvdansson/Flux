@@ -5,12 +5,12 @@ plugins {
 
 android {
     namespace 'io.github.simonhalvdansson.flux'
-    compileSdk 36
+    compileSdk 37
 
     defaultConfig {
         applicationId "io.github.simonhalvdansson.flux"
         minSdk 34
-        targetSdk 36
+        targetSdk 37
         versionCode 3
         versionName "1.0"
 
