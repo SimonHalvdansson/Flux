@@ -1,6 +1,7 @@
 package io.github.simonhalvdansson.flux;
 
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.graphics.Rect;
 import android.graphics.Outline;
 import android.graphics.drawable.Drawable;
@@ -24,10 +25,13 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.core.view.insets.GradientProtection;
+import androidx.core.view.insets.ProtectionLayout;
 import androidx.interpolator.view.animation.LinearOutSlowInInterpolator;
 
 import com.google.android.material.button.MaterialButtonToggleGroup;
@@ -42,6 +46,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
@@ -58,7 +63,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView currentPriceValue;
     private TextView currentPriceUnit;
     private View currentPriceInfoTrigger;
-    private FrameLayout activityRoot;
+    private ProtectionLayout activityRoot;
     private View yesterdayAverageCard;
     private TextView yesterdayAverageValue;
     private TextView yesterdayAverageUnit;
@@ -112,11 +117,13 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
+        getWindow().setStatusBarColor(Color.TRANSPARENT);
         setContentView(R.layout.activity_main);
 
         sharedPreferences = PriceRepository.getPreferences(this);
         PriceRepository.getSelectedCountryCode(this, sharedPreferences);
         activityRoot = findViewById(R.id.activity_root);
+        applyStatusBarProtection();
         ImageView appIconView = findViewById(R.id.app_icon);
         currentPriceLabel = findViewById(R.id.current_price_label);
         currentPriceValue = findViewById(R.id.current_price_value);
@@ -480,6 +487,13 @@ public class MainActivity extends AppCompatActivity {
             return insets;
         });
         ViewCompat.requestApplyInsets(root);
+    }
+
+    private void applyStatusBarProtection() {
+        int backdropColor = ContextCompat.getColor(this, R.color.main_backdrop_base_top);
+        activityRoot.setProtections(Collections.singletonList(
+                new GradientProtection(WindowInsetsCompat.Side.TOP, backdropColor)
+        ));
     }
 
     private void requestFocusedFieldVisibility() {
