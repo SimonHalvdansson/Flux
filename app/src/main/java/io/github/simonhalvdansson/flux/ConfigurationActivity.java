@@ -166,7 +166,14 @@ public class ConfigurationActivity extends AppCompatActivity {
                 WidgetPreferences.setMainBarPoolMode(prefs, appWidgetId, poolMode);
                 int selectedChartMode = WidgetPreferences.getChartMode(prefs, appWidgetId);
                 boolean selectedShowYAxis = WidgetPreferences.getMainChartShowYAxis(prefs, appWidgetId);
-                updateChartWidgetPreview(chartWidgetPreview, prefs, selectedChartMode, poolMode, selectedShowYAxis);
+                updateChartWidgetPreview(
+                        chartWidgetPreview,
+                        prefs,
+                        selectedChartMode,
+                        poolMode,
+                        selectedShowYAxis,
+                        true
+                );
             });
         }
 
@@ -230,7 +237,23 @@ public class ConfigurationActivity extends AppCompatActivity {
                                           int chartMode,
                                           int barPoolMode,
                                           boolean showYAxis) {
-        ChartWidgetPreviewBinder.bind(previewRoot, prefs, chartMode, barPoolMode, showYAxis);
+        updateChartWidgetPreview(previewRoot, prefs, chartMode, barPoolMode, showYAxis, false);
+    }
+
+    private void updateChartWidgetPreview(View previewRoot,
+                                          SharedPreferences prefs,
+                                          int chartMode,
+                                          int barPoolMode,
+                                          boolean showYAxis,
+                                          boolean animateBars) {
+        ChartWidgetPreviewBinder.bind(
+                previewRoot,
+                prefs,
+                chartMode,
+                barPoolMode,
+                showYAxis,
+                animateBars
+        );
     }
 
     private int getChartButtonId(int chartMode) {

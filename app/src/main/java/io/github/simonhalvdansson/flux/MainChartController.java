@@ -1,9 +1,5 @@
 package io.github.simonhalvdansson.flux;
 
-import android.animation.Animator;
-import android.animation.AnimatorListenerAdapter;
-import android.animation.AnimatorSet;
-import android.animation.ValueAnimator;
 import android.content.SharedPreferences;
 import android.graphics.Outline;
 import android.graphics.Typeface;
@@ -103,7 +99,7 @@ final class MainChartController {
     private TextView chartYAxisUpperMidValue;
     private TextView chartYAxisLowerMidValue;
     private TextView chartYAxisBottomValue;
-    private AnimatorSet barAnimator;
+    private BarHeightAnimator barHeightAnimator;
     private PopupWindow chartTooltipPopup;
     private boolean shouldAnimateInitialChart;
     private boolean suppressNextBarHeightAnimation;
@@ -154,6 +150,7 @@ final class MainChartController {
         chartYAxisUpperMidValue = activity.findViewById(R.id.chart_y_axis_upper_mid_value);
         chartYAxisLowerMidValue = activity.findViewById(R.id.chart_y_axis_lower_mid_value);
         chartYAxisBottomValue = activity.findViewById(R.id.chart_y_axis_bottom_value);
+        barHeightAnimator = new BarHeightAnimator(chartContainer, BAR_IDS);
 
         setupYAxisSwitch();
         setupBarPoolToggle();
@@ -501,11 +498,11 @@ final class MainChartController {
         if (suppressBarHeightAnimation) {
             shouldAnimateInitialChart = false;
             cancelBarAnimation();
-            applyBarState(targetHeightsPx, targetVisibilities);
+            barHeightAnimator.applyState(targetHeightsPx, targetVisibilities);
         } else if (shouldAnimateInitialChart) {
             shouldAnimateInitialChart = false;
-            applyBarState(new int[BAR_IDS.length], targetVisibilities);
-            chartContainer.post(() -> animateBars(
+            barHeightAnimator.applyState(new int[BAR_IDS.length], targetVisibilities);
+            chartContainer.post(() -> barHeightAnimator.animate(
                     new int[BAR_IDS.length],
                     targetHeightsPx,
                     targetVisibilities,
@@ -513,7 +510,11 @@ final class MainChartController {
                     BAR_ANIMATION_STAGGER_MS
             ));
         } else {
-            chartContainer.post(() -> animateBarUpdates(targetHeightsPx, targetVisibilities));
+            chartContainer.post(() -> barHeightAnimator.animateUpdates(
+                    targetHeightsPx,
+                    targetVisibilities,
+                    BAR_UPDATE_ANIMATION_DURATION_MS
+            ));
         }
     }
 
@@ -901,119 +902,9 @@ final class MainChartController {
         return WidgetPreferences.POOL_MODE_AVERAGE;
     }
 
-    private void animateBars(int[] startHeightsPx,
-                             int[] targetHeightsPx,
-                             boolean[] targetVisibilities,
-                             long durationMs,
-                             long staggerMs) {
-        cancelBarAnimation();
-
-        List<Animator> animators = new ArrayList<>();
-        LinearOutSlowInInterpolator interpolator = new LinearOutSlowInInterpolator();
-
-        for (int i = 0; i < BAR_IDS.length; i++) {
-            ImageView bar = activity.findViewById(BAR_IDS[i]);
-            if (!targetVisibilities[i] && startHeightsPx[i] <= 0) {
-                bar.setVisibility(View.INVISIBLE);
-                setBarHeight(bar, 0);
-                continue;
-            }
-
-            bar.setVisibility(View.VISIBLE);
-            setBarHeight(bar, startHeightsPx[i]);
-            ValueAnimator animator = ValueAnimator.ofInt(startHeightsPx[i], targetHeightsPx[i]);
-            animator.setDuration(durationMs);
-            animator.setStartDelay(i * staggerMs);
-            animator.setInterpolator(interpolator);
-            animator.addUpdateListener(valueAnimator ->
-                    setBarHeight(bar, (int) valueAnimator.getAnimatedValue()));
-            animators.add(animator);
-        }
-
-        barAnimator = new AnimatorSet();
-        barAnimator.playTogether(animators);
-        barAnimator.addListener(new AnimatorListenerAdapter() {
-            @Override
-            public void onAnimationCancel(Animator animation) {
-                applyBarState(targetHeightsPx, targetVisibilities);
-                barAnimator = null;
-            }
-
-            @Override
-            public void onAnimationEnd(Animator animation) {
-                applyBarState(targetHeightsPx, targetVisibilities);
-                barAnimator = null;
-            }
-        });
-        barAnimator.start();
-    }
-
-    private void animateBarUpdates(int[] targetHeightsPx, boolean[] targetVisibilities) {
-        int[] currentHeightsPx = getCurrentBarHeights();
-        if (!hasBarStateChanges(currentHeightsPx, targetHeightsPx, targetVisibilities)) {
-            applyBarState(targetHeightsPx, targetVisibilities);
-            return;
-        }
-        animateBars(
-                currentHeightsPx,
-                targetHeightsPx,
-                targetVisibilities,
-                BAR_UPDATE_ANIMATION_DURATION_MS,
-                0L
-        );
-    }
-
-    private int[] getCurrentBarHeights() {
-        int[] heightsPx = new int[BAR_IDS.length];
-        for (int i = 0; i < BAR_IDS.length; i++) {
-            ImageView bar = activity.findViewById(BAR_IDS[i]);
-            ViewGroup.LayoutParams params = bar.getLayoutParams();
-            heightsPx[i] = params != null ? params.height : 0;
-        }
-        return heightsPx;
-    }
-
-    private boolean hasBarStateChanges(int[] currentHeightsPx,
-                                       int[] targetHeightsPx,
-                                       boolean[] targetVisibilities) {
-        for (int i = 0; i < BAR_IDS.length; i++) {
-            ImageView bar = activity.findViewById(BAR_IDS[i]);
-            int currentVisibility = bar.getVisibility();
-            int targetVisibility = targetVisibilities[i] ? View.VISIBLE : View.INVISIBLE;
-            if (currentHeightsPx[i] != targetHeightsPx[i] || currentVisibility != targetVisibility) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private void applyBarHeights(int[] targetHeightsPx) {
-        for (int i = 0; i < BAR_IDS.length; i++) {
-            ImageView bar = activity.findViewById(BAR_IDS[i]);
-            setBarHeight(bar, targetHeightsPx[i]);
-        }
-    }
-
-    private void applyBarState(int[] targetHeightsPx, boolean[] targetVisibilities) {
-        applyBarHeights(targetHeightsPx);
-        for (int i = 0; i < BAR_IDS.length; i++) {
-            ImageView bar = activity.findViewById(BAR_IDS[i]);
-            bar.setVisibility(targetVisibilities[i] ? View.VISIBLE : View.INVISIBLE);
-        }
-    }
-
-    private void setBarHeight(ImageView bar, int heightPx) {
-        LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) bar.getLayoutParams();
-        if (params.height != heightPx) {
-            params.height = heightPx;
-            bar.setLayoutParams(params);
-        }
-    }
-
     private void cancelBarAnimation() {
-        if (barAnimator != null) {
-            barAnimator.cancel();
-            barAnimator = null;
+        if (barHeightAnimator != null) {
+            barHeightAnimator.cancel();
         }
     }
 

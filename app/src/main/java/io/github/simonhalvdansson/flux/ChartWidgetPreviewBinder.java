@@ -4,7 +4,6 @@ import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.util.TypedValue;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -12,6 +11,7 @@ import android.widget.TextView;
 import java.time.ZonedDateTime;
 
 final class ChartWidgetPreviewBinder {
+    private static final long BAR_UPDATE_ANIMATION_DURATION_MS = 160L;
 
     private static final int[] BAR_IDS = {
             R.id.bar_0, R.id.bar_1, R.id.bar_2, R.id.bar_3,
@@ -51,13 +51,29 @@ final class ChartWidgetPreviewBinder {
                      int chartMode,
                      int barPoolMode,
                      boolean showYAxis) {
+        bind(previewRoot, prefs, chartMode, barPoolMode, showYAxis, false);
+    }
+
+    static void bind(View previewRoot,
+                     SharedPreferences prefs,
+                     int chartMode,
+                     int barPoolMode,
+                     boolean showYAxis,
+                     boolean animateBars) {
         if (previewRoot == null) {
             return;
         }
 
         View chartArea = previewRoot.findViewById(R.id.chart_area_container);
         if (chartArea == null || chartArea.getWidth() <= 0 || chartArea.getHeight() <= 0) {
-            previewRoot.post(() -> bind(previewRoot, prefs, chartMode, barPoolMode, showYAxis));
+            previewRoot.post(() -> bind(
+                    previewRoot,
+                    prefs,
+                    chartMode,
+                    barPoolMode,
+                    showYAxis,
+                    animateBars
+            ));
             return;
         }
 
@@ -98,13 +114,20 @@ final class ChartWidgetPreviewBinder {
         updateTimeLabels(previewRoot, renderData);
 
         if (chartMode == WidgetPreferences.CHART_MODE_BARS) {
-            bindBars(previewRoot, renderData, chartArea.getHeight(), displayedChartScaleMax);
+            bindBars(
+                    previewRoot,
+                    renderData,
+                    chartArea.getHeight(),
+                    displayedChartScaleMax,
+                    animateBars
+            );
             barGraphContainer.setVisibility(View.VISIBLE);
             graphImage.setVisibility(View.GONE);
             graphImage.setImageDrawable(null);
             return;
         }
 
+        getBarHeightAnimator(previewRoot).cancel();
         barGraphContainer.setVisibility(View.GONE);
         graphImage.setVisibility(View.VISIBLE);
         bindGraph(graphImage, renderData, chartMode, chartArea.getWidth(), chartArea.getHeight(), displayedChartScaleMax);
@@ -113,24 +136,40 @@ final class ChartWidgetPreviewBinder {
     private static void bindBars(View previewRoot,
                                  MainWidgetRenderDataResolver.RenderData renderData,
                                  int availableHeightPx,
-                                 double scaleMax) {
+                                 double scaleMax,
+                                 boolean animate) {
         int drawableHeightPx = Math.max(0, availableHeightPx - dp(previewRoot, 4));
         ZonedDateTime now = ZonedDateTime.now();
         double safeScaleMax = scaleMax > 0.0d ? scaleMax : 1.0d;
+        int[] targetHeightsPx = new int[BAR_IDS.length];
+        boolean[] targetVisibilities = new boolean[BAR_IDS.length];
 
         for (int i = 0; i < BAR_IDS.length; i++) {
             ImageView bar = previewRoot.findViewById(BAR_IDS[i]);
             if (i >= renderData.barDisplayEntries.size()) {
-                bar.setVisibility(View.INVISIBLE);
-                setBarHeight(bar, 0);
+                targetHeightsPx[i] = 0;
+                targetVisibilities[i] = false;
                 continue;
             }
 
             PriceFetcher.PriceEntry entry = renderData.barDisplayEntries.get(i);
-            int barHeightPx = Math.round((float) (Math.abs(entry.pricePerKwh) / safeScaleMax) * drawableHeightPx);
-            bar.setVisibility(View.VISIBLE);
-            setBarHeight(bar, barHeightPx);
+            targetHeightsPx[i] = Math.round(
+                    (float) (Math.abs(entry.pricePerKwh) / safeScaleMax) * drawableHeightPx
+            );
+            targetVisibilities[i] = true;
             bar.setBackgroundResource(BarChartUtils.resolveBarBackgroundRes(entry, now));
+        }
+
+        BarHeightAnimator animator = getBarHeightAnimator(previewRoot);
+        if (animate) {
+            animator.animateUpdates(
+                    targetHeightsPx,
+                    targetVisibilities,
+                    BAR_UPDATE_ANIMATION_DURATION_MS
+            );
+        } else {
+            animator.cancel();
+            animator.applyState(targetHeightsPx, targetVisibilities);
         }
     }
 
@@ -206,12 +245,15 @@ final class ChartWidgetPreviewBinder {
         }
     }
 
-    private static void setBarHeight(ImageView bar, int heightPx) {
-        ViewGroup.LayoutParams params = bar.getLayoutParams();
-        if (params.height != heightPx) {
-            params.height = heightPx;
-            bar.setLayoutParams(params);
+    private static BarHeightAnimator getBarHeightAnimator(View previewRoot) {
+        View barGraphContainer = previewRoot.findViewById(R.id.bar_graph_container);
+        Object existingAnimator = barGraphContainer.getTag();
+        if (existingAnimator instanceof BarHeightAnimator) {
+            return (BarHeightAnimator) existingAnimator;
         }
+        BarHeightAnimator animator = new BarHeightAnimator(previewRoot, BAR_IDS);
+        barGraphContainer.setTag(animator);
+        return animator;
     }
 
     private static int dp(View view, int dp) {
