@@ -133,7 +133,7 @@ final class MainChartController {
     }
 
     void setup() {
-        chartContainer = activity.findViewById(R.id.bar_chart_section);
+        chartContainer = activity.findViewById(R.id.price_data_content);
         chartVisualContainer = activity.findViewById(R.id.chart_visual_container);
         chartModeContentContainer = activity.findViewById(R.id.chart_mode_content_container);
         chartYAxisContainer = activity.findViewById(R.id.chart_y_axis_container);

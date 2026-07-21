@@ -5,6 +5,9 @@ import android.graphics.Color;
 import android.graphics.Rect;
 import android.graphics.Outline;
 import android.graphics.drawable.Drawable;
+import android.net.ConnectivityManager;
+import android.net.Network;
+import android.net.NetworkCapabilities;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -34,8 +37,10 @@ import androidx.core.view.insets.GradientProtection;
 import androidx.core.view.insets.ProtectionLayout;
 import androidx.interpolator.view.animation.LinearOutSlowInInterpolator;
 
+import com.google.android.material.button.MaterialButton;
 import com.google.android.material.button.MaterialButtonToggleGroup;
 import com.google.android.material.materialswitch.MaterialSwitch;
+import com.google.android.material.progressindicator.CircularProgressIndicator;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 
@@ -64,6 +69,15 @@ public class MainActivity extends AppCompatActivity {
     private TextView currentPriceUnit;
     private View currentPriceInfoTrigger;
     private ProtectionLayout activityRoot;
+    private View priceSection;
+    private View priceDataContent;
+    private View priceErrorState;
+    private TextView priceErrorTitle;
+    private TextView priceErrorMessage;
+    private MaterialButton priceErrorRetryButton;
+    private CircularProgressIndicator priceErrorProgress;
+    private View chartControlsDivider;
+    private MaterialButtonToggleGroup chartToggleGroup;
     private View yesterdayAverageCard;
     private TextView yesterdayAverageValue;
     private TextView yesterdayAverageUnit;
@@ -100,6 +114,7 @@ public class MainActivity extends AppCompatActivity {
     };
     private int currentCountryIndex = 0;
     private int currentImeInsetBottom = 0;
+    private boolean retryInProgress = false;
 
     private AutoCompleteTextView countryDropdown;
     private AutoCompleteTextView areaDropdown;
@@ -129,6 +144,15 @@ public class MainActivity extends AppCompatActivity {
         currentPriceValue = findViewById(R.id.current_price_value);
         currentPriceUnit = findViewById(R.id.current_price_unit);
         currentPriceInfoTrigger = findViewById(R.id.current_price_info_trigger);
+        priceSection = findViewById(R.id.bar_chart_section);
+        priceDataContent = findViewById(R.id.price_data_content);
+        priceErrorState = findViewById(R.id.price_error_state);
+        priceErrorTitle = findViewById(R.id.price_error_title);
+        priceErrorMessage = findViewById(R.id.price_error_message);
+        priceErrorRetryButton = findViewById(R.id.price_error_retry_button);
+        priceErrorProgress = findViewById(R.id.price_error_progress);
+        chartControlsDivider = findViewById(R.id.main_chart_controls_divider);
+        chartToggleGroup = findViewById(R.id.main_chart_toggle_group);
         yesterdayAverageCard = findViewById(R.id.yesterday_average_card);
         yesterdayAverageValue = findViewById(R.id.yesterday_average_value);
         yesterdayAverageUnit = findViewById(R.id.yesterday_average_unit);
@@ -177,6 +201,7 @@ public class MainActivity extends AppCompatActivity {
         averageDetailsController.setupCardDialogs();
         setupSettingsToggle(restoreSettingsExpanded);
         setupCurrentPriceInfoTrigger();
+        setupPriceErrorState();
         configureAppIconShadow(appIconView);
         applyWindowInsets();
         setupAboutDialogTrigger();
@@ -565,8 +590,71 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void refreshPrices() {
-        Thread refreshThread = new Thread(() -> PriceRepository.refreshCachedPrices(getApplicationContext()));
+        refreshPrices(false);
+    }
+
+    private void refreshPrices(boolean initiatedByUser) {
+        if (initiatedByUser) {
+            if (retryInProgress) {
+                return;
+            }
+            retryInProgress = true;
+            updateRetryProgress();
+        }
+
+        Thread refreshThread = new Thread(() -> {
+            PriceRepository.refreshCachedPrices(getApplicationContext());
+            if (initiatedByUser) {
+                runOnUiThread(() -> {
+                    retryInProgress = false;
+                    updateRetryProgress();
+                    renderCurrentPrice();
+                });
+            }
+        });
         refreshThread.start();
+    }
+
+    private void setupPriceErrorState() {
+        priceErrorRetryButton.setOnClickListener(v -> refreshPrices(true));
+        updateRetryProgress();
+    }
+
+    private void updateRetryProgress() {
+        priceErrorRetryButton.setEnabled(!retryInProgress);
+        priceErrorRetryButton.setText(retryInProgress
+                ? R.string.price_error_retrying
+                : R.string.price_error_retry);
+        priceErrorProgress.setVisibility(retryInProgress ? View.VISIBLE : View.GONE);
+    }
+
+    private void updatePriceContentState(boolean hasData, boolean hasError) {
+        priceSection.setVisibility(hasData || hasError ? View.VISIBLE : View.GONE);
+        priceDataContent.setVisibility(hasData ? View.VISIBLE : View.GONE);
+        chartControlsDivider.setVisibility(hasData ? View.VISIBLE : View.GONE);
+        chartToggleGroup.setVisibility(hasData ? View.VISIBLE : View.GONE);
+        priceErrorState.setVisibility(hasError ? View.VISIBLE : View.GONE);
+    }
+
+    private void updatePriceErrorCopy() {
+        boolean online = hasValidatedInternetConnection();
+        priceErrorTitle.setText(online
+                ? R.string.price_error_service_title
+                : R.string.price_error_offline_title);
+        priceErrorMessage.setText(online
+                ? R.string.price_error_service_message
+                : R.string.price_error_offline_message);
+    }
+
+    private boolean hasValidatedInternetConnection() {
+        ConnectivityManager connectivityManager = getSystemService(ConnectivityManager.class);
+        if (connectivityManager == null) {
+            return false;
+        }
+        Network activeNetwork = connectivityManager.getActiveNetwork();
+        NetworkCapabilities capabilities = connectivityManager.getNetworkCapabilities(activeNetwork);
+        return capabilities != null
+                && capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED);
     }
 
     private void scheduleQuarterBoundaryRefresh() {
@@ -615,6 +703,7 @@ public class MainActivity extends AppCompatActivity {
     private void renderCurrentPrice() {
         CurrentPriceResolver.Snapshot snapshot = CurrentPriceResolver.resolve(this);
         if (snapshot.hasData) {
+            updatePriceContentState(true, false);
             updateCurrentPriceLabel();
             currentPriceValue.setText(snapshot.formattedPrice);
             if (snapshot.unitText != null && !snapshot.unitText.isEmpty()) {
@@ -635,11 +724,14 @@ public class MainActivity extends AppCompatActivity {
 
         if (snapshot.apiError) {
             updateCurrentPriceLabel();
-            currentPriceValue.setText(R.string.current_price_unavailable);
+            currentPriceValue.setText(R.string.current_price_placeholder);
+            updatePriceErrorCopy();
+            updatePriceContentState(false, true);
             renderPriceVisuals();
             return;
         }
 
+        updatePriceContentState(false, false);
         renderLoadingPlaceholders();
     }
 

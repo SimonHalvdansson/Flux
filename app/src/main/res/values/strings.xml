@@ -12,6 +12,12 @@
     <string name="current_price_loading">Loading current price...</string>
     <string name="current_price_placeholder">--</string>
     <string name="current_price_unavailable">Price unavailable</string>
+    <string name="price_error_offline_title">No internet connection</string>
+    <string name="price_error_offline_message">Connect to the internet and try again to load the latest electricity prices.</string>
+    <string name="price_error_service_title">Prices couldn\'t be loaded</string>
+    <string name="price_error_service_message">The price service isn\'t responding right now. Try again in a moment.</string>
+    <string name="price_error_retry">Try again</string>
+    <string name="price_error_retrying">Trying again…</string>
     <string name="current_price_details_label_time">Active</string>
     <string name="current_price_details_label_price">Price</string>
     <string name="current_price_details_label_original">Original</string>
